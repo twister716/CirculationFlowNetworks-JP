@@ -5,6 +5,26 @@ tile.circulation_networks.circulation_furnace.name=循环熔炉
 tile.circulation_networks.phase_interrupter.name=相位干涉器
 
 item.circulation_networks.inspection_tool.name=环流扳手
+item.circulation_networks.inspection_tool.current_mode=当前模式：§6%s
+item.circulation_networks.inspection_tool.current_submode=子模式：§9%s
+item.circulation_networks.inspection_tool.mode.inspection=网络信息显示
+item.circulation_networks.inspection_tool.mode.configuration=能量节点配置
+item.circulation_networks.inspection_tool.mode_display=§6%s§7[§9%s§7]
+item.circulation_networks.inspection_tool.submode.inspection.all=显示全部信息
+item.circulation_networks.inspection_tool.submode.inspection.spoce=显示连接范围
+item.circulation_networks.inspection_tool.submode.inspection.link=显示节点网络
+item.circulation_networks.inspection_tool.submode.configuration.send=能量输出
+item.circulation_networks.inspection_tool.submode.configuration.receive=能量输入
+item.circulation_networks.inspection_tool.submode.configuration.storage=能量存储
+item.circulation_networks.inspection_tool.submode.configuration.clear=清除配置
+item.circulation_networks.inspection_tool.usage.switch_mode=§e潜行 + 右键空气§r切换主模式
+item.circulation_networks.inspection_tool.usage.switch_submode=§e潜行 + 滚轮§r切换子模式
+item.circulation_networks.inspection_tool.config.set=§a已将此方块配置为 %s
+item.circulation_networks.inspection_tool.config.cleared=§a已清除此方块的能量配置
+item.circulation_networks.inspection_tool.config.invalid_target=§c此方块不是有效的能量机器，无法配置
+item.circulation_networks.inspection_tool.config.node_blocked=§c节点机器无法通过此方式配置
+item.circulation_networks.inspection_tool.mode.inspection.description=潜行 + 右键节点机器以显示节点的特定信息
+item.circulation_networks.inspection_tool.mode.configuration.description=潜行 + 右键机器以覆盖网络自动化的机器类型检测
 
 # Phase Interrupter GUI
 gui.phase_interrupter.title=相位干涉器配置

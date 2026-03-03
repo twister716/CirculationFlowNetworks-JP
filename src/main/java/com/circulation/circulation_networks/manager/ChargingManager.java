@@ -63,7 +63,7 @@ public final class ChargingManager {
         var players = server.getPlayerList().getPlayers();
         p:
         for (var player : players) {
-            var map = scopeNode.get(player.getEntityWorld().provider.getDimension());
+            var map = scopeNode.get(player.dimension);
             if (map != null) {
                 var pos = player.getPosition();
                 var set = map.get(Functions.mergeChunkCoords(pos));

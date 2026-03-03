@@ -5,6 +5,26 @@ tile.circulation_networks.circulation_furnace.name=Circulation Furnace
 tile.circulation_networks.phase_interrupter.name=Phase Interrupter
 
 item.circulation_networks.inspection_tool.name=Circulation Wrench
+item.circulation_networks.inspection_tool.current_mode=Current Mode: §6%s
+item.circulation_networks.inspection_tool.current_submode=Sub Mode: §9%s
+item.circulation_networks.inspection_tool.mode.inspection=Network Information Display
+item.circulation_networks.inspection_tool.mode.configuration=Energy Node Configuration
+item.circulation_networks.inspection_tool.mode_display=§6%s§7[§9%s§7]
+item.circulation_networks.inspection_tool.submode.inspection.all=Show All Information
+item.circulation_networks.inspection_tool.submode.inspection.spoce=Show Link Range
+item.circulation_networks.inspection_tool.submode.inspection.link=Show Node Network
+item.circulation_networks.inspection_tool.submode.configuration.send=Energy Output
+item.circulation_networks.inspection_tool.submode.configuration.receive=Energy Input
+item.circulation_networks.inspection_tool.submode.configuration.storage=Energy Storage
+item.circulation_networks.inspection_tool.submode.configuration.clear=Clear Configuration
+item.circulation_networks.inspection_tool.usage.switch_mode=§eSneak + Right-Click Air§r to switch mode
+item.circulation_networks.inspection_tool.usage.switch_submode=§eSneak + Scroll§r to switch sub-mode
+item.circulation_networks.inspection_tool.config.set=§aConfigured this block as %s
+item.circulation_networks.inspection_tool.config.cleared=§aCleared energy configuration for this block
+item.circulation_networks.inspection_tool.config.invalid_target=§cThis block is not a valid energy machine
+item.circulation_networks.inspection_tool.config.node_blocked=§cNode machines cannot be configured this way
+item.circulation_networks.inspection_tool.mode.inspection.description=Sneak + Right-click node machine to display node-specific information
+item.circulation_networks.inspection_tool.mode.configuration.description=Sneak + Right-click machine to override network automation machine type detection
 
 # Phase Interrupter GUI
 gui.phase_interrupter.title=Phase Interrupter Configuration

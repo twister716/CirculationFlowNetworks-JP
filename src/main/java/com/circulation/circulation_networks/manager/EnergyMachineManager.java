@@ -54,6 +54,7 @@ public final class EnergyMachineManager {
     private final WeakHashMap<TileEntity, ReferenceSet<INode>> machineGridMap = new WeakHashMap<>();
     @Getter
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
+    private final ReferenceSet<TileEntity> cache = new ReferenceOpenHashSet<>();
 
     {
         scopeNode.defaultReturnValue(Long2ObjectMaps.emptyMap());
@@ -101,11 +102,13 @@ public final class EnergyMachineManager {
 
     public void onTileEntityValidate(TileEntityLifeCycleEvent.Validate event) {
         if (event.getWorld().isRemote) return;
-        addMachine(event.getTileEntity());
-        var node = NetworkManager.INSTANCE.getNodeFromPos(event.getWorld(), event.getPos());
-        if (node instanceof IMachineNode im) {
-            addMachineNode(im, event.getTileEntity());
-        }
+        if (NetworkManager.INSTANCE.isInit()) {
+            addMachine(event.getTileEntity());
+            var node = NetworkManager.INSTANCE.getNodeFromPos(event.getWorld(), event.getPos());
+            if (node instanceof IMachineNode im) {
+                addMachineNode(im, event.getTileEntity());
+            }
+        } else cache.add(event.getTileEntity());
     }
 
     public void onTileEntityInvalidate(TileEntityLifeCycleEvent.Invalidate event) {
@@ -114,8 +117,9 @@ public final class EnergyMachineManager {
     }
 
     public void onServerTick() {
-        if (server == null) return;
+        if (server == null || !NetworkManager.INSTANCE.isInit()) return;
         interaction.values().forEach(Interaction::reset);
+        var overrideManager = EnergyTypeOverrideManager.get();
         var gridMap = new Reference2ObjectOpenHashMap<IGrid, EnumMap<IEnergyHandler.EnergyType, Set<IEnergyHandler>>>();
         for (var entry : machineGridMap.entrySet()) {
             var te = entry.getKey();
@@ -125,14 +129,22 @@ public final class EnergyMachineManager {
 
             if (handler == null) {
                 continue;
-            } else if (handler.getType() == IEnergyHandler.EnergyType.INVALID) {
+            }
+
+            var type = handler.getType();
+            if (overrideManager != null) {
+                var override = overrideManager.getOverride(te.getWorld().provider.getDimension(), te.getPos());
+                if (override != null) type = override;
+            }
+
+            if (type == IEnergyHandler.EnergyType.INVALID) {
                 handler.recycle();
                 continue;
             }
 
             for (var node : entry.getValue()) {
                 gridMap.computeIfAbsent(node.getGrid(), g -> new EnumMap<>(IEnergyHandler.EnergyType.class))
-                       .computeIfAbsent(handler.getType(), s -> new ObjectLinkedOpenHashSet<>())
+                       .computeIfAbsent(type, s -> new ObjectLinkedOpenHashSet<>())
                        .add(handler);
             }
         }
@@ -166,7 +178,12 @@ public final class EnergyMachineManager {
         var pos = tileEntity.getPos();
         long chunkCoord = Functions.mergeChunkCoords(pos);
 
-        var map = scopeNode.get(tileEntity.getWorld().provider.getDimension());
+        var dim = tileEntity.getWorld().provider.getDimension();
+        var map = scopeNode.get(dim);
+        if (map == scopeNode.defaultReturnValue()) {
+            scopeNode.put(dim, map = new Long2ObjectOpenHashMap<>());
+            map.defaultReturnValue(ReferenceSets.emptySet());
+        }
         ReferenceSet<IEnergySupplyNode> set = map.get(chunkCoord);
         if (!set.isEmpty()) {
             var s = machineGridMap.get(tileEntity);
@@ -336,6 +353,15 @@ public final class EnergyMachineManager {
                 nodeScopeMap.put(energySupplyNode, LongSets.unmodifiable(chunksCovered));
             }
         }
+
+        for (var te : cache) {
+            addMachine(te);
+            var node = NetworkManager.INSTANCE.getNodeFromPos(te.getWorld(), te.getPos());
+            if (node instanceof IMachineNode im) {
+                addMachineNode(im, te);
+            }
+        }
+        cache.clear();
     }
 
     public void removeNode(INode node) {

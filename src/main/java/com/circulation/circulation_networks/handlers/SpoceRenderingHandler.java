@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.handlers;
 import com.circulation.circulation_networks.items.ItemInspectionTool;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
+import com.circulation.circulation_networks.utils.RenderingUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -100,16 +101,7 @@ public class SpoceRenderingHandler {
     }
 
     protected void drawCachedIntersection(float[] verts, float r, float g, float b) {
-        if (verts.length == 0) return;
-        GlStateManager.color(r, g, b, 1.0f);
-        GlStateManager.glLineWidth(4.0f);
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
-        for (int i = 0; i < verts.length; i += 3) {
-            buf.pos(verts[i], verts[i + 1], verts[i + 2]).endVertex();
-        }
-        tess.draw();
+        RenderingUtils.drawCachedIntersection(verts, r, g, b);
     }
 
     private void draw(float rotation, float r, float g, float b, float radius, float r1, float g1, float b1) {
@@ -122,27 +114,7 @@ public class SpoceRenderingHandler {
     }
 
     protected void drawSphere(float r, float g, float b, float radius, float alpha) {
-        GlStateManager.color(r, g, b, alpha);
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        final int slices = 32, stacks = 32;
-        for (int i = 0; i < slices; i++) {
-            double phi1 = Math.PI * i / slices;
-            double phi2 = Math.PI * (i + 1) / slices;
-            buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION_NORMAL);
-            for (int j = 0; j <= stacks; j++) {
-                double theta = 2.0 * Math.PI * j / stacks;
-                float x1 = (float) (radius * Math.sin(phi1) * Math.cos(theta));
-                float y1 = (float) (radius * Math.cos(phi1));
-                float z1 = (float) (radius * Math.sin(phi1) * Math.sin(theta));
-                buf.pos(x1, y1, z1).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
-                float x2 = (float) (radius * Math.sin(phi2) * Math.cos(theta));
-                float y2 = (float) (radius * Math.cos(phi2));
-                float z2 = (float) (radius * Math.sin(phi2) * Math.sin(theta));
-                buf.pos(x2, y2, z2).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
-            }
-            tess.draw();
-        }
+        RenderingUtils.drawSphere(r, g, b, radius, alpha);
     }
 
     protected void drawBuckyBallWireframe(float r, float g, float b, float radius, float alpha) {
@@ -428,7 +400,9 @@ public class SpoceRenderingHandler {
 
         var stack = p.getHeldItemMainhand();
         if (!(stack.getItem() == RegistryItems.inspectionTool
-            && RegistryItems.inspectionTool.getMode(stack).isMode(ItemInspectionTool.Mode.Spoce))) return;
+            && RegistryItems.inspectionTool.getFunction(stack) == ItemInspectionTool.ToolFunction.INSPECTION
+            && ItemInspectionTool.InspectionMode.fromID(RegistryItems.inspectionTool.getSubMode(stack)).isMode(ItemInspectionTool.InspectionMode.SPOCE)))
+            return;
 
         float partial = event.getPartialTicks();
         double renderPosX = p.lastTickPosX + (p.posX - p.lastTickPosX) * partial;

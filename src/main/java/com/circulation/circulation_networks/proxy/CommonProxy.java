@@ -9,12 +9,15 @@ import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
 import com.circulation.circulation_networks.events.TileEntityLifeCycleEvent;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
+import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.MachineNodeTEManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
 import com.circulation.circulation_networks.packets.ContainerValueConfig;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.PhaseInterrupterSyncPacket;
+import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.packets.SpoceRendering;
 import com.circulation.circulation_networks.packets.UpdateItemModeMessage;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
@@ -56,21 +59,6 @@ public class CommonProxy implements IGuiHandler {
     public static Capability<INode> nodeCapability;
     private int id = 0;
 
-    public void preInit() {
-        MinecraftForge.EVENT_BUS.register(this);
-        NetworkRegistry.INSTANCE.registerGuiHandler(CirculationFlowNetworks.instance, this);
-        CapabilityManager.INSTANCE.register(CEHandler.class, new EmptyStorage<>(), () -> null);
-        CapabilityManager.INSTANCE.register(INode.class, new EmptyStorage<>(), () -> null);
-
-        registerMessage(PhaseInterrupterSyncPacket.class, Side.SERVER);
-        registerMessage(UpdateItemModeMessage.class, Side.SERVER);
-
-        registerMessage(SpoceRendering.class, Side.CLIENT);
-        registerMessage(NodeNetworkRendering.class, Side.CLIENT);
-        registerMessage(ContainerProgressBar.class, Side.CLIENT);
-        registerMessage(ContainerValueConfig.class, Side.CLIENT);
-    }
-
     public void init() {
         RegistryEnergyHandler.registerEnergyHandler(new CEHandlerManager());
         RegistryEnergyHandler.registerEnergyHandler(new FEHandlerManager());
@@ -93,6 +81,23 @@ public class CommonProxy implements IGuiHandler {
 
     public <T extends Packet<T>> void registerMessage(Class<T> aClass, Side side) {
         NET_CHANNEL.registerMessage(aClass, aClass, id++, side);
+    }
+
+    public void preInit() {
+        MinecraftForge.EVENT_BUS.register(this);
+        NetworkRegistry.INSTANCE.registerGuiHandler(CirculationFlowNetworks.instance, this);
+        CapabilityManager.INSTANCE.register(CEHandler.class, new EmptyStorage<>(), () -> null);
+        CapabilityManager.INSTANCE.register(INode.class, new EmptyStorage<>(), () -> null);
+
+        registerMessage(PhaseInterrupterSyncPacket.class, Side.SERVER);
+        registerMessage(UpdateItemModeMessage.class, Side.SERVER);
+
+        registerMessage(SpoceRendering.class, Side.CLIENT);
+        registerMessage(NodeNetworkRendering.class, Side.CLIENT);
+        registerMessage(ConfigOverrideRendering.class, Side.CLIENT);
+        registerMessage(ContainerProgressBar.class, Side.CLIENT);
+        registerMessage(ContainerValueConfig.class, Side.CLIENT);
+        registerMessage(RenderingClear.INSTANCE, Side.CLIENT);
     }
 
     @SubscribeEvent
@@ -118,6 +123,8 @@ public class CommonProxy implements IGuiHandler {
     public void onWorldSave(WorldEvent.Save event) {
         if (!event.getWorld().isRemote && event.getWorld().provider.getDimension() == 0) {
             NetworkManager.INSTANCE.saveGrid();
+            var overrideManager = EnergyTypeOverrideManager.get();
+            if (overrideManager != null) overrideManager.saveOnWorldTick();
         }
     }
 
@@ -128,17 +135,38 @@ public class CommonProxy implements IGuiHandler {
         EnergyMachineManager.INSTANCE.onTileEntityValidate(event);
     }
 
+    public <T extends Packet<T>> void registerMessage(T aClass, Side side) {
+        //noinspection unchecked
+        NET_CHANNEL.registerMessage(aClass, (Class<T>) aClass.getClass(), id++, side);
+    }
+
     @SubscribeEvent
     public void onTileEntityInvalidate(TileEntityLifeCycleEvent.Invalidate event) {
         MachineNodeTEManager.INSTANCE.onTileEntityInvalidate(event);
         NetworkManager.INSTANCE.onTileEntityInvalidate(event);
         EnergyMachineManager.INSTANCE.onTileEntityInvalidate(event);
+        var overrideManager = EnergyTypeOverrideManager.get();
+        if (overrideManager != null) overrideManager.onTileEntityInvalidate(event);
+    }
+
+    @SubscribeEvent
+    public void onWorldLoad(WorldEvent.Load event) {
+        if (!event.getWorld().isRemote && event.getWorld().provider.getDimension() == 0) {
+            EnergyTypeOverrideManager.get();
+        }
     }
 
     @SubscribeEvent
     public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.player instanceof EntityPlayerMP player) {
-            NET_CHANNEL.sendTo(new NodeNetworkRendering(), player);
+            NET_CHANNEL.sendTo(RenderingClear.INSTANCE, player);
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP player) {
+            NET_CHANNEL.sendTo(new ConfigOverrideRendering(player.dimension), player);
         }
     }
 

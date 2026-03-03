@@ -33,8 +33,9 @@ public final class UpdateItemModeMessage implements Packet<UpdateItemModeMessage
     public IMessage onMessage(UpdateItemModeMessage message, MessageContext ctx) {
         ItemStack stack = ctx.getServerHandler().player.getHeldItemMainhand();
 
-        if (stack.getItem() instanceof ItemInspectionTool && stack.getTagCompound() != null) {
-            Functions.getOrCreateTagCompound(stack).setInteger("mode", Math.floorMod(message.mode, ItemInspectionTool.Mode.values().length));
+        if (stack.getItem() instanceof ItemInspectionTool tool && stack.getTagCompound() != null) {
+            var function = tool.getFunction(stack);
+            Functions.getOrCreateTagCompound(stack).setInteger("mode", Math.floorMod(message.mode, function.getSubModeCount()));
         }
         return null;
     }

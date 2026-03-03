@@ -39,11 +39,10 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     public static final int NODE_REMOVE = 2;
     public static final int MACHINE_ADD = 3;
     public static final int MACHINE_REMOVE = 4;
-    public static final int CLEAR = 5;
 
     private static final Object2ReferenceMap<IGrid, ReferenceLinkedOpenHashSet<EntityPlayerMP>> gridPlayers = new Object2ReferenceOpenHashMap<>();
     private static final Reference2ReferenceMap<EntityPlayerMP, IGrid> playerGrid = new Reference2ReferenceOpenHashMap<>();
-    private final int mode;
+    private int mode;
     private int dim;
     private IGrid grid;
     private ReferenceSet<INode> nodes;
@@ -54,8 +53,11 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     private transient long[] parsedNodeRemoveMachineLinks;
     private transient long[] parsedMachineLinks;
 
+    public NodeNetworkRendering() {
+    }
+
     public NodeNetworkRendering(EntityPlayer player, IGrid grid) {
-        this.dim = player.getEntityWorld().provider.getDimension();
+        this.dim = player.dimension;
         this.grid = grid;
         this.nodes = grid.getNodes();
         this.mode = SET;
@@ -69,7 +71,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     }
 
     public NodeNetworkRendering(EntityPlayer player, INode node, int mode) {
-        this.dim = player.getEntityWorld().provider.getDimension();
+        this.dim = player.dimension;
         this.grid = node.getGrid();
         this.mode = mode;
         this.targetNode = node;
@@ -88,14 +90,10 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     }
 
     public NodeNetworkRendering(EntityPlayer player, TileEntity te, INode node, int mode) {
-        this.dim = player.getEntityWorld().provider.getDimension();
+        this.dim = player.dimension;
         this.grid = node.getGrid();
         this.mode = mode;
         this.entryList = ObjectLists.singleton(new Pair(te, node));
-    }
-
-    public NodeNetworkRendering() {
-        this.mode = CLEAR;
     }
 
     public static void addPlayer(IGrid grid, EntityPlayerMP player) {
@@ -139,7 +137,6 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     @Override
     public void fromBytes(ByteBuf buf) {
         parsedMode = buf.readByte();
-        if (parsedMode == CLEAR) return;
 
         if (parsedMode == SET || parsedMode == NODE_ADD || parsedMode == NODE_REMOVE) {
             parsedNodeLinks = readLongPairs(buf);
@@ -156,11 +153,6 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     public IMessage onMessage(NodeNetworkRendering message, MessageContext ctx) {
         Minecraft.getMinecraft().addScheduledTask(() -> {
             var handler = NodeNetworkRenderingHandler.INSTANCE;
-
-            if (message.parsedMode == CLEAR) {
-                handler.clearLinks();
-                return;
-            }
 
             if (message.parsedMode == SET) {
                 handler.clearLinks();
@@ -200,8 +192,6 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeByte(mode);
-
-        if (mode == CLEAR) return;
 
         if (mode == SET || mode == NODE_ADD || mode == NODE_REMOVE) {
             writeLinks(buf, () -> {

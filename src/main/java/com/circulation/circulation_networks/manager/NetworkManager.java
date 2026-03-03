@@ -66,6 +66,8 @@ public final class NetworkManager {
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Int2ObjectOpenHashMap<>();
     private final ObjectSet<IGrid> markGird = new ObjectOpenHashSet<>();
     private final Queue<IGrid> emptyGird = new ArrayDeque<>();
+    @Getter
+    private boolean init;
     private int nextGridId = 0;
 
     {
@@ -407,6 +409,7 @@ public final class NetworkManager {
         posNodes.clear();
         nextGridId = 0;
         saveFile = null;
+        init = false;
     }
 
     public void saveGrid() {

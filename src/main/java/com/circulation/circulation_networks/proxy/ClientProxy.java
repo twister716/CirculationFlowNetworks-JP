@@ -1,7 +1,8 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-import com.circulation.circulation_networks.handlers.InspectionToolHandler;
+import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
+import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.PhaseInterrupterRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
@@ -28,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 @SideOnly(Side.CLIENT)
-public class ClientProxy extends CommonProxy {
+public final class ClientProxy extends CommonProxy {
 
     public static OpenGLLevel openGLLevel = OpenGLLevel.GL_1_1;
     public static boolean isLWJGL3 = false;
@@ -86,7 +87,8 @@ public class ClientProxy extends CommonProxy {
         super.postInit();
         MinecraftForge.EVENT_BUS.register(SpoceRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(NodeNetworkRenderingHandler.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(InspectionToolHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(ConfigOverrideRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(PhaseInterrupterRenderingHandler.INSTANCE);
     }
 
@@ -111,6 +113,7 @@ public class ClientProxy extends CommonProxy {
     public void onClientStop(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         MachineNodeTEManager.INSTANCE.clear();
         NodeNetworkRenderingHandler.INSTANCE.clearLinks();
+        ConfigOverrideRenderingHandler.INSTANCE.clear();
         SpoceRenderingHandler.INSTANCE.clear();
     }
 

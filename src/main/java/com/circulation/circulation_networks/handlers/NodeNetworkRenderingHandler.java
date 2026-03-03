@@ -153,7 +153,9 @@ public final class NodeNetworkRenderingHandler {
 
         var stack = p.getHeldItemMainhand();
         if (!(stack.getItem() == RegistryItems.inspectionTool
-            && RegistryItems.inspectionTool.getMode(stack).isMode(ItemInspectionTool.Mode.Link))) return;
+            && RegistryItems.inspectionTool.getFunction(stack) == ItemInspectionTool.ToolFunction.INSPECTION
+            && ItemInspectionTool.InspectionMode.fromID(RegistryItems.inspectionTool.getSubMode(stack)).isMode(ItemInspectionTool.InspectionMode.LINK)))
+            return;
 
         double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX) * event.getPartialTicks();
         double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY) * event.getPartialTicks();

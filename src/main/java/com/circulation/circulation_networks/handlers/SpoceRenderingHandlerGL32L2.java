@@ -79,24 +79,46 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
     @Override
     protected void cleanupGL() {
         if (sphereVBO != 0) {
-            GL15.glDeleteBuffers(sphereVBO);
+            try {
+                GL15.glDeleteBuffers(sphereVBO);
+            } catch (Exception ignored) {
+
+            }
             sphereVBO = 0;
         }
         if (sphereVAO != 0) {
-            GL30.glDeleteVertexArrays(sphereVAO);
+            try {
+                GL30.glDeleteVertexArrays(sphereVAO);
+            } catch (Exception ignored) {
+
+            }
             sphereVAO = 0;
         }
         if (buckyVBO != 0) {
-            GL15.glDeleteBuffers(buckyVBO);
+            try {
+                GL15.glDeleteBuffers(buckyVBO);
+            } catch (Exception ignored) {
+
+            }
             buckyVBO = 0;
         }
         if (buckyVAO != 0) {
-            GL30.glDeleteVertexArrays(buckyVAO);
+            try {
+                GL30.glDeleteVertexArrays(buckyVAO);
+            } catch (Exception ignored) {
+
+            }
             buckyVAO = 0;
         }
     }
 
     @Override
+    public void clear() {
+        super.clear();
+        sphereVertexCount = 0;
+        buckyVertexCount = 0;
+    }
+
     protected void drawSphere(float r, float g, float b, float radius, float alpha) {
         GlStateManager.color(r, g, b, alpha);
         GlStateManager.pushMatrix();

@@ -23,8 +23,8 @@ public class GuiPhaseInterrupter extends GuiContainer {
 
     private final TileEntityPhaseInterrupter tileEntity;
     private final ContainerPhaseInterrupter container;
-    private GuiButton redstoneModeButton;
     public GuiTextField scopeField;
+    private GuiButton redstoneModeButton;
 
     public GuiPhaseInterrupter(EntityPlayer player, TileEntityPhaseInterrupter te) {
         super(new ContainerPhaseInterrupter(player, te));

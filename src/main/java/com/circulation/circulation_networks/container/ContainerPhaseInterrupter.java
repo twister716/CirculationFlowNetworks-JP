@@ -10,9 +10,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ContainerPhaseInterrupter extends CFNBaseContainer {
 
+    public final TileEntityPhaseInterrupter te;
     @GuiSync(0)
     public int scope;
-    public final TileEntityPhaseInterrupter te;
 
     public ContainerPhaseInterrupter(EntityPlayer player, TileEntityPhaseInterrupter te) {
         super(player, te);
@@ -23,6 +23,7 @@ public class ContainerPhaseInterrupter extends CFNBaseContainer {
     public void detectAndSendChanges() {
         scope = te.getScope();
     }
+
     public void onUpdate(final String field, final Object oldValue, final Object newValue) {
         if (this.te.getWorld().isRemote) {
             if ("scope".equals(field)) {
