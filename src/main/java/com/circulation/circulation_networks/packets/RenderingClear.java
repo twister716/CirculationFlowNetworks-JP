@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.packets;
 
-import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.utils.Packet;
@@ -30,7 +29,6 @@ public class RenderingClear implements Packet<RenderingClear> {
     public IMessage onMessage(RenderingClear message, MessageContext ctx) {
         NodeNetworkRenderingHandler.INSTANCE.clearLinks();
         SpoceRenderingHandler.INSTANCE.clear();
-        ConfigOverrideRenderingHandler.INSTANCE.clear();
         return null;
     }
 }
