@@ -123,8 +123,7 @@ public class CommonProxy implements IGuiHandler {
     public void onWorldSave(WorldEvent.Save event) {
         if (!event.getWorld().isRemote && event.getWorld().provider.getDimension() == 0) {
             NetworkManager.INSTANCE.saveGrid();
-            var overrideManager = EnergyTypeOverrideManager.get();
-            if (overrideManager != null) overrideManager.saveOnWorldTick();
+            EnergyTypeOverrideManager.save();
         }
     }
 

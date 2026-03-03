@@ -21,6 +21,7 @@ public final class EnergyTypeOverrideManager {
     private static EnergyTypeOverrideManager INSTANCE;
 
     private final Int2ObjectMap<Long2ObjectMap<IEnergyHandler.EnergyType>> overrides = new Int2ObjectOpenHashMap<>();
+    private boolean m;
 
     private EnergyTypeOverrideManager() {
     }
@@ -40,8 +41,15 @@ public final class EnergyTypeOverrideManager {
         INSTANCE = null;
     }
 
+    public static void save() {
+        if (INSTANCE != null) {
+            INSTANCE.saveToFile();
+        }
+    }
+
     public void setOverride(int dim, BlockPos pos, IEnergyHandler.EnergyType type) {
         overrides.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>()).put(pos.toLong(), type);
+        m = true;
     }
 
     public void clearOverride(int dim, BlockPos pos) {
@@ -50,6 +58,7 @@ public final class EnergyTypeOverrideManager {
             dimMap.remove(pos.toLong());
             if (dimMap.isEmpty()) overrides.remove(dim);
         }
+        m = true;
     }
 
     @Nullable
@@ -67,10 +76,6 @@ public final class EnergyTypeOverrideManager {
     public void onTileEntityInvalidate(TileEntityLifeCycleEvent.Invalidate event) {
         if (event.getWorld().isRemote) return;
         clearOverride(event.getWorld().provider.getDimension(), event.getPos());
-    }
-
-    public void saveOnWorldTick() {
-        saveToFile();
     }
 
     private void loadFromFile() {
@@ -106,7 +111,7 @@ public final class EnergyTypeOverrideManager {
     }
 
     private void saveToFile() {
-        if (overrides.isEmpty()) {
+        if (overrides.isEmpty() && !m) {
             return;
         }
 
@@ -133,5 +138,7 @@ public final class EnergyTypeOverrideManager {
             CompressedStreamTools.safeWrite(nbt, saveFile);
         } catch (IOException ignored) {
         }
+
+        m = false;
     }
 }
