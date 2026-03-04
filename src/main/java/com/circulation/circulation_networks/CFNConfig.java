@@ -32,6 +32,26 @@ public final class CFNConfig {
         @Config.Name("ElectromagneticInductionTower")
         public final ElectromagneticInductionTowerConfig electromagneticInductionTower = new ElectromagneticInductionTowerConfig();
 
+        @Config.Name("Hub")
+        public final HubConfig hub = new HubConfig();
+
+        public static class HubConfig {
+            @Config.Comment({"中枢的能量范围", "Energy range of Hub"})
+            @Config.Name("energyScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double energyScope = 10;
+
+            @Config.Comment({"中枢的充能范围", "Charging range of Hub"})
+            @Config.Name("chargingScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double chargingScope = 8;
+
+            @Config.Comment({"中枢的链接范围", "Link range of Hub"})
+            @Config.Name("linkScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double linkScope = 16;
+        }
+
         public static class EnergyInductionTowerConfig {
             @Config.Comment({"能量感应塔的能量范围", "Energy range of Energy Induction Tower "})
             @Config.Name("energyScope")

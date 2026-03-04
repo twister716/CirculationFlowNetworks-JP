@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.network.nodes.ChargingNode;
+import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.network.nodes.InductionNode;
 import com.circulation.circulation_networks.network.nodes.machine_node.ConsumerNode;
 import com.circulation.circulation_networks.network.nodes.machine_node.GeneratorNode;
@@ -21,6 +22,7 @@ public final class RegistryNodes {
     static {
         register(InductionNode.class, InductionNode::new);
         register(ChargingNode.class, ChargingNode::new);
+        register(HubNode.class, HubNode::new);
         register(GeneratorNode.class, GeneratorNode::new);
         register(StorageNode.class, StorageNode::new);
         register(ConsumerNode.class, ConsumerNode::new);

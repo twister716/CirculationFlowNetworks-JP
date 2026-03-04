@@ -1,16 +1,20 @@
 package com.circulation.circulation_networks.network;
 
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.registry.RegistryNodes;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagLong;
 import net.minecraftforge.common.util.Constants;
+
+import javax.annotation.Nullable;
 
 public class Grid implements IGrid {
 
@@ -18,6 +22,10 @@ public class Grid implements IGrid {
     private final int id;
     @Getter
     private final ReferenceSet<INode> nodes = new ReferenceOpenHashSet<>();
+    @Getter
+    @Setter
+    @Nullable
+    private IHubNode hubNode;
 
     public Grid(int id) {
         this.id = id;
@@ -36,6 +44,9 @@ public class Grid implements IGrid {
                 node.setActive(true);
                 grid.nodes.add(node);
                 posMap.put(nodeNbt.getLong("pos"), node);
+                if (node instanceof IHubNode hub) {
+                    grid.setHubNode(hub);
+                }
             }
         }
         for (var nbtBase : list) {

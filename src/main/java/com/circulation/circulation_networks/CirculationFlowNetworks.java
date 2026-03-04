@@ -3,6 +3,7 @@ package com.circulation.circulation_networks;
 import com.circulation.circulation_networks.manager.ChargingManager;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
+import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeTEManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.proxy.CommonProxy;
@@ -90,6 +91,7 @@ public class CirculationFlowNetworks {
         EnergyMachineManager.INSTANCE.onServerStop();
         EnergyTypeOverrideManager.onServerStop();
         ChargingManager.INSTANCE.onServerStop();
+        HubChannelManager.INSTANCE.onServerStop();
         MachineNodeTEManager.INSTANCE.clear();
     }
 

@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.AddNodeEvent;
 import com.circulation.circulation_networks.events.RemoveNodeEvent;
@@ -36,6 +37,7 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
@@ -225,6 +227,14 @@ public final class NetworkManager {
 
         IGrid oldGrid = removedNode.getGrid();
 
+        // 如果移除的是中枢节点，清除Grid上的Hub引用并注销频道
+        if (removedNode instanceof IHubNode hub) {
+            if (oldGrid != null) {
+                oldGrid.setHubNode(null);
+            }
+            HubChannelManager.INSTANCE.unregister(hub);
+        }
+
         if (oldGrid != null) {
             for (INode node : oldGrid.getNodes()) {
                 node.removeNeighbor(removedNode);
@@ -279,9 +289,13 @@ public final class NetworkManager {
                 components.sort((a, b) -> b.size() - a.size());
 
                 oldGrid.getNodes().clear();
+                oldGrid.setHubNode(null);
                 for (INode n : components.get(0)) {
                     oldGrid.getNodes().add(n);
                     n.setGrid(oldGrid);
+                    if (n instanceof IHubNode h) {
+                        oldGrid.setHubNode(h);
+                    }
                 }
                 markGird.add(oldGrid);
 
@@ -290,6 +304,9 @@ public final class NetworkManager {
                     IGrid splitGrid = allocGrid();
                     for (INode n : components.get(i)) {
                         assignNodeToGrid(n, splitGrid);
+                        if (n instanceof IHubNode h) {
+                            splitGrid.setHubNode(h);
+                        }
                     }
                     if (watchingPlayers != null) {
                         for (var player : watchingPlayers) {
@@ -324,6 +341,56 @@ public final class NetworkManager {
         }
         candidates.remove(newNode);
 
+        // ---- 中枢冲突预检 ----
+        ReferenceSet<IGrid> linkedGrids = new ReferenceOpenHashSet<>();
+        for (INode existing : candidates) {
+            if (!existing.isActive()) continue;
+            if (newNode.linkScopeCheck(existing) == INode.LinkType.DISCONNECT) continue;
+            if (existing.getGrid() != null) {
+                linkedGrids.add(existing.getGrid());
+            }
+        }
+
+        boolean hubConflict = false;
+        if (newNode instanceof IHubNode) {
+            // 新节点是中枢：如果任何可连接Grid已有中枢，则冲突
+            for (IGrid g : linkedGrids) {
+                if (g.getHubNode() != null) {
+                    hubConflict = true;
+                    break;
+                }
+            }
+        } else {
+            // 新节点是普通节点：如果可连接Grid中有多个含中枢的Grid，合并会导致冲突
+            int hubCount = 0;
+            for (IGrid g : linkedGrids) {
+                if (g.getHubNode() != null) {
+                    hubCount++;
+                    if (hubCount > 1) {
+                        hubConflict = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (hubConflict) {
+            activeNodes.remove(newNode);
+            unregisterNodeIndices(dimId, newNode);
+            newNode.setActive(false);
+            // 通知附近玩家
+            var world = newNode.getWorld();
+            var pos = newNode.getPos();
+            for (var player : world.playerEntities) {
+                if (player.getDistanceSq(pos) < 64 * 64) {
+                    player.sendMessage(new TextComponentTranslation("message.circulation_networks.hub_conflict"));
+                }
+            }
+            world.destroyBlock(pos, true);
+            return;
+        }
+
+        // ---- 正常连接逻辑 ----
         for (INode existing : candidates) {
             if (!existing.isActive()) continue;
             var linkType = newNode.linkScopeCheck(existing);
@@ -343,11 +410,16 @@ public final class NetworkManager {
             } else if (existingGrid != null && existingGrid != currentGrid) {
                 IGrid dst = currentGrid.getNodes().size() > existingGrid.getNodes().size() ? currentGrid : existingGrid;
                 IGrid src = dst == currentGrid ? existingGrid : currentGrid;
+                // 传递中枢引用
+                if (src.getHubNode() != null) {
+                    dst.setHubNode(src.getHubNode());
+                }
                 for (INode n : src.getNodes()) {
                     dst.getNodes().add(n);
                     n.setGrid(dst);
                 }
                 src.getNodes().clear();
+                src.setHubNode(null);
                 destroyGrid(src);
                 markGird.add(dst);
             }
@@ -355,6 +427,11 @@ public final class NetworkManager {
 
         if (newNode.getGrid() == null) {
             assignNodeToGrid(newNode, allocGrid());
+        }
+
+        // 如果新节点是中枢，设置Grid的hubNode引用
+        if (newNode instanceof IHubNode hub) {
+            newNode.getGrid().setHubNode(hub);
         }
 
         var players = NodeNetworkRendering.getPlayers(newNode.getGrid());

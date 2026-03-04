@@ -87,28 +87,42 @@ public final class NodeNetworkRenderingHandler {
         tess.draw();
     }
 
-    private static void drawSphere(float r, float g, float b, float radius, float alpha) {
-        GlStateManager.color(r, g, b, alpha);
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        final int slices = 24, stacks = 24;
+    private static int sphereDisplayList = -1;
+
+    private static void ensureSphereDisplayList() {
+        if (sphereDisplayList >= 0) return;
+        sphereDisplayList = GL11.glGenLists(1);
+        GL11.glNewList(sphereDisplayList, GL11.GL_COMPILE);
+        final int slices = 32, stacks = 32;
         for (int i = 0; i < slices; i++) {
             double phi1 = Math.PI * i / slices;
             double phi2 = Math.PI * (i + 1) / slices;
-            buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION_NORMAL);
+            GL11.glBegin(GL11.GL_QUAD_STRIP);
             for (int j = 0; j <= stacks; j++) {
                 double theta = 2.0 * Math.PI * j / stacks;
-                float x1 = (float) (radius * Math.sin(phi1) * Math.cos(theta));
-                float y1 = (float) (radius * Math.cos(phi1));
-                float z1 = (float) (radius * Math.sin(phi1) * Math.sin(theta));
-                buf.pos(x1, y1, z1).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
-                float x2 = (float) (radius * Math.sin(phi2) * Math.cos(theta));
-                float y2 = (float) (radius * Math.cos(phi2));
-                float z2 = (float) (radius * Math.sin(phi2) * Math.sin(theta));
-                buf.pos(x2, y2, z2).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
+                GL11.glVertex3f(
+                    (float) (Math.sin(phi1) * Math.cos(theta)),
+                    (float) Math.cos(phi1),
+                    (float) (Math.sin(phi1) * Math.sin(theta))
+                );
+                GL11.glVertex3f(
+                    (float) (Math.sin(phi2) * Math.cos(theta)),
+                    (float) Math.cos(phi2),
+                    (float) (Math.sin(phi2) * Math.sin(theta))
+                );
             }
-            tess.draw();
+            GL11.glEnd();
         }
+        GL11.glEndList();
+    }
+
+    private static void drawSphere(float r, float g, float b, float radius, float alpha) {
+        ensureSphereDisplayList();
+        GlStateManager.color(r, g, b, alpha);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(radius, radius, radius);
+        GL11.glCallList(sphereDisplayList);
+        GlStateManager.popMatrix();
     }
 
     public void addNodeLink(long a, long b) {

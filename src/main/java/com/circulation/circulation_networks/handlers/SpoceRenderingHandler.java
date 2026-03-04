@@ -44,6 +44,7 @@ public class SpoceRenderingHandler {
     protected float chargingScope;
     protected int currentIntersectionSlot = -1;
     protected float currentIntersectionRadius = 0;
+    protected float pendingIntersectionR, pendingIntersectionG, pendingIntersectionB;
     private int buildCount;
     private float lastAnimProgress;
     private float animProgress;
@@ -432,6 +433,8 @@ public class SpoceRenderingHandler {
             glInitialized = true;
         }
 
+        onPreRender();
+
         float time = world.getTotalWorldTime() + partial;
         float rotation = time * 0.8f;
 
@@ -440,17 +443,22 @@ public class SpoceRenderingHandler {
             final float wr = 0.4f, wg = 0.8f, wb = 1.0f;
             currentIntersectionSlot = 0;
             currentIntersectionRadius = radius;
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             draw(rotation * rs[0], 0, 0.4f, 0.8f, radius, wr, wg, wb);
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-            if (animating) {
-                drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
-            } else {
-                if (linkDirty) {
-                    linkVerts = buildIntersectionGeometry(world, linkScope);
-                    linkDirty = false;
+            if (!usesShaderIntersection()) {
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                if (animating) {
+                    drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
+                } else {
+                    if (linkDirty) {
+                        linkVerts = buildIntersectionGeometry(world, linkScope);
+                        linkDirty = false;
+                    }
+                    drawCachedIntersection(linkVerts, bright(wr), bright(wg), bright(wb));
                 }
-                drawCachedIntersection(linkVerts, bright(wr), bright(wg), bright(wb));
             }
         }
 
@@ -459,17 +467,22 @@ public class SpoceRenderingHandler {
             final float wr = 0.8f, wg = 0.6f, wb = 1.0f;
             currentIntersectionSlot = 1;
             currentIntersectionRadius = radius;
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             draw(rotation * rs[1], 0.4f, 0.2f, 0.8f, radius, wr, wg, wb);
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-            if (animating) {
-                drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
-            } else {
-                if (energyDirty) {
-                    energyVerts = buildIntersectionGeometry(world, energyScope);
-                    energyDirty = false;
+            if (!usesShaderIntersection()) {
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                if (animating) {
+                    drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
+                } else {
+                    if (energyDirty) {
+                        energyVerts = buildIntersectionGeometry(world, energyScope);
+                        energyDirty = false;
+                    }
+                    drawCachedIntersection(energyVerts, bright(wr), bright(wg), bright(wb));
                 }
-                drawCachedIntersection(energyVerts, bright(wr), bright(wg), bright(wb));
             }
         }
 
@@ -478,17 +491,22 @@ public class SpoceRenderingHandler {
             final float wr = 0.4f, wg = 1.0f, wb = 0.4f;
             currentIntersectionSlot = 2;
             currentIntersectionRadius = radius;
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             draw(rotation * rs[2], 0, 0.5f, 0.1f, radius, wr, wg, wb);
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-            if (animating) {
-                drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
-            } else {
-                if (chargingDirty) {
-                    chargingVerts = buildIntersectionGeometry(world, chargingScope);
-                    chargingDirty = false;
+            if (!usesShaderIntersection()) {
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                if (animating) {
+                    drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
+                } else {
+                    if (chargingDirty) {
+                        chargingVerts = buildIntersectionGeometry(world, chargingScope);
+                        chargingDirty = false;
+                    }
+                    drawCachedIntersection(chargingVerts, bright(wr), bright(wg), bright(wb));
                 }
-                drawCachedIntersection(chargingVerts, bright(wr), bright(wg), bright(wb));
             }
         }
 
@@ -504,6 +522,13 @@ public class SpoceRenderingHandler {
     }
 
     protected void cleanupGL() {
+    }
+
+    protected void onPreRender() {
+    }
+
+    protected boolean usesShaderIntersection() {
+        return false;
     }
 
 }

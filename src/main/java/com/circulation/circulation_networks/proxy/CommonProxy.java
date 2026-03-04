@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
 import com.circulation.circulation_networks.events.TileEntityLifeCycleEvent;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
+import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeTEManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
@@ -127,6 +128,7 @@ public class CommonProxy implements IGuiHandler {
         MachineNodeTEManager.INSTANCE.onTileEntityValidate(event);
         NetworkManager.INSTANCE.onTileEntityValidate(event);
         EnergyMachineManager.INSTANCE.onTileEntityValidate(event);
+        HubChannelManager.INSTANCE.onTileEntityValidate(event);
     }
 
     public <T extends Packet<T>> void registerMessage(T aClass, Side side) {
@@ -139,6 +141,7 @@ public class CommonProxy implements IGuiHandler {
         MachineNodeTEManager.INSTANCE.onTileEntityInvalidate(event);
         NetworkManager.INSTANCE.onTileEntityInvalidate(event);
         EnergyMachineManager.INSTANCE.onTileEntityInvalidate(event);
+        HubChannelManager.INSTANCE.onTileEntityInvalidate(event);
         var overrideManager = EnergyTypeOverrideManager.get();
         if (overrideManager != null) overrideManager.onTileEntityInvalidate(event);
     }

@@ -16,6 +16,7 @@ import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -94,10 +95,39 @@ public final class ChargingManager {
             }
         }
 
+        // 已被频道合并处理过的Grid集合，用于防止重复处理
+        var chargingProcessed = new ReferenceOpenHashSet<IGrid>();
+
         for (var entry : gridMap.entrySet()) {
             var grid = entry.getKey();
+            if (chargingProcessed.contains(grid)) continue;
             var receive = entry.getValue();
 
+            // 检查频道：如果此Grid通过频道合并处理，合并所有频道Grid的machineMap
+            var hubNode = grid.getHubNode();
+            if (hubNode != null) {
+                var channelId = hubNode.getChannelId();
+                if (channelId != null) {
+                    var channelGrids = HubChannelManager.INSTANCE.getChannelGrids(channelId);
+                    if (channelGrids != null && channelGrids.size() > 1) {
+                        var mergedSend = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                        var mergedStorage = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                        for (var cg : channelGrids) {
+                            var handlers = machineMap.get(cg);
+                            if (handlers != null) {
+                                mergedSend.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet()));
+                                mergedStorage.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet()));
+                            }
+                            chargingProcessed.add(cg);
+                        }
+                        transferEnergy(mergedSend, receive, EnergyMachineManager.Status.EXTRACT, grid);
+                        transferEnergy(mergedStorage, receive, EnergyMachineManager.Status.EXTRACT, grid);
+                        continue;
+                    }
+                }
+            }
+
+            chargingProcessed.add(grid);
             var m = machineMap.get(grid);
             if (m != null) {
                 var send = m.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet());

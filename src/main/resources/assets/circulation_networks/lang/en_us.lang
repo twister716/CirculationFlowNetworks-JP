@@ -3,6 +3,7 @@ tile.circulation_networks.electromagnetic_induction_tower.name=Electromagnetic I
 tile.circulation_networks.wind_turbine.name=Wind Turbine
 tile.circulation_networks.circulation_furnace.name=Circulation Furnace
 tile.circulation_networks.phase_interrupter.name=Phase Interrupter
+tile.circulation_networks.hub.name=Hub
 
 item.circulation_networks.inspection_tool.name=Circulation Wrench
 item.circulation_networks.inspection_tool.current_mode=Current Mode: §6%s
@@ -25,6 +26,12 @@ item.circulation_networks.inspection_tool.config.invalid_target=§cThis block is
 item.circulation_networks.inspection_tool.config.node_blocked=§cNode machines cannot be configured this way
 item.circulation_networks.inspection_tool.mode.inspection.description=Sneak + Right-click node machine to display node-specific information
 item.circulation_networks.inspection_tool.mode.configuration.description=Sneak + Right-click machine to override network automation machine type detection
+
+item.circulation_networks.hub_channel_plugin.name=Hub Channel Plugin
+item.circulation_networks.hub_channel_plugin.channel=§7Channel: §b%s §7(§b%s§7)
+item.circulation_networks.hub_channel_plugin.no_channel=§7No channel configured
+
+message.circulation_networks.hub_conflict=§cCannot place node: hub conflict detected in connected networks!
 
 # Phase Interrupter GUI
 gui.phase_interrupter.title=Phase Interrupter Configuration

@@ -5,6 +5,7 @@ import com.circulation.circulation_networks.blocks.machines.BlockCirculationFurn
 import com.circulation.circulation_networks.blocks.machines.BlockWindTurbine;
 import com.circulation.circulation_networks.blocks.nodes.BlockElectromagneticInductionTower;
 import com.circulation.circulation_networks.blocks.nodes.BlockEnergyInductionTower;
+import com.circulation.circulation_networks.blocks.nodes.BlockHub;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -30,6 +31,7 @@ public final class RegistryBlocks {
     public static BlockWindTurbine blockWindTurbine;
     public static BlockCirculationFurnace blockCirculationFurnace;
     public static BlockPhaseInterrupter blockPhaseInterrupter;
+    public static BlockHub blockHub;
 
     public static void registerBlocks(RegistryEvent.Register<Block> event) {
         prepareItemBlockRegister(blockEnergyInductionTower = registerBlock(new BlockEnergyInductionTower()));
@@ -37,6 +39,7 @@ public final class RegistryBlocks {
         prepareItemBlockRegister(blockWindTurbine = registerBlock(new BlockWindTurbine()));
         prepareItemBlockRegister(blockCirculationFurnace = registerBlock(new BlockCirculationFurnace()));
         prepareItemBlockRegister(blockPhaseInterrupter = registerBlock(new BlockPhaseInterrupter()));
+        prepareItemBlockRegister(blockHub = registerBlock(new BlockHub()));
 
         BLOCKS_TO_REGISTER.forEach(event.getRegistry()::register);
         BLOCKS_TO_REGISTER.clear();

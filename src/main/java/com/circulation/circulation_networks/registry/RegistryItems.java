@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.registry;
 
+import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
 import com.circulation.circulation_networks.items.ItemInspectionTool;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;
@@ -20,9 +21,11 @@ public final class RegistryItems {
     private static final List<Item> ITEM_MODELS_TO_REGISTER = new LinkedList<>();
 
     public static ItemInspectionTool inspectionTool;
+    public static ItemHubChannelPlugin hubChannelPlugin;
 
     public static void registerItems(RegistryEvent.Register<Item> event) {
         inspectionTool = registryItem(new ItemInspectionTool());
+        hubChannelPlugin = registryItem(new ItemHubChannelPlugin());
 
         ITEMS_TO_REGISTER.forEach(event.getRegistry()::register);
         ITEMS_TO_REGISTER.clear();
