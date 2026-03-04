@@ -68,11 +68,6 @@ public class CommonProxy implements IGuiHandler {
             RegistryEnergyHandler.registerEnergyHandler(EUHandlerManager.INSTANCE);
             MinecraftForge.EVENT_BUS.register(EUHandlerManager.INSTANCE);
         }
-        try {
-            RegistryEnergyHandler.blackListClass.add(Class.forName("sonar.fluxnetworks.common.tileentity.TileFluxCore"));
-        } catch (ClassNotFoundException ignored) {
-
-        }
     }
 
     public void postInit() {

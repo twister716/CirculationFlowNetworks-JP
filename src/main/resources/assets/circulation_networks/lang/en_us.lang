@@ -1,5 +1,5 @@
 tile.circulation_networks.energy_induction_tower.name=Energy Induction Tower
-tile.circulation_networks.charging_tower.name=Charging Tower
+tile.circulation_networks.electromagnetic_induction_tower.name=Electromagnetic Induction Tower
 tile.circulation_networks.wind_turbine.name=Wind Turbine
 tile.circulation_networks.circulation_furnace.name=Circulation Furnace
 tile.circulation_networks.phase_interrupter.name=Phase Interrupter

@@ -148,7 +148,7 @@ dependencies {
 // Adds Access Transformer files to tasks
 if (propertyBool('use_access_transformer')) {
     for (def location : propertyStringList('access_transformer_locations')) {
-        def fileLocation = file("${projectDir}/src/main/resources/${location}")
+        def fileLocation = file("${projectDir}/src/main/resources/META-INF/${location}")
         if (fileLocation.exists()) {
             tasks.deobfuscateMergedJarToSrg.accessTransformerFiles.from(fileLocation)
             tasks.srgifyBinpatchedJar.accessTransformerFiles.from(fileLocation)

@@ -17,17 +17,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static com.circulation.circulation_networks.CirculationFlowNetworks.CREATIVE_TAB;
+import static com.circulation.circulation_networks.CirculationFlowNetworks.MOD_ID;
 
 public abstract class BaseBlock extends Block implements ITileEntityProvider {
 
     protected BaseBlock(String name) {
         super(Material.IRON);
-        this.setRegistryName(new ResourceLocation(CirculationFlowNetworks.MOD_ID, name));
-        this.setTranslationKey(CirculationFlowNetworks.MOD_ID + "." + name);
+        this.setRegistryName(new ResourceLocation(MOD_ID, name));
+        this.setTranslationKey(MOD_ID + "." + name);
         this.setCreativeTab(CREATIVE_TAB);
         var te = createNewTileEntity(null, 0);
         if (te == null) return;
-        TileEntity.register(name, te.getClass());
+        TileEntity.register(MOD_ID + ":" + name, te.getClass());
     }
 
     public boolean hasTileEntity(@NotNull IBlockState state) {
