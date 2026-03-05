@@ -221,6 +221,7 @@ public final class EnergyMachineManager {
             if (s == null) s = new ReferenceOpenHashSet<>();
             for (var node : set) {
                 if (!node.supplyScopeCheck(pos)) continue;
+                if (node.isBlacklisted(tileEntity)) continue;
 
                 var set1 = gridMachineMap.get(node);
                 if (set1 == gridMachineMap.defaultReturnValue()) {
@@ -319,6 +320,7 @@ public final class EnergyMachineManager {
                     for (TileEntity tileEntity : chunk.getTileEntityMap().values()) {
                         if (!energySupplyNode.supplyScopeCheck(tileEntity.getPos())) continue;
                         if (RegistryEnergyHandler.isBlack(tileEntity)) continue;
+                        if (energySupplyNode.isBlacklisted(tileEntity)) continue;
                         if (RegistryEnergyHandler.isEnergyTileEntity(tileEntity)) {
                             if (set2 == gridMachineMap.defaultReturnValue()) {
                                 gridMachineMap.put(energySupplyNode, set2 = Collections.newSetFromMap(new WeakHashMap<>()));

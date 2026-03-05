@@ -1,5 +1,7 @@
 package com.circulation.circulation_networks.api.node;
 
+import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
 /**
@@ -9,16 +11,13 @@ public interface IEnergySupplyNode extends INode {
 
     double getEnergyScope();
 
-    /**
-     * 返回能量范围的平方，用于距离检测。<br>
-     * 实现类应缓存此值以避免每次调用时重复乘法运算。
-     */
-    default double getEnergyScopeSq() {
-        double s = getEnergyScope();
-        return s * s;
-    }
+    double getEnergyScopeSq();
 
     default boolean supplyScopeCheck(BlockPos pos) {
         return this.distanceSq(pos) <= getEnergyScopeSq();
+    }
+
+    default boolean isBlacklisted(TileEntity tileEntity) {
+        return RegistryEnergyHandler.isSupplyBlack(tileEntity);
     }
 }

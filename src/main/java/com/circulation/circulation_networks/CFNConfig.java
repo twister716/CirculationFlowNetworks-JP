@@ -24,6 +24,20 @@ public final class CFNConfig {
     })
     public static String[] classNames = new String[]{"sonar.fluxnetworks.common.tileentity.TileFluxCore"};
 
+    @Config.Name("EnergySupplyBlacklist")
+    @Config.Comment({
+        "通用能源供应节点的能源设备黑名单（完全限定名或类名前缀）",
+        "被匹配的能源设备只能由专用节点（覆写了 isBlacklisted 方法的节点）建立连接，",
+        "普通供应节点对这些设备无效。",
+        "",
+        "Energy device blacklist for generic supply nodes (non-specialized).",
+        "Matched devices can ONLY be connected by specialized nodes that override isBlacklisted.",
+        "Examples:",
+        "  - 'com.example.AdvancedEnergyTile' Exact match",
+        "  - 'com.example.advanced' Prefix match"
+    })
+    public static String[] supplyClassNames = new String[]{};
+
     public static class Node {
 
         @Config.Name("EnergyInductionTower")

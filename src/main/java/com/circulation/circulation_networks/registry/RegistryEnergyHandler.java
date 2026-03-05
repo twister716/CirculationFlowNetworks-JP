@@ -20,6 +20,7 @@ import java.util.List;
 public final class RegistryEnergyHandler {
 
     private static Class<?>[] blackListClass;
+    private static Class<?>[] supplyBlackListClass;
     private static List<IEnergyHandlerManager> list = new ObjectArrayList<>();
 
     /**
@@ -34,6 +35,14 @@ public final class RegistryEnergyHandler {
         if (tileEntity.getCapability(CommonProxy.nodeCapability, null) instanceof IMachineNode) return true;
         if (blackListClass == null) return false;
         for (Class<?> listClass : blackListClass) {
+            if (listClass.isInstance(tileEntity)) return true;
+        }
+        return false;
+    }
+
+    public static boolean isSupplyBlack(TileEntity tileEntity) {
+        if (supplyBlackListClass == null) return false;
+        for (Class<?> listClass : supplyBlackListClass) {
             if (listClass.isInstance(tileEntity)) return true;
         }
         return false;
@@ -72,34 +81,44 @@ public final class RegistryEnergyHandler {
         list.sort(Comparator.reverseOrder());
         list = ImmutableList.copyOf(list);
 
-        if (CFNConfig.classNames != null && CFNConfig.classNames.length > 0) {
-            final List<String> blackNameList = new ObjectArrayList<>();
-            final ReferenceSet<Class<?>> blackListClass = new ReferenceOpenHashSet<>();
+        final List<String> blackPrefixes = new ObjectArrayList<>();
+        final List<String> supplyPrefixes = new ObjectArrayList<>();
+        final ReferenceSet<Class<?>> blackSet = new ReferenceOpenHashSet<>();
+        final ReferenceSet<Class<?>> supplySet = new ReferenceOpenHashSet<>();
 
-            for (String className : CFNConfig.classNames) {
-                if (className == null || className.trim().isEmpty()) continue;
-                className = className.trim();
+        collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
+        collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
 
-                try {
-                    Class<?> cls = Class.forName(className);
-                    blackListClass.add(cls);
-                } catch (ClassNotFoundException e) {
-                    blackNameList.add(className);
-                }
-            }
-
+        if (!blackPrefixes.isEmpty() || !supplyPrefixes.isEmpty()) {
             for (var aClass : TileEntity.REGISTRY) {
-                if (blackListClass.contains(aClass)) continue;
                 var className = aClass.getName();
-                for (String s : blackNameList) {
-                    if (className.startsWith(s)) {
-                        blackListClass.add(aClass);
-                        break;
+                if (!blackPrefixes.isEmpty() && !blackSet.contains(aClass)) {
+                    for (String s : blackPrefixes) {
+                        if (className.startsWith(s)) { blackSet.add(aClass); break; }
+                    }
+                }
+                if (!supplyPrefixes.isEmpty() && !supplySet.contains(aClass)) {
+                    for (String s : supplyPrefixes) {
+                        if (className.startsWith(s)) { supplySet.add(aClass); break; }
                     }
                 }
             }
+        }
 
-            RegistryEnergyHandler.blackListClass = blackListClass.toArray(new Class[0]);
+        RegistryEnergyHandler.blackListClass = blackSet.isEmpty() ? null : blackSet.toArray(new Class[0]);
+        RegistryEnergyHandler.supplyBlackListClass = supplySet.isEmpty() ? null : supplySet.toArray(new Class[0]);
+    }
+
+    private static void collectExactClasses(String[] names, ReferenceSet<Class<?>> set, List<String> prefixes) {
+        if (names == null) return;
+        for (String className : names) {
+            if (className == null || className.trim().isEmpty()) continue;
+            className = className.trim();
+            try {
+                set.add(Class.forName(className));
+            } catch (ClassNotFoundException e) {
+                prefixes.add(className);
+            }
         }
     }
 
