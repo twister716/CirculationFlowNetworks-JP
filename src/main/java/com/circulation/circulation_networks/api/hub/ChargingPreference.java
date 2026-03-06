@@ -13,18 +13,20 @@ public class ChargingPreference {
     private boolean chargeBaubles;
     private boolean chargeMainHand;
     private boolean chargeOffHand;
+    private boolean chargeArmorSlot;
 
     public ChargingPreference(boolean chargeInventory, boolean chargeHotbar, boolean chargeBaubles,
-                              boolean chargeMainHand, boolean chargeOffHand) {
+                              boolean chargeMainHand, boolean chargeOffHand, boolean chargeArmorSlot) {
         this.chargeInventory = chargeInventory;
         this.chargeHotbar = chargeHotbar;
         this.chargeBaubles = chargeBaubles;
         this.chargeMainHand = chargeMainHand;
         this.chargeOffHand = chargeOffHand;
+        this.chargeArmorSlot = chargeArmorSlot;
     }
 
     public static ChargingPreference defaultAll() {
-        return new ChargingPreference(true, true, true, true, true);
+        return new ChargingPreference(true, true, true, true, true, true);
     }
 
     public static ChargingPreference deserialize(NBTTagCompound nbt) {
@@ -33,7 +35,8 @@ public class ChargingPreference {
             nbt.getBoolean("hotbar"),
             nbt.getBoolean("baubles"),
             nbt.getBoolean("mainHand"),
-            nbt.getBoolean("offHand")
+            nbt.getBoolean("offHand"),
+            nbt.getBoolean("armorSlot")
         );
     }
 
@@ -44,6 +47,7 @@ public class ChargingPreference {
         nbt.setBoolean("baubles", chargeBaubles);
         nbt.setBoolean("mainHand", chargeMainHand);
         nbt.setBoolean("offHand", chargeOffHand);
+        nbt.setBoolean("armorSlot", chargeArmorSlot);
         return nbt;
     }
 }
