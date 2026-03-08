@@ -16,6 +16,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -78,9 +79,12 @@ public class TileEntityHub extends BaseNodeTileEntity {
         markDirty();
     }
 
-    @Nullable
+    @Nonnull
     public ChargingPreference getChargingPreference(UUID playerId) {
-        return playerPreferences.get(playerId);
+        return playerPreferences.computeIfAbsent(playerId, k -> {
+            markDirty();
+            return ChargingPreference.defaultAll();
+        });
     }
 
     public void setChargingPreference(UUID playerId, ChargingPreference preference) {

@@ -23,7 +23,7 @@ public abstract class MachineNode extends Node implements IMachineNode {
     }
 
     public MachineNode(IMachineNodeTileEntity tileEntity, double energyScope, double linkScope) {
-        super(tileEntity,linkScope);
+        super(tileEntity, linkScope);
         this.energyScope = energyScope;
         energyScopeSq = energyScope * energyScope;
     }

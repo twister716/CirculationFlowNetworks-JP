@@ -143,6 +143,7 @@ public final class EnergyMachineManager {
             }
 
             for (var node : entry.getValue()) {
+                if (node.getGrid() == null) continue;
                 gridMap.computeIfAbsent(node.getGrid(), g -> new EnumMap<>(IEnergyHandler.EnergyType.class))
                        .computeIfAbsent(type, s -> new ObjectLinkedOpenHashSet<>())
                        .add(handler);
@@ -154,7 +155,6 @@ public final class EnergyMachineManager {
         for (var e : gridMap.entrySet()) {
             var grid = e.getKey();
             if (processedGrids.contains(grid)) continue;
-
             var hubNode = grid.getHubNode();
             if (hubNode != null) {
                 var channelId = hubNode.getChannelId();

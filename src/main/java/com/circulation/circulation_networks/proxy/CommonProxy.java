@@ -42,6 +42,7 @@ import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -52,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static com.circulation.circulation_networks.CirculationFlowNetworks.NET_CHANNEL;
 
+@SuppressWarnings("unused")
 public class CommonProxy implements IGuiHandler {
 
     @CapabilityInject(CEHandler.class)
@@ -59,6 +61,10 @@ public class CommonProxy implements IGuiHandler {
     @CapabilityInject(INode.class)
     public static Capability<INode> nodeCapability;
     private int id = 0;
+
+    public CommonProxy() {
+        MinecraftForge.EVENT_BUS.register(this);
+    }
 
     public void init() {
         RegistryEnergyHandler.registerEnergyHandler(new CEHandlerManager());
@@ -79,8 +85,7 @@ public class CommonProxy implements IGuiHandler {
         NET_CHANNEL.registerMessage(aClass, aClass, id++, side);
     }
 
-    public void preInit() {
-        MinecraftForge.EVENT_BUS.register(this);
+    public void preInit(FMLPreInitializationEvent event) {
         NetworkRegistry.INSTANCE.registerGuiHandler(CirculationFlowNetworks.instance, this);
         CapabilityManager.INSTANCE.register(CEHandler.class, new EmptyStorage<>(), () -> null);
         CapabilityManager.INSTANCE.register(INode.class, new EmptyStorage<>(), () -> null);

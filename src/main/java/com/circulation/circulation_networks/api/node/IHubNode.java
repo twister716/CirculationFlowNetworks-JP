@@ -1,9 +1,11 @@
 package com.circulation.circulation_networks.api.node;
 
+import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import net.minecraft.item.ItemStack;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
@@ -55,13 +57,25 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
      *
      * @return 若未设置则返回null，无中枢时使用默认全部充能
      */
-    @Nullable
+    @Nonnull
     ChargingPreference getChargingPreference(UUID playerId);
 
     /**
      * 设置指定玩家的充能偏好 / Set charging preference for specified player
      */
     void setChargingPreference(UUID playerId, ChargingPreference preference);
+
+    /**
+     * 获取指定玩家的充能偏好 / Get charging preference for specified player
+     *
+     * @return 若未设置则返回null，无中枢时使用默认全部充能
+     */
+    boolean getChargingState(UUID playerId, ChargingDefinition preference);
+
+    /**
+     * 设置指定玩家的充能偏好 / Set charging preference for specified player
+     */
+    void setChargingState(UUID playerId, ChargingDefinition preference, boolean value);
 
     /**
      * 获取中枢所有者 / Get hub owner

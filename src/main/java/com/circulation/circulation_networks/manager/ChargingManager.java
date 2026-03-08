@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.manager;
 import baubles.api.BaublesApi;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.node.IChargingNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.utils.Functions;
@@ -24,11 +25,13 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -59,88 +62,183 @@ public final class ChargingManager {
     }
 
     public void onServerTick(Reference2ObjectOpenHashMap<IGrid, EnumMap<IEnergyHandler.EnergyType, Set<IEnergyHandler>>> machineMap) {
-        var gridMap = new Reference2ObjectOpenHashMap<IGrid, List<IEnergyHandler>>();
-        gridMap.defaultReturnValue(ObjectLists.emptyList());
+        var list = new ObjectArrayList<Reference2ObjectOpenHashMap<IGrid, List<IEnergyHandler>>>();
         var players = server.getPlayerList().getPlayers();
-        p:
         for (var player : players) {
+            var gridMap = new Reference2ObjectOpenHashMap<IGrid, List<IEnergyHandler>>();
+            gridMap.defaultReturnValue(ObjectLists.emptyList());
             var map = scopeNode.get(player.dimension);
-            if (map != null) {
+            if (map != null && !map.isEmpty()) {
                 var pos = player.getPosition();
                 var set = map.get(Functions.mergeChunkCoords(pos));
                 if (set.isEmpty()) continue;
-                var invs = new ObjectArrayList<IEnergyHandler>();
-                var w = false;
+                var grids = new ObjectArrayList<IGrid>();
                 for (var node : set) {
-                    if (gridMap.containsKey(node.getGrid())) continue;
                     if (!node.chargingScopeCheck(pos)) continue;
-                    if (!w) {
-                        var inv = player.inventory;
-                        for (var i = 0; i < inv.getSizeInventory(); i++) {
-                            var stack = inv.getStackInSlot(i);
-                            var handler = IEnergyHandler.release(stack);
-                            if (handler == null) continue;
-                            if (handler.canReceive()) {
-                                invs.add(handler);
-                                continue;
+                    grids.add(node.getGrid());
+                }
+                if (grids.isEmpty()) continue;
+                //TODO:等待维度充能和跨维度充能的实现，当前先简单地只检测范围内节点
+                EnumMap<ChargingDefinition, List<IEnergyHandler>> gridMapValue = new EnumMap<>(ChargingDefinition.class);
+                var m = player.inventory.mainInventory.toArray(new ItemStack[0]);
+                for (var grid : grids) {
+                    EnumSet<ChargingDefinition> s;
+                    if (grid.getHubNode() == null) {
+                        s = EnumSet.allOf(ChargingDefinition.class);
+                    } else {
+                        s = EnumSet.noneOf(ChargingDefinition.class);
+                        var c = grid.getHubNode().getChargingPreference(player.getUniqueID());
+                        for (var value : ChargingDefinition.values()) {
+                            if (c.getPreference(value)) {
+                                s.add(value);
                             }
-                            handler.recycle();
                         }
-                        if (loadBaubles) checkBaubles(invs, player);
-                        if (invs.isEmpty()) continue p;
-                        w = true;
                     }
-                    gridMap.put(node.getGrid(), invs);
+                    if (s.isEmpty()) continue;
+                    var invs = new ObjectArrayList<IEnergyHandler>();
+                    if (s.contains(ChargingDefinition.INVENTORY)) {
+                        var i = gridMapValue.get(ChargingDefinition.INVENTORY);
+                        if (i != null) {
+                            invs.addAll(i);
+                        } else {
+                            var iiii = new ObjectArrayList<IEnergyHandler>();
+                            for (var i1 = 9; i1 < m.length; i1++) {
+                                var stack = m[i1];
+                                var handler = IEnergyHandler.release(stack);
+                                if (handler == null) continue;
+                                if (handler.canReceive()) {
+                                    iiii.add(handler);
+                                    invs.add(handler);
+                                    continue;
+                                }
+                                handler.recycle();
+                            }
+                            gridMapValue.put(ChargingDefinition.INVENTORY, iiii);
+                        }
+                    }
+                    if (s.contains(ChargingDefinition.HOTBAR)) {
+                        var i = gridMapValue.get(ChargingDefinition.HOTBAR);
+                        if (i != null) {
+                            invs.addAll(i);
+                        } else {
+                            var iiii = new ObjectArrayList<IEnergyHandler>();
+                            for (var i1 = 0; i1 < 9; i1++) {
+                                var stack = m[i1];
+                                var handler = IEnergyHandler.release(stack);
+                                if (handler == null) continue;
+                                if (handler.canReceive()) {
+                                    iiii.add(handler);
+                                    invs.add(handler);
+                                    continue;
+                                }
+                                handler.recycle();
+                            }
+                            gridMapValue.put(ChargingDefinition.HOTBAR, iiii);
+                        }
+                    } else {
+                        if (s.contains(ChargingDefinition.MAIN_HAND)) {
+                            var stack = player.getHeldItemMainhand();
+                            var handler = IEnergyHandler.release(stack);
+                            if (handler != null) {
+                                if (handler.canReceive()) {
+                                    gridMapValue.put(ChargingDefinition.HOTBAR, ObjectLists.singleton(handler));
+                                    invs.add(handler);
+                                } else {
+                                    handler.recycle();
+                                }
+                            }
+                        }
+                        if (s.contains(ChargingDefinition.OFF_HAND)) {
+                            var stack = player.getHeldItemOffhand();
+                            var handler = IEnergyHandler.release(stack);
+                            if (handler != null) {
+                                if (handler.canReceive()) {
+                                    gridMapValue.put(ChargingDefinition.OFF_HAND, ObjectLists.singleton(handler));
+                                    invs.add(handler);
+                                } else {
+                                    handler.recycle();
+                                }
+                            }
+                        }
+                    }
+                    if (s.contains(ChargingDefinition.ARMOR)) {
+                        var i = gridMapValue.get(ChargingDefinition.ARMOR);
+                        if (i != null) {
+                            invs.addAll(i);
+                        } else {
+                            var iiii = new ObjectArrayList<IEnergyHandler>();
+                            for (var i1 = 0; i1 < player.inventory.armorInventory.size(); i1++) {
+                                var stack = player.inventory.armorInventory.get(i1);
+                                var handler = IEnergyHandler.release(stack);
+                                if (handler == null) continue;
+                                if (handler.canReceive()) {
+                                    iiii.add(handler);
+                                    invs.add(handler);
+                                    continue;
+                                }
+                                handler.recycle();
+                            }
+                            gridMapValue.put(ChargingDefinition.ARMOR, iiii);
+                        }
+                    }
+                    if (loadBaubles && s.contains(ChargingDefinition.BAUBLES)) checkBaubles(invs, player);
+                    if (invs.isEmpty()) continue;
+
+                    gridMap.put(grid, invs);
                 }
             }
+            list.add(gridMap);
         }
 
         var chargingProcessed = new ReferenceOpenHashSet<IGrid>();
 
-        for (var entry : gridMap.entrySet()) {
-            var grid = entry.getKey();
-            if (chargingProcessed.contains(grid)) continue;
-            var receive = entry.getValue();
+        for (var gridMap : list) {
+            for (var entry : gridMap.entrySet()) {
+                var grid = entry.getKey();
+                if (chargingProcessed.contains(grid)) continue;
+                var receive = entry.getValue();
 
-            var hubNode = grid.getHubNode();
-            if (hubNode != null) {
-                var channelId = hubNode.getChannelId();
-                if (channelId != null) {
-                    var channelGrids = HubChannelManager.INSTANCE.getChannelGrids(channelId);
-                    if (channelGrids != null && channelGrids.size() > 1) {
-                        var mergedSend = new ObjectLinkedOpenHashSet<IEnergyHandler>();
-                        var mergedStorage = new ObjectLinkedOpenHashSet<IEnergyHandler>();
-                        for (var cg : channelGrids) {
-                            var handlers = machineMap.get(cg);
-                            if (handlers != null) {
-                                mergedSend.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet()));
-                                mergedStorage.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet()));
+                var hubNode = grid.getHubNode();
+                if (hubNode != null) {
+                    var channelId = hubNode.getChannelId();
+                    if (channelId != null) {
+                        var channelGrids = HubChannelManager.INSTANCE.getChannelGrids(channelId);
+                        if (channelGrids != null && channelGrids.size() > 1) {
+                            var mergedSend = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                            var mergedStorage = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                            for (var cg : channelGrids) {
+                                var handlers = machineMap.get(cg);
+                                if (handlers != null) {
+                                    mergedSend.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet()));
+                                    mergedStorage.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet()));
+                                }
+                                chargingProcessed.add(cg);
                             }
-                            chargingProcessed.add(cg);
+                            transferEnergy(mergedSend, receive, EnergyMachineManager.Status.EXTRACT, grid);
+                            transferEnergy(mergedStorage, receive, EnergyMachineManager.Status.EXTRACT, grid);
+                            continue;
                         }
-                        transferEnergy(mergedSend, receive, EnergyMachineManager.Status.EXTRACT, grid);
-                        transferEnergy(mergedStorage, receive, EnergyMachineManager.Status.EXTRACT, grid);
-                        continue;
                     }
+                }
+
+                chargingProcessed.add(grid);
+                var m = machineMap.get(grid);
+                if (m != null) {
+                    var send = m.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet());
+                    transferEnergy(send, receive, EnergyMachineManager.Status.EXTRACT, grid);
+
+                    var storage = m.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet());
+                    transferEnergy(storage, receive, EnergyMachineManager.Status.EXTRACT, grid);
                 }
             }
 
-            chargingProcessed.add(grid);
-            var m = machineMap.get(grid);
-            if (m != null) {
-                var send = m.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet());
-                transferEnergy(send, receive, EnergyMachineManager.Status.EXTRACT, grid);
-
-                var storage = m.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet());
-                transferEnergy(storage, receive, EnergyMachineManager.Status.EXTRACT, grid);
+            for (var value : gridMap.values()) {
+                for (var handler : value) {
+                    handler.recycle();
+                }
             }
         }
 
-        for (var value : gridMap.values()) {
-            for (var handler : value) {
-                handler.recycle();
-            }
-        }
     }
 
     public void addNode(INode node) {

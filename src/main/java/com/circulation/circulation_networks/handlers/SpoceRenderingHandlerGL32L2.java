@@ -23,11 +23,10 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
 
     private static final ResourceLocation SHADER_VERT = new ResourceLocation("circulation_networks", "shaders/sphere_depth.vsh");
     private static final ResourceLocation SHADER_FRAG = new ResourceLocation("circulation_networks", "shaders/sphere_depth.fsh");
-
-    protected int sphereVAO, sphereVBO, sphereVertexCount;
-    protected int buckyVAO, buckyVBO, buckyVertexCount;
     private final FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
     private final FloatBuffer mvBuf = BufferUtils.createFloatBuffer(16);
+    protected int sphereVAO, sphereVBO, sphereVertexCount;
+    protected int buckyVAO, buckyVBO, buckyVertexCount;
     private int shaderProgram;
     private int depthTextureId;
     private int lastScreenWidth, lastScreenHeight;
@@ -244,7 +243,7 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         Minecraft mc = Minecraft.getMinecraft();
         int w = mc.displayWidth;
         int h = mc.displayHeight;
-        
+
         if (w <= 0 || h <= 0) return;
 
         GL13.glActiveTexture(GL13.GL_TEXTURE2);

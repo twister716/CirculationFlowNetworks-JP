@@ -1,12 +1,14 @@
 package com.circulation.circulation_networks.network.nodes;
 
 import com.circulation.circulation_networks.api.INodeTileEntity;
+import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -85,13 +87,23 @@ public final class HubNode extends Node implements IHubNode {
     }
 
     @Override
-    public @Nullable ChargingPreference getChargingPreference(UUID playerId) {
+    public @NotNull ChargingPreference getChargingPreference(UUID playerId) {
         return getHubTE().getChargingPreference(playerId);
     }
 
     @Override
     public void setChargingPreference(UUID playerId, ChargingPreference preference) {
         getHubTE().setChargingPreference(playerId, preference);
+    }
+
+    @Override
+    public boolean getChargingState(UUID playerId, ChargingDefinition cd) {
+        return getHubTE().getChargingPreference(playerId).getPreference(cd);
+    }
+
+    @Override
+    public void setChargingState(UUID playerId, ChargingDefinition cd, boolean value) {
+        getHubTE().getChargingPreference(playerId).setPreference(cd, value);
     }
 
     @Override

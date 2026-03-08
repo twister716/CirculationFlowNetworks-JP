@@ -25,6 +25,16 @@ public class ItemHubChannelPlugin extends BaseItem implements IHubPlugin {
     }
 
     /**
+     * 设置物品的频道UUID和名称
+     */
+    public static void setChannelInfo(ItemStack stack, UUID channelId, String name) {
+        if (stack.isEmpty() || channelId == null || name == null) return;
+        NBTTagCompound tag = Functions.getOrCreateTagCompound(stack);
+        tag.setString("channelId", channelId.toString());
+        tag.setString("channelName", name);
+    }
+
+    /**
      * 从物品NBT中获取频道UUID
      */
     @Nullable
@@ -52,16 +62,6 @@ public class ItemHubChannelPlugin extends BaseItem implements IHubPlugin {
             return tag.getString("channelName");
         }
         return null;
-    }
-
-    /**
-     * 设置物品的频道UUID和名称
-     */
-    public static void setChannelInfo(ItemStack stack, UUID channelId, String name) {
-        if (stack.isEmpty() || channelId == null || name == null) return;
-        NBTTagCompound tag = Functions.getOrCreateTagCompound(stack);
-        tag.setString("channelId", channelId.toString());
-        tag.setString("channelName", name);
     }
 
     @Override

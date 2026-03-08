@@ -524,6 +524,7 @@ public final class NetworkManager {
         }
         nextGridId = maxId + 1;
         EnergyMachineManager.INSTANCE.initGrid(entries);
+        init = true;
     }
 
     @Desugar

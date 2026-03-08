@@ -1,11 +1,7 @@
 package com.circulation.circulation_networks.api.hub;
 
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.NBTTagCompound;
 
-@Getter
-@Setter
 public class ChargingPreference {
 
     private boolean chargeInventory;
@@ -38,6 +34,28 @@ public class ChargingPreference {
             nbt.getBoolean("offHand"),
             nbt.getBoolean("armorSlot")
         );
+    }
+
+    public boolean getPreference(ChargingDefinition cd) {
+        return switch (cd) {
+            case INVENTORY -> chargeInventory;
+            case HOTBAR -> chargeHotbar;
+            case BAUBLES -> chargeBaubles;
+            case MAIN_HAND -> chargeMainHand;
+            case OFF_HAND -> chargeOffHand;
+            case ARMOR -> chargeArmorSlot;
+        };
+    }
+
+    public void setPreference(ChargingDefinition cd, boolean value) {
+        switch (cd) {
+            case INVENTORY -> chargeInventory = value;
+            case HOTBAR -> chargeHotbar = value;
+            case BAUBLES -> chargeBaubles = value;
+            case MAIN_HAND -> chargeMainHand = value;
+            case OFF_HAND -> chargeOffHand = value;
+            case ARMOR -> chargeArmorSlot = value;
+        }
     }
 
     public NBTTagCompound serialize() {

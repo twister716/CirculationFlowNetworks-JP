@@ -110,7 +110,7 @@ public final class API {
      * @param pos   被检查的区块 / the chunk to check
      * @return 可能可以链接该区块中节点的所有节点 / all nodes that may link to nodes in that chunk
      * @deprecated 使用 {@link #getNodesCoveringChunk(World, int, int)} 代替
-     *             / use {@link #getNodesCoveringChunk(World, int, int)} instead
+     * / use {@link #getNodesCoveringChunk(World, int, int)} instead
      */
     @Nonnull
     @Deprecated
@@ -175,7 +175,7 @@ public final class API {
      * @param pos   目标区块 / the chunk to query
      * @return 可能为此区块的机器供能的所有节点 / all nodes that may supply energy to machines in that chunk
      * @deprecated 使用 {@link #getEnergyNodes(World, int, int)} 或 {@link #getEnergyNodes(World, BlockPos)} 代替
-     *             / use {@link #getEnergyNodes(World, int, int)} or {@link #getEnergyNodes(World, BlockPos)} instead
+     * / use {@link #getEnergyNodes(World, int, int)} or {@link #getEnergyNodes(World, BlockPos)} instead
      */
     @Nonnull
     @Deprecated
@@ -211,7 +211,7 @@ public final class API {
      *
      * @param channelId 频道 UUID / the channel UUID
      * @return 属于该频道的所有网格，若频道不存在则为 {@code null}
-     *         / all grids in this channel, or {@code null} if the channel does not exist
+     * / all grids in this channel, or {@code null} if the channel does not exist
      */
     @Nullable
     public static ReferenceSet<IGrid> getChannelGrids(@Nonnull UUID channelId) {

@@ -5,21 +5,25 @@ import com.circulation.circulation_networks.utils.GuiSync;
 import com.circulation.circulation_networks.utils.SyncData;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IContainerListener;
 import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 public abstract class CFNBaseContainer extends Container {
 
     protected final TileEntity te;
     protected final EntityPlayer player;
     private final Int2ObjectMap<SyncData> syncData = new Int2ObjectOpenHashMap<>();
+    private final List<LayoutEntry> layouts = new ObjectArrayList<>();
 
     {
         for (Field f : this.getClass().getFields()) {
@@ -39,16 +43,81 @@ public abstract class CFNBaseContainer extends Container {
         this.player = player;
     }
 
-    protected void bindPlayerInventory(InventoryPlayer inventoryPlayer, int offsetX, int offsetY) {
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.addSlotToContainer(new Slot(inventoryPlayer, j + i * 9 + 9, 8 + j * 18 + offsetX, offsetY + i * 18));
+    protected void registerLayout(ComponentSlotLayout layout) {
+        int start = inventorySlots.size();
+        layout.registerInto(this::addSlotToContainer);
+        layouts.add(new LayoutEntry(layout, start, inventorySlots.size(), false));
+    }
+
+    protected void registerPlayerLayout(ComponentSlotLayout layout) {
+        int start = inventorySlots.size();
+        layout.registerInto(this::addSlotToContainer);
+        layouts.add(new LayoutEntry(layout, start, inventorySlots.size(), true));
+    }
+
+    @Override
+    public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer playerIn, int index) {
+        Slot slot = inventorySlots.get(index);
+        if (slot == null || !slot.getHasStack()) return ItemStack.EMPTY;
+
+        ItemStack stack = slot.getStack();
+        ItemStack result = stack.copy();
+
+        if (slot instanceof FilterComponentSlot) return result;
+
+        LayoutEntry source = null;
+        for (LayoutEntry e : layouts) {
+            if (index >= e.start && index < e.end) {
+                source = e;
+                break;
             }
         }
 
-        for (int k = 0; k < 9; ++k) {
-            this.addSlotToContainer(new Slot(inventoryPlayer, k, 8 + k * 18 + offsetX, offsetY + 58));
+        boolean merged = false;
+        if (slot instanceof OutputComponentSlot) {
+            for (LayoutEntry e : layouts) {
+                if (e.isPlayerInventory) {
+                    merged = mergeItemStack(stack, e.start, e.end, true);
+                    if (merged) break;
+                }
+            }
+            if (merged) slot.onSlotChange(stack, result);
+        } else if (source != null && source.isPlayerInventory) {
+            for (LayoutEntry e : layouts) {
+                if (!e.isPlayerInventory) {
+                    merged = mergeItemStack(stack, e.start, e.end, false);
+                    if (merged) break;
+                }
+            }
+        } else {
+            for (LayoutEntry e : layouts) {
+                if (e.isPlayerInventory) {
+                    merged = mergeItemStack(stack, e.start, e.end, false);
+                    if (merged) break;
+                }
+            }
         }
+
+        if (!merged) return ItemStack.EMPTY;
+        if (stack.isEmpty()) slot.putStack(ItemStack.EMPTY);
+        else slot.onSlotChanged();
+        if (stack.getCount() == result.getCount()) return ItemStack.EMPTY;
+        slot.onTake(playerIn, stack);
+        return result;
+    }
+
+    @Override
+    public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
+        if (slotId >= 0 && slotId < inventorySlots.size()) {
+            Slot slot = inventorySlots.get(slotId);
+            if (slot instanceof FilterComponentSlot) {
+                if (clickTypeIn == ClickType.PICKUP) {
+                    ((FilterComponentSlot) slot).ghostClickWith(player.inventory.getItemStack(), dragType);
+                }
+                return ItemStack.EMPTY;
+            }
+        }
+        return super.slotClick(slotId, dragType, clickTypeIn, player);
     }
 
     @Override
@@ -95,5 +164,19 @@ public abstract class CFNBaseContainer extends Container {
 
     public void onUpdate(final String field, final Object oldValue, final Object newValue) {
 
+    }
+
+    private static final class LayoutEntry {
+        final ComponentSlotLayout layout;
+        final int start;
+        final int end;
+        final boolean isPlayerInventory;
+
+        LayoutEntry(ComponentSlotLayout layout, int start, int end, boolean isPlayerInventory) {
+            this.layout = layout;
+            this.start = start;
+            this.end = end;
+            this.isPlayerInventory = isPlayerInventory;
+        }
     }
 }

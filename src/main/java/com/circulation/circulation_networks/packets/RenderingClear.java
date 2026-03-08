@@ -11,7 +11,7 @@ public class RenderingClear implements Packet<RenderingClear> {
 
     public static final RenderingClear INSTANCE = new RenderingClear();
 
-    private RenderingClear() {
+    public RenderingClear() {
 
     }
 

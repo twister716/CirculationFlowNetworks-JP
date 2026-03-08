@@ -94,12 +94,18 @@ public final class RegistryEnergyHandler {
                 var className = aClass.getName();
                 if (!blackPrefixes.isEmpty() && !blackSet.contains(aClass)) {
                     for (String s : blackPrefixes) {
-                        if (className.startsWith(s)) { blackSet.add(aClass); break; }
+                        if (className.startsWith(s)) {
+                            blackSet.add(aClass);
+                            break;
+                        }
                     }
                 }
                 if (!supplyPrefixes.isEmpty() && !supplySet.contains(aClass)) {
                     for (String s : supplyPrefixes) {
-                        if (className.startsWith(s)) { supplySet.add(aClass); break; }
+                        if (className.startsWith(s)) {
+                            supplySet.add(aClass);
+                            break;
+                        }
                     }
                 }
             }

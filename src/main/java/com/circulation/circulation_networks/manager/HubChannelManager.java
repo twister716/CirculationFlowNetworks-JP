@@ -41,7 +41,7 @@ public final class HubChannelManager {
 
         var channel = channels.get(channelId);
         if (channel == null) {
-            channel = new HubChannel(channelId, name,permissionMode);
+            channel = new HubChannel(channelId, name, permissionMode);
             channels.put(channelId, channel);
         }
         channel.addGrid(grid);

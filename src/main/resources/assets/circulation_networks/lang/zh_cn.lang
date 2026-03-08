@@ -1,7 +1,7 @@
 tile.circulation_networks.energy_induction_tower.name=能量感应塔
 tile.circulation_networks.electromagnetic_induction_tower.name=电磁感应塔
 tile.circulation_networks.wind_turbine.name=风力涡轮机
-tile.circulation_networks.circulation_furnace.name=循环熔炉
+tile.circulation_networks.circulation_furnace.name=环流熔炉
 tile.circulation_networks.phase_interrupter.name=相位干涉器
 tile.circulation_networks.hub.name=中枢
 

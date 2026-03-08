@@ -25,10 +25,10 @@ public class HubChannel implements IHubChannel {
     private PermissionMode permissionMode;
 
     public HubChannel(UUID channelId, EntityPlayerMP player, PermissionMode permissionMode) {
-        this(channelId, player.getName(),permissionMode);
+        this(channelId, player.getName(), permissionMode);
     }
 
-    public HubChannel(UUID channelId, String name,PermissionMode permissionMode) {
+    public HubChannel(UUID channelId, String name, PermissionMode permissionMode) {
         this.channelId = channelId;
         this.name = name;
         this.permissionMode = permissionMode;

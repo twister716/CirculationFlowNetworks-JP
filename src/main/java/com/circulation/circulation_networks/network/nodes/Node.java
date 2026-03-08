@@ -30,10 +30,10 @@ public abstract class Node implements INode {
     private final WeakReference<World> world;
     private final ReferenceSet<INode> neighbors = new ReferenceOpenHashSet<>();
     private final Reference2DoubleMap<INode> distanceMap = new Reference2DoubleOpenHashMap<>();
-    @Getter
-    private boolean active;
     private final double linkScope;
     private final double linkScopeSq;
+    @Getter
+    private boolean active;
     private IGrid grid;
 
     public Node(NBTTagCompound nbt) {

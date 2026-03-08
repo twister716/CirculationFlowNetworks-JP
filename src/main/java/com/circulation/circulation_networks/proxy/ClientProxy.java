@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
+import com.circulation.circulation_networks.gui.component.base.RegisterComponentSpritesEvent;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
@@ -19,7 +21,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
@@ -27,6 +31,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
+
+import java.io.File;
 
 @SideOnly(Side.CLIENT)
 public final class ClientProxy extends CommonProxy {
@@ -73,8 +79,21 @@ public final class ClientProxy extends CommonProxy {
         };
     }
 
-    public void preInit() {
-        super.preInit();
+    public void preInit(FMLPreInitializationEvent event) {
+        super.preInit(event);
+        File modConfigDir = new File(event.getModConfigurationDirectory(), CirculationFlowNetworks.MOD_ID);
+        MinecraftForge.EVENT_BUS.post(new RegisterComponentSpritesEvent());
+        ComponentAtlas.INSTANCE.startAsync(modConfigDir);
+    }
+
+    @SubscribeEvent
+    public void onRegisterSprites(RegisterComponentSpritesEvent event) {
+        event.register("inventory");
+        event.register("base_0");
+        event.register("base_1");
+        event.register("base_2");
+
+        event.registerBackground("gui_center");
     }
 
     public void init() {
@@ -107,6 +126,16 @@ public final class ClientProxy extends CommonProxy {
             return te.getGui(player);
         }
         return null;
+    }
+
+    @SubscribeEvent
+    public void onTextureReloadPre(TextureStitchEvent.Pre event) {
+        ComponentAtlas.INSTANCE.dispose();
+    }
+
+    @SubscribeEvent
+    public void onTextureReloadPost(TextureStitchEvent.Post event) {
+        ComponentAtlas.INSTANCE.restart();
     }
 
     @SubscribeEvent

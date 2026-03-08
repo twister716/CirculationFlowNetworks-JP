@@ -32,7 +32,7 @@ public final class NodeNetworkRenderingHandler {
 
     private static final float SPHERE_CORE_RADIUS = 0.12f;
     private static final float SPHERE_GLOW_RADIUS = 0.28f;
-
+    private static int sphereDisplayList = -1;
     private final ObjectSet<Line> nodeLinks = new ObjectLinkedOpenHashSet<>();
     private final ObjectSet<Line> machineLinks = new ObjectLinkedOpenHashSet<>();
     private final Multiset<Pos> nodePoss = HashMultiset.create();
@@ -86,8 +86,6 @@ public final class NodeNetworkRenderingHandler {
         }
         tess.draw();
     }
-
-    private static int sphereDisplayList = -1;
 
     private static void ensureSphereDisplayList() {
         if (sphereDisplayList >= 0) return;
