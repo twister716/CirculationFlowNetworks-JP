@@ -9,6 +9,7 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.TileEntityLifeCycleEvent;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
+import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
 import com.circulation.circulation_networks.utils.Functions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -156,27 +157,30 @@ public final class EnergyMachineManager {
             var grid = e.getKey();
             if (processedGrids.contains(grid)) continue;
             var hubNode = grid.getHubNode();
-            if (hubNode != null) {
-                var channelId = hubNode.getChannelId();
-                if (channelId != null) {
-                    var channelGrids = HubChannelManager.INSTANCE.getChannelGrids(channelId);
-                    if (channelGrids != null && channelGrids.size() > 1) {
-                        var mergedSend = new ObjectLinkedOpenHashSet<IEnergyHandler>();
-                        var mergedStorage = new ObjectLinkedOpenHashSet<IEnergyHandler>();
-                        var mergedReceive = new ObjectLinkedOpenHashSet<IEnergyHandler>();
-                        for (var cg : channelGrids) {
-                            var handlers = gridMap.get(cg);
-                            if (handlers != null) {
-                                mergedSend.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet()));
-                                mergedStorage.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet()));
-                                mergedReceive.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.RECEIVE, ObjectSets.emptySet()));
+            if (hubNode != null && hubNode.isActive()) {
+                var hub = hubNode.getTileEntity();
+                if (hub instanceof TileEntityHub h) {
+                    var channelId = h.getChannelId();
+                    if (channelId != null) {
+                        var channelGrids = HubChannelManager.INSTANCE.getChannelGrids(channelId);
+                        if (channelGrids != null && channelGrids.size() > 1) {
+                            var mergedSend = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                            var mergedStorage = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                            var mergedReceive = new ObjectLinkedOpenHashSet<IEnergyHandler>();
+                            for (var cg : channelGrids) {
+                                var handlers = gridMap.get(cg);
+                                if (handlers != null) {
+                                    mergedSend.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.SEND, ObjectSets.emptySet()));
+                                    mergedStorage.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.STORAGE, ObjectSets.emptySet()));
+                                    mergedReceive.addAll(handlers.getOrDefault(IEnergyHandler.EnergyType.RECEIVE, ObjectSets.emptySet()));
+                                }
+                                processedGrids.add(cg);
                             }
-                            processedGrids.add(cg);
+                            transferEnergy(mergedSend, mergedReceive, Status.INTERACTION, grid);
+                            transferEnergy(mergedStorage, mergedReceive, Status.EXTRACT, grid);
+                            transferEnergy(mergedSend, mergedStorage, Status.RECEIVE, grid);
+                            continue;
                         }
-                        transferEnergy(mergedSend, mergedReceive, Status.INTERACTION, grid);
-                        transferEnergy(mergedStorage, mergedReceive, Status.EXTRACT, grid);
-                        transferEnergy(mergedSend, mergedStorage, Status.RECEIVE, grid);
-                        continue;
                     }
                 }
             }

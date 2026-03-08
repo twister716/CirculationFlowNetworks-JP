@@ -125,7 +125,7 @@ public abstract class Node implements INode {
                 return te;
             }
         }
-        throw new NullPointerException();
+        return null;
     }
 
     @Override

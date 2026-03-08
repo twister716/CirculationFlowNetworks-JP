@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
@@ -267,6 +268,16 @@ public final class ComponentAtlas {
 
     // ── Discovery ─────────────────────────────────────────────────────────────
 
+    private boolean init;
+
+    @SubscribeEvent
+    public void onRegisterSprites(RegisterComponentSpritesEvent event) {
+        event.register("inventory");
+        event.register("slot");
+
+        event.registerBackground("gui_center");
+    }
+
     /**
      * Starts the background stitching task. Call once during
      * {@code FMLPreInitializationEvent} and again (via {@link #restart()}) after
@@ -282,6 +293,8 @@ public final class ComponentAtlas {
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void startAsync(File modConfigDir) {
+        if (init) return;
+        init = true;
         MinecraftForge.EVENT_BUS.post(new RegisterComponentSpritesEvent());
 
         cacheDir = modConfigDir;
@@ -383,6 +396,7 @@ public final class ComponentAtlas {
      */
     public void restart() {
         if (cacheDir != null) {
+            init = false;
             startAsync(cacheDir);
         }
     }

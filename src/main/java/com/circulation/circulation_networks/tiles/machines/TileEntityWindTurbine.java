@@ -11,7 +11,7 @@ public final class TileEntityWindTurbine extends BaseMachineNodeTileEntity imple
 
     @Override
     protected @NotNull IMachineNode createNode() {
-        return new GeneratorNode(this, 5, 5);
+        return new GeneratorNode(this, 3, 3);
     }
 
     @Override

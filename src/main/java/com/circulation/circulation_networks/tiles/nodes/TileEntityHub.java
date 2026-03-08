@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
 import com.circulation.circulation_networks.network.nodes.HubNode;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.item.ItemStack;
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,7 +27,7 @@ public class TileEntityHub extends BaseNodeTileEntity {
 
     @Getter
     private final ItemStack[] plugins = new ItemStack[IHubNode.PLUGIN_SLOTS];
-    private final Map<UUID, ChargingPreference> playerPreferences = new HashMap<>();
+    private final Map<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
     @Getter
     @Setter
     private PermissionMode permissionMode = PermissionMode.PUBLIC;
@@ -159,4 +159,11 @@ public class TileEntityHub extends BaseNodeTileEntity {
         }
     }
 
+    @Override
+    protected void onInvalidate() {
+        if (getNode() != null && getNode().getGrid() != null) {
+            getNode().getGrid().setHubNode(null);
+        }
+        super.onInvalidate();
+    }
 }

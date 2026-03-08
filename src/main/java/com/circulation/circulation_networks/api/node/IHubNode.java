@@ -12,10 +12,12 @@ import java.util.UUID;
 /**
  * 中枢节点接口，一个网络中只能存在一个中枢节点。
  * 中枢节点同时具有能量供应和玩家充能能力。
+ * 实际上是唯一单例而不是API接口
  * <p>
  * Hub node interface. Only one hub node can exist per network.
  * Hub nodes have both energy supply and player charging capabilities.
  */
+@SuppressWarnings("unused")
 public interface IHubNode extends IEnergySupplyNode, IChargingNode {
 
     int PLUGIN_SLOTS = 5;

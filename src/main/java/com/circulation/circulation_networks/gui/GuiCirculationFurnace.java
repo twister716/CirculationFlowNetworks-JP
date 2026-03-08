@@ -25,8 +25,8 @@ public class GuiCirculationFurnace extends CFNBaseGui {
 
     @Override
     protected List<Component> buildComponents(List<Component> components) {
-        components.add(new SlotComponent(guiLeft + 56, guiTop + 35, container.inputLayout, "base_2", this));
-        components.add(new SlotComponent(guiLeft + 116, guiTop + 35, container.outputLayout, "base_2", this));
+        components.add(new SlotComponent(guiLeft + 56, guiTop + 35, container.inputLayout, "slot", this));
+        components.add(new SlotComponent(guiLeft + 116, guiTop + 35, container.outputLayout, "slot", this));
         components.add(new InventoryComponent(guiLeft + 8, guiTop + 84, container.playerInvLayout, this));
         return components;
     }

@@ -2,7 +2,6 @@ package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
-import com.circulation.circulation_networks.gui.component.base.RegisterComponentSpritesEvent;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
@@ -81,18 +80,9 @@ public final class ClientProxy extends CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
+        MinecraftForge.EVENT_BUS.register(ComponentAtlas.INSTANCE);
         File modConfigDir = new File(event.getModConfigurationDirectory(), CirculationFlowNetworks.MOD_ID);
         ComponentAtlas.INSTANCE.startAsync(modConfigDir);
-    }
-
-    @SubscribeEvent
-    public void onRegisterSprites(RegisterComponentSpritesEvent event) {
-        event.register("inventory");
-        event.register("base_0");
-        event.register("base_1");
-        event.register("base_2");
-
-        event.registerBackground("gui_center");
     }
 
     public void init() {

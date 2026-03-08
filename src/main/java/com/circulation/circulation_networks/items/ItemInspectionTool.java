@@ -5,7 +5,6 @@ import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.node.IChargingNode;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
@@ -169,8 +168,7 @@ public class ItemInspectionTool extends BaseItem {
             TileEntity te = world.getTileEntity(pos);
             if (te == null) return EnumActionResult.PASS;
 
-            if (RegistryEnergyHandler.isBlack(te) || !RegistryEnergyHandler.isEnergyTileEntity(te)
-                || !EnergyMachineManager.INSTANCE.getMachineGridMap().containsKey(te)) {
+            if (RegistryEnergyHandler.isBlack(te) || !RegistryEnergyHandler.isEnergyTileEntity(te)) {
                 player.sendMessage(new TextComponentTranslation("item.circulation_networks.inspection_tool.config.invalid_target"));
                 return EnumActionResult.FAIL;
             }
