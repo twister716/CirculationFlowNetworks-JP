@@ -23,12 +23,37 @@ public final class RegistryEnergyHandler {
     private static Class<?>[] supplyBlackListClass;
     private static List<IEnergyHandlerManager> list = new ObjectArrayList<>();
 
+    private static ReferenceSet<Class<?>> registeredBlackClasses = new ReferenceOpenHashSet<>();
+    private static ReferenceSet<Class<?>> registeredSupplyBlackClasses = new ReferenceOpenHashSet<>();
+
     /**
-     * 只允许在postinit阶段前进行注册
+     * Registers an energy handler manager. Must be called before {@link #lock()}.
      */
     public static void registerEnergyHandler(IEnergyHandlerManager manager) {
         list.add(manager);
         IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ArrayDeque<>());
+    }
+
+    /**
+     * Registers a tile entity class to be excluded from automatic energy network integration.
+     * Node-based tile entities (implementing {@link IMachineNode}) are automatically blacklisted
+     * and do not need to be registered here.
+     * Must be called before {@link #lock()}.
+     *
+     * @param clazz the tile entity class to blacklist from energy handling
+     */
+    public static void registerBlackClass(Class<?> clazz) {
+        registeredBlackClasses.add(clazz);
+    }
+
+    /**
+     * Registers a tile entity class to be excluded from energy supply operations.
+     * Must be called before {@link #lock()}.
+     *
+     * @param clazz the tile entity class to blacklist from energy supply
+     */
+    public static void registerSupplyBlackClass(Class<?> clazz) {
+        registeredSupplyBlackClasses.add(clazz);
     }
 
     public static boolean isBlack(TileEntity tileEntity) {
@@ -83,8 +108,8 @@ public final class RegistryEnergyHandler {
 
         final List<String> blackPrefixes = new ObjectArrayList<>();
         final List<String> supplyPrefixes = new ObjectArrayList<>();
-        final ReferenceSet<Class<?>> blackSet = new ReferenceOpenHashSet<>();
-        final ReferenceSet<Class<?>> supplySet = new ReferenceOpenHashSet<>();
+        final ReferenceSet<Class<?>> blackSet = registeredBlackClasses;
+        final ReferenceSet<Class<?>> supplySet = registeredSupplyBlackClasses;
 
         collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
         collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
@@ -93,16 +118,16 @@ public final class RegistryEnergyHandler {
             for (var aClass : TileEntity.REGISTRY) {
                 var className = aClass.getName();
                 if (!blackPrefixes.isEmpty() && !blackSet.contains(aClass)) {
-                    for (String s : blackPrefixes) {
-                        if (className.startsWith(s)) {
+                    for (String prefix : blackPrefixes) {
+                        if (className.startsWith(prefix)) {
                             blackSet.add(aClass);
                             break;
                         }
                     }
                 }
                 if (!supplyPrefixes.isEmpty() && !supplySet.contains(aClass)) {
-                    for (String s : supplyPrefixes) {
-                        if (className.startsWith(s)) {
+                    for (String prefix : supplyPrefixes) {
+                        if (className.startsWith(prefix)) {
                             supplySet.add(aClass);
                             break;
                         }
@@ -111,17 +136,23 @@ public final class RegistryEnergyHandler {
             }
         }
 
-        RegistryEnergyHandler.blackListClass = blackSet.isEmpty() ? null : blackSet.toArray(new Class[0]);
-        RegistryEnergyHandler.supplyBlackListClass = supplySet.isEmpty() ? null : supplySet.toArray(new Class[0]);
+        blackListClass = blackSet.isEmpty() ? null : blackSet.toArray(new Class[0]);
+        supplyBlackListClass = supplySet.isEmpty() ? null : supplySet.toArray(new Class[0]);
+
+        registeredBlackClasses.clear();
+        registeredSupplyBlackClasses.clear();
+
+        registeredBlackClasses = null;
+        registeredSupplyBlackClasses = null;
     }
 
-    private static void collectExactClasses(String[] names, ReferenceSet<Class<?>> set, List<String> prefixes) {
+    private static void collectExactClasses(String[] names, ReferenceSet<Class<?>> classSet, List<String> prefixes) {
         if (names == null) return;
         for (String className : names) {
             if (className == null || className.trim().isEmpty()) continue;
             className = className.trim();
             try {
-                set.add(Class.forName(className));
+                classSet.add(Class.forName(className));
             } catch (ClassNotFoundException e) {
                 prefixes.add(className);
             }
