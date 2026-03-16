@@ -1,17 +1,14 @@
 package com.circulation.circulation_networks.gui.component;
 
 import com.circulation.circulation_networks.container.ComponentSlotLayout;
-import com.circulation.circulation_networks.gui.CFNBaseGui;
 import com.circulation.circulation_networks.gui.component.base.Component;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import com.circulation.circulation_networks.gui.component.base.ComponentGuiContext;
 
-@SideOnly(Side.CLIENT)
 public class SlotComponent extends Component {
 
     public static final int SIZE = 18;
 
-    public SlotComponent(int x, int y, ComponentSlotLayout layout, String bgSprite, CFNBaseGui gui) {
+    public SlotComponent(int x, int y, ComponentSlotLayout layout, String bgSprite, ComponentGuiContext gui) {
         super(x, y, SIZE, SIZE, gui);
         setSpriteLayers(bgSprite);
         bindLayout(layout);
@@ -21,4 +18,3 @@ public class SlotComponent extends Component {
     protected void render(int mouseX, int mouseY, float partialTicks) {
     }
 }
-

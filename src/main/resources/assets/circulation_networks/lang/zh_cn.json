@@ -1,0 +1,83 @@
+{
+  "block": {
+    "circulation_networks": {
+      "energy_induction_tower": "能量感应塔",
+      "electromagnetic_induction_tower": "电磁感应塔",
+      "wind_turbine": "风力涡轮机",
+      "circulation_furnace": "环流熔炉",
+      "phase_interrupter": "相位干涉器",
+      "hub": "中枢"
+    }
+  },
+  "item": {
+    "circulation_networks": {
+      "inspection_tool": "环流扳手",
+      "hub_channel_plugin": "中枢频道插件"
+    }
+  },
+  "inspection_tool": {
+    "circulation_networks": {
+      "current_mode": "当前模式：§6%s",
+      "current_submode": "子模式：§9%s",
+      "mode": {
+        "inspection": "网络信息显示",
+        "configuration": "能量节点配置"
+      },
+      "mode_display": "§6%s§7[§9%s§7]",
+      "submode": {
+        "inspection": {
+          "all": "显示全部信息",
+          "spoce": "显示连接范围",
+          "link": "显示节点网络"
+        },
+        "configuration": {
+          "send": "能量输出",
+          "receive": "能量输入",
+          "storage": "能量存储",
+          "clear": "清除配置"
+        }
+      },
+      "usage": {
+        "switch_mode": "§e潜行 + 右键空气§r切换主模式",
+        "switch_submode": "§e潜行 + 滚轮§r切换子模式"
+      },
+      "config": {
+        "set": "§a已将此方块配置为 %s",
+        "cleared": "§a已清除此方块的能量配置",
+        "invalid_target": "§c此方块不是有效的能量机器，无法配置",
+        "node_blocked": "§c节点机器无法通过此方式配置"
+      },
+      "mode_description": {
+        "inspection": "潜行 + 右键节点机器以显示节点的特定信息",
+        "configuration": "潜行 + 右键机器以覆盖网络自动化的机器类型检测"
+      }
+    }
+  },
+  "hub_channel_plugin": {
+    "circulation_networks": {
+      "channel": "§7频道：§b%s §7(§b%s§7)",
+      "no_channel": "§7未配置频道"
+    }
+  },
+  "message": {
+    "circulation_networks": {
+      "hub_conflict": "§c无法放置节点：连接的网络中检测到中枢冲突！"
+    }
+  },
+  "gui": {
+    "phase_interrupter": {
+      "title": "相位干涉器配置",
+      "show_range": "显示范围",
+      "close": "关闭",
+      "scope": "范围",
+      "show_range_status": "显示范围",
+      "enabled": "启用",
+      "disabled": "禁用",
+      "redstone_mode": "红石模式",
+      "inverse_mode": "反转模式",
+      "normal_mode": "常规模式",
+      "inverse_desc": "反转 (收信号→生效)",
+      "normal_desc": "常规 (收信号→失效)"
+    }
+  }
+}

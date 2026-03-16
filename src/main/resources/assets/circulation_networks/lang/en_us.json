@@ -1,0 +1,83 @@
+{
+  "block": {
+    "circulation_networks": {
+      "energy_induction_tower": "Energy Induction Tower",
+      "electromagnetic_induction_tower": "Electromagnetic Induction Tower",
+      "wind_turbine": "Wind Turbine",
+      "circulation_furnace": "Circulation Furnace",
+      "phase_interrupter": "Phase Interrupter",
+      "hub": "Hub"
+    }
+  },
+  "item": {
+    "circulation_networks": {
+      "inspection_tool": "Circulation Wrench",
+      "hub_channel_plugin": "Hub Channel Plugin"
+    }
+  },
+  "inspection_tool": {
+    "circulation_networks": {
+      "current_mode": "Current Mode: §6%s",
+      "current_submode": "Sub Mode: §9%s",
+      "mode": {
+        "inspection": "Network Information Display",
+        "configuration": "Energy Node Configuration"
+      },
+      "mode_display": "§6%s§7[§9%s§7]",
+      "submode": {
+        "inspection": {
+          "all": "Show All Information",
+          "spoce": "Show Link Range",
+          "link": "Show Node Network"
+        },
+        "configuration": {
+          "send": "Energy Output",
+          "receive": "Energy Input",
+          "storage": "Energy Storage",
+          "clear": "Clear Configuration"
+        }
+      },
+      "usage": {
+        "switch_mode": "§eSneak + Right-Click Air§r to switch mode",
+        "switch_submode": "§eSneak + Scroll§r to switch sub-mode"
+      },
+      "config": {
+        "set": "§aConfigured this block as %s",
+        "cleared": "§aCleared energy configuration for this block",
+        "invalid_target": "§cThis block is not a valid energy machine",
+        "node_blocked": "§cNode machines cannot be configured this way"
+      },
+      "mode_description": {
+        "inspection": "Sneak + Right-click node machine to display node-specific information",
+        "configuration": "Sneak + Right-click machine to override network automation machine type detection"
+      }
+    }
+  },
+  "hub_channel_plugin": {
+    "circulation_networks": {
+      "channel": "§7Channel: §b%s §7(§b%s§7)",
+      "no_channel": "§7No channel configured"
+    }
+  },
+  "message": {
+    "circulation_networks": {
+      "hub_conflict": "§cCannot place node: hub conflict detected in connected networks!"
+    }
+  },
+  "gui": {
+    "phase_interrupter": {
+      "title": "Phase Interrupter Configuration",
+      "show_range": "Show Range",
+      "close": "Close",
+      "scope": "Scope",
+      "show_range_status": "Show Range",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "redstone_mode": "Redstone Mode",
+      "inverse_mode": "Inverse Mode",
+      "normal_mode": "Normal Mode",
+      "inverse_desc": "Inverse (Receive Signal → Active)",
+      "normal_desc": "Normal (Receive Signal → Inactive)"
+    }
+  }
+}

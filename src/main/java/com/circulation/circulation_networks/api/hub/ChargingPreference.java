@@ -1,6 +1,10 @@
 package com.circulation.circulation_networks.api.hub;
 
+//? if <1.20 {
 import net.minecraft.nbt.NBTTagCompound;
+//?} else {
+/*import net.minecraft.nbt.CompoundTag;
+*///?}
 
 public class ChargingPreference {
 
@@ -25,6 +29,7 @@ public class ChargingPreference {
         return new ChargingPreference(true, true, true, true, true, true);
     }
 
+    //? if <1.20 {
     public static ChargingPreference deserialize(NBTTagCompound nbt) {
         return new ChargingPreference(
             nbt.getBoolean("inv"),
@@ -35,6 +40,18 @@ public class ChargingPreference {
             nbt.getBoolean("armorSlot")
         );
     }
+    //?} else {
+    /*public static ChargingPreference deserialize(CompoundTag nbt) {
+        return new ChargingPreference(
+            nbt.getBoolean("inv"),
+            nbt.getBoolean("hotbar"),
+            nbt.getBoolean("baubles"),
+            nbt.getBoolean("mainHand"),
+            nbt.getBoolean("offHand"),
+            nbt.getBoolean("armorSlot")
+        );
+    }
+    *///?}
 
     public boolean getPreference(ChargingDefinition cd) {
         return switch (cd) {
@@ -58,6 +75,7 @@ public class ChargingPreference {
         }
     }
 
+    //? if <1.20 {
     public NBTTagCompound serialize() {
         var nbt = new NBTTagCompound();
         nbt.setBoolean("inv", chargeInventory);
@@ -68,4 +86,16 @@ public class ChargingPreference {
         nbt.setBoolean("armorSlot", chargeArmorSlot);
         return nbt;
     }
+    //?} else {
+    /*public CompoundTag serialize() {
+        var nbt = new CompoundTag();
+        nbt.putBoolean("inv", chargeInventory);
+        nbt.putBoolean("hotbar", chargeHotbar);
+        nbt.putBoolean("baubles", chargeBaubles);
+        nbt.putBoolean("mainHand", chargeMainHand);
+        nbt.putBoolean("offHand", chargeOffHand);
+        nbt.putBoolean("armorSlot", chargeArmorSlot);
+        return nbt;
+    }
+    *///?}
 }

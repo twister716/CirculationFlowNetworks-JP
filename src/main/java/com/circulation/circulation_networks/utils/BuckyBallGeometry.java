@@ -1,8 +1,8 @@
 package com.circulation.circulation_networks.utils;
 
+import com.circulation.circulation_networks.math.Vec3d;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
 
@@ -28,12 +28,16 @@ public final class BuckyBallGeometry {
             vertices.add(new Vec3d(v[2] / length, v[0] / length, v[1] / length));
         }
 
+        final double thresholdSq = 0.41 * 0.41;
         for (int i = 0; i < vertices.size(); i++) {
             for (int j = i + 1; j < vertices.size(); j++) {
-                if (vertices.get(i).distanceTo(vertices.get(j)) < 0.41) {
+                if (vertices.get(i).squareDistanceTo(vertices.get(j)) < thresholdSq) {
                     edges.add(new int[]{i, j});
                 }
             }
         }
+    }
+
+    private BuckyBallGeometry() {
     }
 }

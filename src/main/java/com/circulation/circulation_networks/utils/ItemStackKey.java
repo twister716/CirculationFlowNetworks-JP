@@ -1,13 +1,15 @@
 package com.circulation.circulation_networks.utils;
 
-import lombok.ToString;
+//? if <1.20 {
 import net.minecraft.item.ItemStack;
+//?} else {
+/*import net.minecraft.world.item.ItemStack;
+*///?}
 
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@ToString
 public final class ItemStackKey {
 
     public static final ItemStackKey EMPTY = new ItemStackKey(ItemStack.EMPTY);
@@ -33,7 +35,11 @@ public final class ItemStackKey {
 
     private ItemStackKey set(ItemStack key) {
         this.key = key;
+        //? if <1.20 {
         this.hashCode = Objects.hash(key.getItem(), key.getTagCompound());
+        //?} else {
+        /*this.hashCode = Objects.hash(key.getItem(), key.getTag());
+        *///?}
         return this;
     }
 
@@ -66,13 +72,23 @@ public final class ItemStackKey {
     }
 
     public boolean equals(ItemStack key) {
+        //? if <1.20 {
         return this.key.getItem() == key.getItem()
             && (this.key.getMetadata() == key.getMetadata() || this.key.getMetadata() == 32767 || key.getMetadata() == 32767)
             && Objects.equals(this.key.getTagCompound(), key.getTagCompound());
+        //?} else {
+        /*return this.key.getItem() == key.getItem()
+            && Objects.equals(this.key.getTag(), key.getTag());
+        *///?}
     }
 
     @Override
     public int hashCode() {
         return hashCode;
+    }
+
+    @Override
+    public String toString() {
+        return "ItemStackKey(key=" + key + ", hashCode=" + hashCode + ")";
     }
 }

@@ -3,7 +3,11 @@ package com.circulation.circulation_networks.api.node;
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
+//? if <1.20 {
 import net.minecraft.item.ItemStack;
+//?} else {
+/*import net.minecraft.world.item.ItemStack;
+*///?}
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,6 +57,13 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
      */
     @Nullable
     UUID getChannelId();
+
+    void setChannelId(@Nullable UUID channelId);
+
+    @Nullable
+    String getChannelName();
+
+    void setChannelName(@Nullable String channelName);
 
     /**
      * 获取指定玩家的充能偏好 / Get charging preference for specified player

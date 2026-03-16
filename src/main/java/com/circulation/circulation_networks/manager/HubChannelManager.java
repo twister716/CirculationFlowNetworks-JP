@@ -1,11 +1,11 @@
 package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.IHubNodeBlockEntity;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.api.node.IHubNode;
-import com.circulation.circulation_networks.events.TileEntityLifeCycleEvent;
+import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.hub.HubChannel;
-import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -15,13 +15,6 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * 管理中枢频道，维护频道ID到Grid的映射关系。
- * 同频道的Grid在能量处理时会被合并处理。
- * <p>
- * Manages hub channels, maintaining the mapping from channel ID to grids.
- * Grids on the same channel will be merged during energy processing.
- */
 public final class HubChannelManager {
 
     public static final HubChannelManager INSTANCE = new HubChannelManager();
@@ -29,9 +22,6 @@ public final class HubChannelManager {
     private final Map<UUID, HubChannel> channels = new Object2ReferenceOpenHashMap<>();
     private final Reference2ObjectMap<IHubNode, UUID> hubChannels = new Reference2ObjectOpenHashMap<>();
 
-    /**
-     * 将中枢所在Grid注册到指定频道
-     */
     public void register(IHubNode hub, UUID channelId, String name, PermissionMode permissionMode) {
         if (channelId == null || name == null) return;
         var grid = hub.getGrid();
@@ -48,9 +38,6 @@ public final class HubChannelManager {
         hubChannels.put(hub, channelId);
     }
 
-    /**
-     * 注销中枢的频道注册
-     */
     public void unregister(IHubNode hub) {
         var oldChannelId = hubChannels.remove(hub);
         if (oldChannelId == null) return;
@@ -67,22 +54,16 @@ public final class HubChannelManager {
         }
     }
 
-    /**
-     * 获取指定频道内的所有Grid
-     */
     @Nullable
     public ReferenceSet<IGrid> getChannelGrids(UUID channelId) {
         var channel = channels.get(channelId);
         return channel != null ? channel.getGrids() : null;
     }
 
-    /**
-     * 当中枢TE被验证时调用（节点已被NetworkManager添加到Grid后）
-     */
-    public void onTileEntityValidate(TileEntityLifeCycleEvent.Validate event) {
-        if (event.getWorld().isRemote) return;
-        var te = event.getTileEntity();
-        if (te instanceof TileEntityHub hubTE) {
+    public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
+        if (isClientWorld(event.getWorld())) return;
+        var te = event.getBlockEntity();
+        if (te instanceof IHubNodeBlockEntity hubTE) {
             var node = hubTE.getNode();
             if (node instanceof IHubNode hub) {
                 var channelId = hubTE.getChannelId();
@@ -95,13 +76,10 @@ public final class HubChannelManager {
         }
     }
 
-    /**
-     * 当中枢TE被移除时调用（在NetworkManager移除节点之前）
-     */
-    public void onTileEntityInvalidate(TileEntityLifeCycleEvent.Invalidate event) {
-        if (event.getWorld().isRemote) return;
-        var te = event.getTileEntity();
-        if (te instanceof TileEntityHub hubTE) {
+    public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
+        if (isClientWorld(event.getWorld())) return;
+        var te = event.getBlockEntity();
+        if (te instanceof IHubNodeBlockEntity hubTE) {
             var node = hubTE.getNode();
             if (node instanceof IHubNode hub) {
                 unregister(hub);
@@ -113,4 +91,14 @@ public final class HubChannelManager {
         channels.clear();
         hubChannels.clear();
     }
+
+    //? if <1.20 {
+    private static boolean isClientWorld(net.minecraft.world.World world) {
+        return world.isRemote;
+    }
+    //?} else {
+    /*private static boolean isClientWorld(net.minecraft.world.level.Level world) {
+        return world.isClientSide;
+    }
+    *///?}
 }

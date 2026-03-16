@@ -1,15 +1,30 @@
 package com.circulation.circulation_networks.gui.component.base;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.client.Minecraft;
+//? if <1.20 {
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.minecraft.resources.ResourceLocation;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if <1.21 {
+import net.minecraftforge.common.MinecraftForge;
+//?} else {
+/*import net.neoforged.neoforge.common.NeoForge;
+*///?}
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -29,7 +44,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.zip.CRC32;
 
@@ -38,44 +52,31 @@ import java.util.zip.CRC32;
  *
  * <h3>Lifecycle</h3>
  * <ol>
- *   <li>{@link #startAsync(File)} — called during {@code preInit} on the main thread.
- *       Discovers sprites from every jar on the classpath, loads their bytes via the
- *       Minecraft {@code ResourceManager}, then stitches them into a single
- *       {@link BufferedImage} on a background thread. The result is cached under
- *       {@code modConfigDir/atlas_<hash>.png}.</li>
+ *   <li>{@link #startAsync(File)} — called during client init on the main thread.
+ *       Discovers sprites via the Minecraft {@code ResourceManager}, then stitches them
+ *       into a single {@link BufferedImage} on a background thread. The result is cached
+ *       under {@code modConfigDir/atlas_<hash>.png}.</li>
  *   <li>{@link #awaitReady()} — must be called on the GL thread before rendering.
  *       Blocks until stitching is complete, then uploads the image to a GL texture.</li>
  *   <li>{@link #getRegion(String)} — looks up an {@link AtlasRegion} by sprite
  *       base-name (without extension).</li>
  * </ol>
- *
- * <h3>Multi-mod support</h3>
- * Other mods may contribute sprites by placing {@code .png} files in
- * {@code assets/circulation_networks/textures/gui/component/} inside their own jar.
- * The classpath is scanned exhaustively via {@link ClassLoader#getResources(String)},
- * so all jars are visited. Duplicate names are de-duplicated; the winning pixel data
- * is determined by the active {@code ResourceManager} stack.
- *
- * <h3>Atlas layout</h3>
- * Sprites are shelf-packed largest-first into the smallest power-of-two square that
- * fits, with a {@value #PADDING}-pixel border between sprites.
  */
+//? if <1.20 {
 @SideOnly(Side.CLIENT)
-public final class ComponentAtlas {
+//?} else {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+public final class ComponentAtlas extends ComponentAtlasRegistry {
 
     public static final ComponentAtlas INSTANCE = new ComponentAtlas();
 
     private static final String COMPONENT_DIR = "textures/gui/component/";
     private static final String BACKGROUND_DIR = "textures/gui/background/";
-    static final String BG_PREFIX = "bg/";
     private static final String DOMAIN = CirculationFlowNetworks.MOD_ID;
     private static final int MIN_SIZE = 256;
     private static final int MAX_SIZE = 8192;
     private static final int PADDING = 1;
-
-    private final Object2ObjectOpenHashMap<String, AtlasRegion> regions = new Object2ObjectOpenHashMap<>();
-    private final Set<String> registeredSprites = new ObjectLinkedOpenHashSet<>();
-    private final Set<String> registeredBackgrounds = new ObjectLinkedOpenHashSet<>();
 
     private CompletableFuture<StitchResult> future;
     private int glTextureId = 0;
@@ -86,9 +87,6 @@ public final class ComponentAtlas {
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /**
-     * Shelf-packs sprites into the smallest power-of-two square atlas that fits.
-     */
     private static StitchResult stitch(List<SpriteData> sprites) {
         List<SpriteData> sorted = new ObjectArrayList<>(sprites);
         sorted.sort(Comparator.comparingInt((SpriteData s) -> s.image.getWidth() * s.image.getHeight())
@@ -183,10 +181,6 @@ public final class ComponentAtlas {
         return new StitchResult(atlas, regions);
     }
 
-    /**
-     * Recomputes region coordinates from a cached atlas image.
-     * The layout is deterministic given the name-sorted sprite list.
-     */
     private static StitchResult buildRegions(List<SpriteData> sprites, BufferedImage cachedImage) {
         int size = cachedImage.getWidth();
         List<SpriteData> sorted = new ObjectArrayList<>(sprites);
@@ -279,50 +273,72 @@ public final class ComponentAtlas {
     }
 
     /**
-     * Starts the background stitching task. Call once during
-     * {@code FMLPreInitializationEvent} and again (via {@link #restart()}) after
-     * each resource-pack reload.
-     *
-     * <p>Sprite names are taken exclusively from names registered via
-     * {@code ResourceManager} so resource-pack overrides are honored.
-     * Background sprites (registered via
-     * {@link RegisterComponentSpritesEvent#registerBackground}) are loaded from
-     * {@value #BACKGROUND_DIR} and stored in the same atlas under the
-     * {@value #BG_PREFIX} name prefix.
-     * Decoding and stitching run on a background thread.
+     * Starts the background stitching task. Call once during client init and again
+     * (via {@link #restart()}) after each resource-pack reload.
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void startAsync(File modConfigDir) {
         if (init) return;
         init = true;
-        MinecraftForge.EVENT_BUS.post(new RegisterComponentSpritesEvent());
+        RegisterComponentSpritesEvent event = new RegisterComponentSpritesEvent();
+        //? if <1.21 {
+        MinecraftForge.EVENT_BUS.post(event);
+        //?} else {
+        /*NeoForge.EVENT_BUS.post(event);
+         *///?}
+        for (String name : event.getSprites()) addSprite(name);
+        for (String name : event.getBackgrounds()) addBackground(name);
 
         cacheDir = modConfigDir;
         if (!cacheDir.exists()) {
             cacheDir.mkdirs();
         }
 
+        //? if <1.20 {
         Minecraft mc = Minecraft.getMinecraft();
+        //?} else {
+        /*Minecraft mc = Minecraft.getInstance();
+         *///?}
         String[] names = registeredSpriteNames();
         String[] bgNames = registeredBackgroundNames();
 
         List<RawSprite> rawSprites = new ObjectArrayList<>();
         for (String bgName : bgNames) {
+            //? if <1.20 {
             ResourceLocation loc = new ResourceLocation(DOMAIN, BACKGROUND_DIR + bgName + ".png");
             try (InputStream is = mc.getResourceManager().getResource(loc).getInputStream()) {
+                //?} else {
+            /*ResourceLocation loc =
+            //? if <1.21 {
+            new ResourceLocation(DOMAIN, BACKGROUND_DIR + bgName + ".png");
+            //?} else {
+            ResourceLocation.fromNamespaceAndPath(DOMAIN, BACKGROUND_DIR + bgName + ".png");
+            //?}
+            try (InputStream is = mc.getResourceManager().getResourceOrThrow(loc).open()) {
+            *///?}
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] chunk = new byte[8192];
                 int n;
                 while ((n = is.read(chunk)) != -1) baos.write(chunk, 0, n);
-                rawSprites.add(new RawSprite(BG_PREFIX + bgName, baos.toByteArray()));
+                rawSprites.add(new RawSprite(backgroundName(bgName), baos.toByteArray()));
             } catch (Exception e) {
                 CirculationFlowNetworks.LOGGER.warn(
                     "[ComponentAtlas] Could not load background '{}': {}", bgName, e.getMessage());
             }
         }
         for (String name : names) {
+            //? if <1.20 {
             ResourceLocation loc = new ResourceLocation(DOMAIN, COMPONENT_DIR + name + ".png");
             try (InputStream is = mc.getResourceManager().getResource(loc).getInputStream()) {
+                //?} else {
+            /*ResourceLocation loc =
+            //? if <1.21 {
+            new ResourceLocation(DOMAIN, COMPONENT_DIR + name + ".png");
+            //?} else {
+            ResourceLocation.fromNamespaceAndPath(DOMAIN, COMPONENT_DIR + name + ".png");
+            //?}
+            try (InputStream is = mc.getResourceManager().getResourceOrThrow(loc).open()) {
+            *///?}
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] chunk = new byte[8192];
                 int n;
@@ -392,7 +408,6 @@ public final class ComponentAtlas {
 
     /**
      * Rebuilds the atlas after a resource-pack reload.
-     * Call from {@code TextureStitchEvent.Post}.
      */
     public void restart() {
         if (cacheDir != null) {
@@ -422,10 +437,7 @@ public final class ComponentAtlas {
             glTextureId = uploadImage(createFallback());
         } else {
             glTextureId = uploadImage(result.image);
-            regions.clear();
-            for (AtlasRegion r : result.regions) {
-                regions.put(r.name, r);
-            }
+            replaceRegions(result.regions);
         }
     }
 
@@ -445,106 +457,38 @@ public final class ComponentAtlas {
         return glTextureId != 0;
     }
 
-    /**
-     * Returns the {@link AtlasRegion} for the given sprite base-name, or {@code null}
-     * if not present. Populated after the first successful {@link #awaitReady()} call.
-     */
-    @Nullable
-    public AtlasRegion getRegion(String name) {
-        return regions.get(name);
-    }
-
     // ── GL helpers ────────────────────────────────────────────────────────────
 
     /**
-     * Releases the GL texture and resets all state. Call on resource-manager reload or shutdown.
+     * Releases the GL texture and resets all state.
      */
     public void dispose() {
         if (glTextureId != 0) {
             GL11.glDeleteTextures(glTextureId);
             glTextureId = 0;
         }
-        regions.clear();
+        clearRegisteredRegions();
         future = null;
-    }
-
-    /**
-     * Called exclusively by {@link RegisterComponentSpritesEvent#register}.
-     */
-    void addSprite(String name) {
-        registeredSprites.add(name);
-    }
-
-    /**
-     * Registers a background sprite to be stitched from {@value #BACKGROUND_DIR}.
-     * Called exclusively by {@link RegisterComponentSpritesEvent#registerBackground}.
-     */
-    void addBackground(String name) {
-        registeredBackgrounds.add(name);
-    }
-
-    /**
-     * Returns the {@link AtlasRegion} for the given background base-name, or
-     * {@code null} if not present. Background names are stored internally with
-     * the {@value #BG_PREFIX} prefix; this method handles the lookup transparently.
-     *
-     * <p>Populated after the first successful {@link #awaitReady()} call.
-     */
-    @Nullable
-    public AtlasRegion getBackground(String name) {
-        return regions.get(BG_PREFIX + name);
-    }
-
-    // ── Hashing ───────────────────────────────────────────────────────────────
-
-    private String[] registeredSpriteNames() {
-        return registeredSprites.toArray(new String[0]);
-    }
-
-    private String[] registeredBackgroundNames() {
-        return registeredBackgrounds.toArray(new String[0]);
     }
 
     // ── Inner types ───────────────────────────────────────────────────────────
 
-    /**
-     * PNG bytes loaded from {@code ResourceManager} on the main thread.
-     */
-    private static final class RawSprite {
-        final String name;
-        final byte[] bytes;
-
-        RawSprite(String name, byte[] bytes) {
-            this.name = name;
-            this.bytes = bytes;
-        }
+    //? if =1.12.2 {
+    @Desugar
+        //?}
+    private record RawSprite(String name, byte[] bytes) {
     }
 
-    /**
-     * Decoded sprite image ready for stitching.
-     */
-    private static final class SpriteData {
-        final String name;
-        final BufferedImage image;
-
-        SpriteData(String name, BufferedImage image) {
-            this.name = name;
-            this.image = image;
-        }
+    //? if =1.12.2 {
+    @Desugar
+        //?}
+    private record SpriteData(String name, BufferedImage image) {
     }
 
-    /**
-     * Result produced by the background stitching thread.
-     */
-    static final class StitchResult {
+    //? if =1.12.2 {
+    @Desugar
+        //?}
+    record StitchResult(BufferedImage image, List<AtlasRegion> regions) {
         static final StitchResult EMPTY = new StitchResult(null, Collections.emptyList());
-
-        final BufferedImage image;
-        final List<AtlasRegion> regions;
-
-        StitchResult(BufferedImage image, List<AtlasRegion> regions) {
-            this.image = image;
-            this.regions = regions;
-        }
     }
 }

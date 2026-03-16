@@ -1,6 +1,10 @@
 package com.circulation.circulation_networks.api.node;
 
+//? if <1.20 {
 import net.minecraft.util.math.BlockPos;
+//?} else {
+/*import net.minecraft.core.BlockPos;
+*///?}
 
 /**
  * 标识符，确定节点可用于向玩家传输能量

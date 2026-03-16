@@ -2,17 +2,25 @@ package com.circulation.circulation_networks.energy.manager;
 
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IEnergyHandlerManager;
-import com.circulation.circulation_networks.api.node.IMachineNode;
+import com.circulation.circulation_networks.api.IMachineNodeBlockEntity;
 import com.circulation.circulation_networks.energy.handler.CEHandler;
-import com.circulation.circulation_networks.proxy.CommonProxy;
+//? if <1.20 {
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+//?} else {
+/*import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+*///?}
 
 public final class CEHandlerManager implements IEnergyHandlerManager {
 
     @Override
+    //? if <1.20 {
     public boolean isAvailable(TileEntity tileEntity) {
-        return tileEntity.getCapability(CommonProxy.nodeCapability, null) instanceof IMachineNode;
+    //?} else {
+    /*public boolean isAvailable(BlockEntity tileEntity) {
+    *///?}
+        return tileEntity instanceof IMachineNodeBlockEntity;
     }
 
     @Override
@@ -31,8 +39,12 @@ public final class CEHandlerManager implements IEnergyHandlerManager {
     }
 
     @Override
+    //? if <1.20 {
     public IEnergyHandler newInstance(TileEntity tileEntity) {
-        return tileEntity.getCapability(CommonProxy.ceHandlerCapability, null);
+    //?} else {
+    /*public IEnergyHandler newInstance(BlockEntity tileEntity) {
+    *///?}
+        return ((IMachineNodeBlockEntity) tileEntity).getEnergyHandler();
     }
 
     @Override

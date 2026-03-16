@@ -2,16 +2,18 @@ package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.events.AddNodeEvent;
-import com.circulation.circulation_networks.events.RemoveNodeEvent;
-import com.circulation.circulation_networks.events.TileEntityLifeCycleEvent;
+import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
+//? if <1.20 {
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
-import com.circulation.circulation_networks.proxy.CommonProxy;
+//?}
 import com.circulation.circulation_networks.utils.Functions;
+//? if <1.20 {
 import com.github.bsideup.jabel.Desugar;
+//?}
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -32,7 +34,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
-import lombok.Getter;
+//? if <1.20 {
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -40,7 +42,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
-import net.minecraftforge.common.MinecraftForge;
+//?} else {
+/*import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+*///?}
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -48,18 +58,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("unused")
 public final class NetworkManager {
 
     public static final NetworkManager INSTANCE = new NetworkManager();
     private static File saveFile;
-    @Getter
     private final ReferenceSet<INode> activeNodes = new ReferenceOpenHashSet<>();
     private final Int2ObjectMap<IGrid> grids = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ReferenceMap<INode>> posNodes = new Int2ObjectOpenHashMap<>();
@@ -68,7 +75,6 @@ public final class NetworkManager {
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Int2ObjectOpenHashMap<>();
     private final ObjectSet<IGrid> markGird = new ObjectOpenHashSet<>();
     private final Queue<IGrid> emptyGird = new ArrayDeque<>();
-    @Getter
     private boolean init;
     private int nextGridId = 0;
 
@@ -81,11 +87,7 @@ public final class NetworkManager {
 
     public static File getSaveFile() {
         if (saveFile == null) {
-            var path = DimensionManager.getWorld(0)
-                                       .getSaveHandler()
-                                       .getWorldDirectory()
-                                       .toPath()
-                                       .resolve("circulation_grids");
+            var path = getGridSavePath();
             try {
                 Files.createDirectories(path);
             } catch (IOException ignored) {
@@ -95,6 +97,14 @@ public final class NetworkManager {
         return saveFile;
     }
 
+    public ReferenceSet<INode> getActiveNodes() {
+        return activeNodes;
+    }
+
+    public boolean isInit() {
+        return init;
+    }
+
     private void registerNodeIndices(int dimId, INode node) {
         BlockPos pos = node.getPos();
 
@@ -102,7 +112,11 @@ public final class NetworkManager {
         if (pMap == posNodes.defaultReturnValue()) {
             posNodes.put(dimId, pMap = new Long2ReferenceOpenHashMap<>());
         }
+        //? if <1.20 {
         pMap.put(pos.toLong(), node);
+        //?} else {
+        /*pMap.put(pos.asLong(), node);
+        *///?}
 
         long ownChunkCoord = Functions.mergeChunkCoords(pos);
         var locMap = nodeLocation.get(dimId);
@@ -148,7 +162,11 @@ public final class NetworkManager {
     }
 
     private void unregisterNodeIndices(int dimId, INode node) {
+        //? if <1.20 {
         posNodes.get(dimId).remove(node.getPos().toLong());
+        //?} else {
+        /*posNodes.get(dimId).remove(node.getPos().asLong());
+        *///?}
 
         long ownChunkCoord = Functions.mergeChunkCoords(node.getPos());
         nodeLocation.get(dimId).get(ownChunkCoord).remove(node);
@@ -165,52 +183,78 @@ public final class NetworkManager {
         }
     }
 
+    //? if <1.20 {
     public @Nullable INode getNodeFromPos(World world, BlockPos pos) {
-        return posNodes.get(world.provider.getDimension()).get(pos.toLong());
+    //?} else {
+    /*public @Nullable INode getNodeFromPos(Level world, BlockPos pos) {
+    *///?}
+        //? if <1.20 {
+        return posNodes.get(getDimensionId(world)).get(pos.toLong());
+        //?} else {
+        /*return posNodes.get(getDimensionId(world)).get(pos.asLong());
+        *///?}
     }
 
-    public void onTileEntityValidate(TileEntityLifeCycleEvent.Validate event) {
-        int dimId = event.getWorld().provider.getDimension();
-        if (event.getWorld().isRemote) return;
-        var tileEntity = event.getTileEntity();
-        addNode(tileEntity.getCapability(CommonProxy.nodeCapability, null), tileEntity);
+    public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
+        if (isClientWorld(event.getWorld())) return;
+        var blockEntity = event.getBlockEntity();
+        if (blockEntity instanceof INodeBlockEntity nbe) {
+            addNode(nbe.getNode(), blockEntity);
+        }
     }
 
     public Collection<IGrid> getAllGrids() {
         return grids.values();
     }
 
-    public void onTileEntityInvalidate(TileEntityLifeCycleEvent.Invalidate event) {
-        if (event.getWorld().isRemote) return;
-        removeNode(event.getWorld().provider.getDimension(), event.getPos());
+    public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
+        if (isClientWorld(event.getWorld())) return;
+        removeNode(getDimensionId(event.getWorld()), event.getPos());
     }
 
+    //? if <1.20 {
     public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
-        return scopeNode.get(world.provider.getDimension()).get(Functions.mergeChunkCoords(pos));
+    //?} else {
+    /*public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(Level world, BlockPos pos) {
+    *///?}
+        return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(pos));
     }
 
+    //? if <1.20 {
     public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(World world, int chunkX, int chunkY) {
-        return scopeNode.get(world.provider.getDimension()).get(Functions.mergeChunkCoords(chunkX, chunkY));
+    //?} else {
+    /*public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(Level world, int chunkX, int chunkY) {
+    *///?}
+        return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(chunkX, chunkY));
     }
 
+    //? if <1.20 {
     public @Nonnull ReferenceSet<INode> getNodesInChunk(World world, int chunkX, int chunkZ) {
-        var map = nodeLocation.get(world.provider.getDimension());
+    //?} else {
+    /*public @Nonnull ReferenceSet<INode> getNodesInChunk(Level world, int chunkX, int chunkZ) {
+    *///?}
+        var map = nodeLocation.get(getDimensionId(world));
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
 
     public void removeNode(int dim, BlockPos pos) {
         var pMap = posNodes.get(dim);
         if (pMap != null && pMap != posNodes.defaultReturnValue()) {
+            //? if <1.20 {
             removeNode(pMap.get(pos.toLong()));
+            //?} else {
+            /*removeNode(pMap.get(pos.asLong()));
+            *///?}
         }
     }
 
     public void removeNode(INode removedNode) {
-        if (removedNode == null || removedNode.getWorld().isRemote || !activeNodes.remove(removedNode)) return;
+        if (removedNode == null || isClientWorld(removedNode.getWorld()) || !activeNodes.remove(removedNode)) return;
 
-        MinecraftForge.EVENT_BUS.post(new RemoveNodeEvent.Pre(removedNode));
-        int dimId = removedNode.getWorld().provider.getDimension();
+        NodeEventHooks.postRemoveNodePre(removedNode);
+        int dimId = getDimensionId(removedNode);
 
+        //? if <1.20 {
         var players = NodeNetworkRendering.getPlayers(removedNode.getGrid());
         if (players != null && !players.isEmpty()) {
             for (var player : players) {
@@ -218,6 +262,7 @@ public final class NetworkManager {
                     new NodeNetworkRendering(player, removedNode, NodeNetworkRendering.NODE_REMOVE), player);
             }
         }
+        //?}
 
         unregisterNodeIndices(dimId, removedNode);
 
@@ -294,7 +339,9 @@ public final class NetworkManager {
                 }
                 markGird.add(oldGrid);
 
+                //? if <1.20 {
                 var watchingPlayers = NodeNetworkRendering.getPlayers(oldGrid);
+                //?}
                 for (int i = 1; i < components.size(); i++) {
                     IGrid splitGrid = allocGrid();
                     for (INode n : components.get(i)) {
@@ -303,12 +350,14 @@ public final class NetworkManager {
                             splitGrid.setHubNode(h);
                         }
                     }
+                    //? if <1.20 {
                     if (watchingPlayers != null) {
                         for (var player : watchingPlayers) {
                             CirculationFlowNetworks.NET_CHANNEL.sendTo(
                                 new NodeNetworkRendering(player, splitGrid), player);
                         }
                     }
+                    //?}
                 }
             }
         }
@@ -316,16 +365,20 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.removeNode(removedNode);
         ChargingManager.INSTANCE.removeNode(removedNode);
 
-        MinecraftForge.EVENT_BUS.post(new RemoveNodeEvent.Post(removedNode));
+        NodeEventHooks.postRemoveNodePost(removedNode);
     }
 
-    public void addNode(INode newNode, TileEntity tileEntity) {
-        if (newNode == null || newNode.getWorld().isRemote || !newNode.isActive() || activeNodes.contains(newNode))
+    //? if <1.20 {
+    public void addNode(INode newNode, TileEntity blockEntity) {
+    //?} else {
+    /*public void addNode(INode newNode, BlockEntity blockEntity) {
+    *///?}
+        if (newNode == null || isClientWorld(newNode.getWorld()) || !newNode.isActive() || activeNodes.contains(newNode))
             return;
 
-        if (MinecraftForge.EVENT_BUS.post(new AddNodeEvent.Pre(newNode, tileEntity))) return;
+        if (NodeEventHooks.postAddNodePre(newNode, blockEntity)) return;
 
-        int dimId = newNode.getWorld().provider.getDimension();
+        int dimId = getDimensionId(newNode);
         activeNodes.add(newNode);
         registerNodeIndices(dimId, newNode);
 
@@ -366,12 +419,20 @@ public final class NetworkManager {
             newNode.setActive(false);
             var world = newNode.getWorld();
             var pos = newNode.getPos();
-            for (var player : world.playerEntities) {
+            for (var player : getPlayers(world)) {
+                //? if <1.20 {
                 if (player.getDistanceSq(pos) < 36) {
+                //?} else {
+                /*if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) < 36) {
+                *///?}
+                    //? if <1.20 {
                     player.sendMessage(new TextComponentTranslation("message.circulation_networks.hub_conflict"));
+                    //?} else {
+                    /*player.displayClientMessage(Component.translatable("message.circulation_networks.hub_conflict"), false);
+                    *///?}
                 }
             }
-            world.destroyBlock(pos, true);
+            destroyBlock(world, pos);
             return;
         }
 
@@ -416,6 +477,7 @@ public final class NetworkManager {
             newNode.getGrid().setHubNode(hub);
         }
 
+        //? if <1.20 {
         var players = NodeNetworkRendering.getPlayers(newNode.getGrid());
         if (players != null && !players.isEmpty()) {
             for (var player : players) {
@@ -423,10 +485,11 @@ public final class NetworkManager {
                     new NodeNetworkRendering(player, newNode, NodeNetworkRendering.NODE_ADD), player);
             }
         }
+        //?}
         EnergyMachineManager.INSTANCE.addNode(newNode);
         ChargingManager.INSTANCE.addNode(newNode);
 
-        MinecraftForge.EVENT_BUS.post(new AddNodeEvent.Post(newNode, tileEntity));
+        NodeEventHooks.postAddNodePost(newNode, blockEntity);
     }
 
     private void assignNodeToGrid(INode node, IGrid grid) {
@@ -456,7 +519,6 @@ public final class NetworkManager {
         emptyGird.add(grid);
     }
 
-
     public void onServerStop() {
         scopeNode.clear();
         nodeScope.clear();
@@ -473,12 +535,13 @@ public final class NetworkManager {
 
     public void saveGrid() {
         if (markGird.isEmpty()) return;
-        markGird.parallelStream().forEach(grid -> {
+        File saveDir = NetworkManager.getSaveFile();
+        for (IGrid grid : markGird) {
             try {
-                CompressedStreamTools.safeWrite(grid.serialize(), new File(NetworkManager.getSaveFile(), grid.getId() + ".dat"));
+                writeCompressedNbt(grid.serialize(), new File(saveDir, grid.getId() + ".dat"));
             } catch (IOException ignored) {
             }
-        });
+        }
         markGird.clear();
     }
 
@@ -489,21 +552,23 @@ public final class NetworkManager {
         File[] files = f.listFiles(file -> file.isFile() && file.getName().endsWith(".dat"));
         if (files == null || files.length == 0) return;
 
-        var nbts = new ConcurrentLinkedQueue<NBTTagCompound>();
-
-        var entries = new ConcurrentLinkedQueue<GridEntry>();
-        Arrays.stream(files).parallel().forEach(file -> {
+        var entries = new ObjectArrayList<GridEntry>();
+        for (File file : files) {
             try {
-                var nbt = CompressedStreamTools.read(file);
-                if (nbt == null) return;
+                var nbt = readCompressedNbt(file);
+                if (nbt == null) continue;
+                //? if <1.20 {
                 int dimId = nbt.getInteger("dim");
-                if (!DimensionManager.isDimensionRegistered(dimId)) return;
+                //?} else {
+                /*int dimId = nbt.getInt("dim");
+                *///?}
+                if (!isRegisteredDimension(dimId)) continue;
                 var grid = Grid.deserialize(nbt);
-                if (grid == null) return;
+                if (grid == null) continue;
                 entries.add(new GridEntry(dimId, grid));
             } catch (IOException ignored) {
             }
-        });
+        }
 
         int maxId = 0;
         for (var entry : entries) {
@@ -527,7 +592,108 @@ public final class NetworkManager {
         init = true;
     }
 
+    //? if <1.20 {
+    private static java.nio.file.Path getGridSavePath() {
+        return DimensionManager.getWorld(0)
+                               .getSaveHandler()
+                               .getWorldDirectory()
+                               .toPath()
+                               .resolve("circulation_grids");
+    }
+    //?} else if <1.21 {
+    /*private static java.nio.file.Path getGridSavePath() {
+        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer()
+                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("circulation_grids");
+    }
+    *///?} else {
+    /*private static java.nio.file.Path getGridSavePath() {
+        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("circulation_grids");
+    }
+    *///?}
+
+    //? if <1.20 {
+    static NBTTagCompound readCompressedNbt(File file) throws IOException {
+        return CompressedStreamTools.read(file);
+    }
+
+    static void writeCompressedNbt(NBTTagCompound nbt, File file) throws IOException {
+        CompressedStreamTools.safeWrite(nbt, file);
+    }
+    //?} else if <1.21 {
+    /*static CompoundTag readCompressedNbt(File file) throws IOException {
+        return NbtIo.readCompressed(file);
+    }
+
+    static void writeCompressedNbt(CompoundTag nbt, File file) throws IOException {
+        NbtIo.writeCompressed(nbt, file);
+    }
+    *///?} else {
+    /*static CompoundTag readCompressedNbt(File file) throws IOException {
+        return NbtIo.readCompressed(file.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+    }
+
+    static void writeCompressedNbt(CompoundTag nbt, File file) throws IOException {
+        NbtIo.writeCompressed(nbt, file.toPath());
+    }
+    *///?}
+
+    //? if <1.20 {
+    private static int getDimensionId(World world) {
+        return world.provider.getDimension();
+    }
+
+    private static int getDimensionId(INode node) {
+        return getDimensionId(node.getWorld());
+    }
+
+    private static boolean isClientWorld(World world) {
+        return world.isRemote;
+    }
+
+    private static List<net.minecraft.entity.player.EntityPlayer> getPlayers(World world) {
+        return world.playerEntities;
+    }
+
+    private static void destroyBlock(World world, BlockPos pos) {
+        world.destroyBlock(pos, true);
+    }
+
+    private static boolean isRegisteredDimension(int dimId) {
+        return DimensionManager.isDimensionRegistered(dimId);
+    }
+    //?} else {
+    /*private static int getDimensionId(Level world) {
+        return world.dimension().location().hashCode();
+    }
+
+    private static int getDimensionId(INode node) {
+        return getDimensionId(node.getWorld());
+    }
+
+    private static boolean isClientWorld(Level world) {
+        return world.isClientSide;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Player> getPlayers(Level world) {
+        return (List<Player>) (List<?>) world.players();
+    }
+
+    private static void destroyBlock(Level world, BlockPos pos) {
+        world.destroyBlock(pos, true, null);
+    }
+
+    private static boolean isRegisteredDimension(int dimId) {
+        return true;
+    }
+    *///?}
+
+    //? if <1.20 {
     @Desugar
+    //?}
     record GridEntry(int dimId, IGrid grid) {
     }
 }

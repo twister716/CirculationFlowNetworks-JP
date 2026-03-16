@@ -1,0 +1,94 @@
+package com.circulation.circulation_networks.items;
+
+import com.circulation.circulation_networks.items.InspectionToolModeModel.ToolFunction;
+import com.circulation.circulation_networks.utils.Functions;
+//? if <1.20 {
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+//?} else {
+/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+*///?}
+
+public final class InspectionToolState {
+
+    private static final String FUNCTION_KEY = "function";
+    private static final String MODE_KEY = "mode";
+
+    private InspectionToolState() {
+    }
+
+    public static ToolFunction getFunction(ItemStack stack) {
+        var nbt = getTag(stack);
+        if (nbt == null) {
+            return ToolFunction.INSPECTION;
+        }
+        return ToolFunction.fromID(getInt(nbt, FUNCTION_KEY));
+    }
+
+    public static int getSubMode(ItemStack stack) {
+        var nbt = getTag(stack);
+        if (nbt == null) {
+            return 0;
+        }
+        return getInt(nbt, MODE_KEY);
+    }
+
+    public static void setSubMode(ItemStack stack, int subMode) {
+        putInt(Functions.getOrCreateTagCompound(stack), MODE_KEY, subMode);
+    }
+
+    public static ToggleResult toggleFunction(ItemStack stack) {
+        var nbt = Functions.getOrCreateTagCompound(stack);
+        ToolFunction previousFunction = ToolFunction.fromID(getInt(nbt, FUNCTION_KEY));
+        ToolFunction currentFunction = ToolFunction.fromID(InspectionToolModeModel.nextFunctionId(previousFunction.ordinal()));
+        putInt(nbt, FUNCTION_KEY, currentFunction.ordinal());
+        putInt(nbt, MODE_KEY, 0);
+        return new ToggleResult(previousFunction, currentFunction);
+    }
+
+    //? if <1.20 {
+    private static NBTTagCompound getTag(ItemStack stack) {
+        return stack.getTagCompound();
+    }
+
+    private static int getInt(NBTTagCompound nbt, String key) {
+        return nbt.getInteger(key);
+    }
+
+    private static void putInt(NBTTagCompound nbt, String key, int value) {
+        nbt.setInteger(key, value);
+    }
+    //?} else {
+    /*private static CompoundTag getTag(ItemStack stack) {
+        return stack.getTag();
+    }
+
+    private static int getInt(CompoundTag nbt, String key) {
+        return nbt.getInt(key);
+    }
+
+    private static void putInt(CompoundTag nbt, String key, int value) {
+        nbt.putInt(key, value);
+    }
+    *///?}
+
+    public static final class ToggleResult {
+
+        private final ToolFunction previousFunction;
+        private final ToolFunction currentFunction;
+
+        public ToggleResult(ToolFunction previousFunction, ToolFunction currentFunction) {
+            this.previousFunction = previousFunction;
+            this.currentFunction = currentFunction;
+        }
+
+        public ToolFunction previousFunction() {
+            return previousFunction;
+        }
+
+        public ToolFunction currentFunction() {
+            return currentFunction;
+        }
+    }
+}

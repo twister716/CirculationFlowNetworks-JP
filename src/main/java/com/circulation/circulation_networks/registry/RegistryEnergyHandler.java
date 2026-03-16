@@ -1,16 +1,21 @@
 package com.circulation.circulation_networks.registry;
 
-import com.circulation.circulation_networks.CFNConfig;
-import com.circulation.circulation_networks.api.IEnergyHandler;
-import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.node.IMachineNode;
-import com.circulation.circulation_networks.proxy.CommonProxy;
-import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
+import com.google.common.collect.ImmutableList;
+import com.circulation.circulation_networks.api.IEnergyHandler;
+import com.circulation.circulation_networks.api.IEnergyHandlerManager;
+import com.circulation.circulation_networks.api.IMachineNodeBlockEntity;
+import com.circulation.circulation_networks.CFNConfig;
+//? if <1.20 {
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+//?} else {
+ /*import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity; 
+*///?}
 
 import java.util.ArrayDeque;
 import java.util.Comparator;
@@ -21,6 +26,8 @@ public final class RegistryEnergyHandler {
 
     private static Class<?>[] blackListClass;
     private static Class<?>[] supplyBlackListClass;
+    private static String[] blackPrefixArray;
+    private static String[] supplyPrefixArray;
     private static List<IEnergyHandlerManager> list = new ObjectArrayList<>();
 
     private static ReferenceSet<Class<?>> registeredBlackClasses = new ReferenceOpenHashSet<>();
@@ -56,19 +63,42 @@ public final class RegistryEnergyHandler {
         registeredSupplyBlackClasses.add(clazz);
     }
 
-    public static boolean isBlack(TileEntity tileEntity) {
-        if (tileEntity.getCapability(CommonProxy.nodeCapability, null) instanceof IMachineNode) return true;
-        if (blackListClass == null) return false;
-        for (Class<?> listClass : blackListClass) {
-            if (listClass.isInstance(tileEntity)) return true;
+    //? if <1.20 {
+    public static boolean isBlack(TileEntity blockEntity) {
+        if (blockEntity instanceof IMachineNodeBlockEntity) return true;
+    //?} else {
+     /*public static boolean isBlack(BlockEntity blockEntity) {
+        if (blockEntity instanceof IMachineNodeBlockEntity) return true;
+    *///?}
+        if (blackListClass != null) {
+            for (Class<?> listClass : blackListClass) {
+                if (listClass.isInstance(blockEntity)) return true;
+            }
+        }
+        if (blackPrefixArray != null) {
+            String className = blockEntity.getClass().getName();
+            for (String prefix : blackPrefixArray) {
+                if (className.startsWith(prefix)) return true;
+            }
         }
         return false;
     }
 
-    public static boolean isSupplyBlack(TileEntity tileEntity) {
-        if (supplyBlackListClass == null) return false;
-        for (Class<?> listClass : supplyBlackListClass) {
-            if (listClass.isInstance(tileEntity)) return true;
+    //? if <1.20 {
+    public static boolean isSupplyBlack(TileEntity blockEntity) {
+    //?} else {
+     /*public static boolean isSupplyBlack(BlockEntity blockEntity) { 
+    *///?}
+        if (supplyBlackListClass != null) {
+            for (Class<?> listClass : supplyBlackListClass) {
+                if (listClass.isInstance(blockEntity)) return true;
+            }
+        }
+        if (supplyPrefixArray != null) {
+            String className = blockEntity.getClass().getName();
+            for (String prefix : supplyPrefixArray) {
+                if (className.startsWith(prefix)) return true;
+            }
         }
         return false;
     }
@@ -81,19 +111,37 @@ public final class RegistryEnergyHandler {
         return false;
     }
 
+    //? if <1.20 {
     public static boolean isEnergyTileEntity(TileEntity tile) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(tile)) return true;
         }
         return false;
     }
+    //?} else {
+     /*public static boolean isEnergyTileEntity(BlockEntity blockEntity) {
+        for (IEnergyHandlerManager manager : list) {
+            if (manager.isAvailable(blockEntity)) return true;
+        }
+        return false;
+    } 
+    *///?}
 
+    //? if <1.20 {
     public static IEnergyHandlerManager getEnergyManager(TileEntity tile) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(tile)) return manager;
         }
         return null;
     }
+    //?} else {
+     /*public static IEnergyHandlerManager getEnergyManager(BlockEntity blockEntity) {
+        for (IEnergyHandlerManager manager : list) {
+            if (manager.isAvailable(blockEntity)) return manager;
+        }
+        return null;
+    } 
+    *///?}
 
     public static IEnergyHandlerManager getEnergyManager(ItemStack stack) {
         for (IEnergyHandlerManager manager : list) {
@@ -111,6 +159,7 @@ public final class RegistryEnergyHandler {
         final ReferenceSet<Class<?>> blackSet = registeredBlackClasses;
         final ReferenceSet<Class<?>> supplySet = registeredSupplyBlackClasses;
 
+        //? if <1.20 {
         collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
         collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
 
@@ -135,6 +184,12 @@ public final class RegistryEnergyHandler {
                 }
             }
         }
+        //?} else {
+         /*collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
+        collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
+        blackPrefixArray = blackPrefixes.isEmpty() ? null : blackPrefixes.toArray(new String[0]);
+        supplyPrefixArray = supplyPrefixes.isEmpty() ? null : supplyPrefixes.toArray(new String[0]);
+        *///?}
 
         blackListClass = blackSet.isEmpty() ? null : blackSet.toArray(new Class[0]);
         supplyBlackListClass = supplySet.isEmpty() ? null : supplySet.toArray(new Class[0]);

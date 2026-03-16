@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.events;
 
 import com.circulation.circulation_networks.api.node.INode;
 
+// Shared node-remove event that complements AddNodeEvent in the shared lifecycle.
 public class RemoveNodeEvent extends NodeEvent {
 
     public RemoveNodeEvent(INode node) {

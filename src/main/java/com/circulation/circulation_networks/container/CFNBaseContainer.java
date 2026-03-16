@@ -1,66 +1,109 @@
 package com.circulation.circulation_networks.container;
 
-import com.circulation.circulation_networks.CirculationFlowNetworks;
-import com.circulation.circulation_networks.utils.GuiSync;
-import com.circulation.circulation_networks.utils.SyncData;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import com.circulation.circulation_networks.utils.GuiSyncManager;
+import com.circulation.circulation_networks.utils.SyncSender;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+//? if <1.20 {
+import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.packets.ContainerProgressBar;
+import com.circulation.circulation_networks.packets.ContainerValueConfig;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IContainerListener;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+//?} else {
+/*import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+*///?}
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
+//? if <1.20 {
 public abstract class CFNBaseContainer extends Container {
 
     protected final TileEntity te;
     protected final EntityPlayer player;
-    private final Int2ObjectMap<SyncData> syncData = new Int2ObjectOpenHashMap<>();
+//?} else {
+/*public abstract class CFNBaseContainer extends AbstractContainerMenu {
+
+    protected final BlockEntity te;
+    protected final Player player;
+*///?}
+    private final GuiSyncManager guiSyncManager = new GuiSyncManager();
     private final List<LayoutEntry> layouts = new ObjectArrayList<>();
 
     {
-        for (Field f : this.getClass().getFields()) {
-            if (f.isAnnotationPresent(GuiSync.class)) {
-                GuiSync annotation = f.getAnnotation(GuiSync.class);
-                if (this.syncData.containsKey(annotation.value())) {
-                    CirculationFlowNetworks.LOGGER.warn("Channel already in use: {} for {}", annotation.value(), f.getName());
-                } else {
-                    this.syncData.put(annotation.value(), new SyncData(this, f, annotation));
-                }
-            }
-        }
+        guiSyncManager.scan(this, this::onUpdate);
     }
 
+    //? if <1.20 {
     public CFNBaseContainer(EntityPlayer player, TileEntity te) {
         this.te = te;
         this.player = player;
     }
+    //?} else {
+    /*public CFNBaseContainer(MenuType<?> menuType, int containerId, Player player, BlockEntity te) {
+        super(menuType, containerId);
+        this.te = te;
+        this.player = player;
+    }
+    *///?}
+
+    //? if >=1.20 {
+    /*public Inventory getPlayerInventory() {
+        return player.getInventory();
+    }
+    *///?}
 
     protected void registerLayout(ComponentSlotLayout layout) {
-        int start = inventorySlots.size();
-        layout.registerInto(this::addSlotToContainer);
-        layouts.add(new LayoutEntry(layout, start, inventorySlots.size(), false));
+        registerLayoutInternal(layout, false);
     }
 
     protected void registerPlayerLayout(ComponentSlotLayout layout) {
+        registerLayoutInternal(layout, true);
+    }
+
+    private void registerLayoutInternal(ComponentSlotLayout layout, boolean isPlayerInventory) {
+        //? if <1.20 {
         int start = inventorySlots.size();
         layout.registerInto(this::addSlotToContainer);
-        layouts.add(new LayoutEntry(layout, start, inventorySlots.size(), true));
+        int end = inventorySlots.size();
+        //?} else {
+        /*int start = slots.size();
+        layout.registerInto(this::addSlot);
+        int end = slots.size();
+        *///?}
+        layouts.add(new LayoutEntry(layout, start, end, isPlayerInventory));
     }
 
     @Override
+    //? if <1.20 {
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer playerIn, int index) {
         Slot slot = inventorySlots.get(index);
         if (slot == null || !slot.getHasStack()) return ItemStack.EMPTY;
+    //?} else {
+    /*public @NotNull ItemStack quickMoveStack(@NotNull Player playerIn, int index) {
+        Slot slot = slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
+    *///?}
 
+        //? if <1.20 {
         ItemStack stack = slot.getStack();
+        //?} else {
+        /*ItemStack stack = slot.getItem();
+        *///?}
         ItemStack result = stack.copy();
 
         if (slot instanceof FilterComponentSlot) return result;
@@ -77,89 +120,189 @@ public abstract class CFNBaseContainer extends Container {
         if (slot instanceof OutputComponentSlot) {
             for (LayoutEntry e : layouts) {
                 if (e.isPlayerInventory) {
-                    merged = mergeItemStack(stack, e.start, e.end, true);
+                    merged = mergeStack(stack, e.start, e.end, true);
                     if (merged) break;
                 }
             }
+            //? if <1.20 {
             if (merged) slot.onSlotChange(stack, result);
+            //?} else {
+            /*if (merged) slot.onQuickCraft(stack, result);
+            *///?}
         } else if (source != null && source.isPlayerInventory) {
             for (LayoutEntry e : layouts) {
                 if (!e.isPlayerInventory) {
-                    merged = mergeItemStack(stack, e.start, e.end, false);
+                    merged = mergeStack(stack, e.start, e.end, false);
                     if (merged) break;
                 }
             }
         } else {
             for (LayoutEntry e : layouts) {
                 if (e.isPlayerInventory) {
-                    merged = mergeItemStack(stack, e.start, e.end, false);
+                    merged = mergeStack(stack, e.start, e.end, false);
                     if (merged) break;
                 }
             }
         }
 
         if (!merged) return ItemStack.EMPTY;
+        //? if <1.20 {
         if (stack.isEmpty()) slot.putStack(ItemStack.EMPTY);
         else slot.onSlotChanged();
+        //?} else {
+        /*if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+        *///?}
         if (stack.getCount() == result.getCount()) return ItemStack.EMPTY;
         slot.onTake(playerIn, stack);
         return result;
     }
 
-    @Override
-    public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
-        if (slotId >= 0 && slotId < inventorySlots.size()) {
-            Slot slot = inventorySlots.get(slotId);
-            if (slot instanceof FilterComponentSlot) {
-                if (clickTypeIn == ClickType.PICKUP) {
-                    ((FilterComponentSlot) slot).ghostClickWith(player.inventory.getItemStack(), dragType);
-                }
-                return ItemStack.EMPTY;
-            }
-        }
-        return super.slotClick(slotId, dragType, clickTypeIn, player);
+    private boolean mergeStack(ItemStack stack, int start, int end, boolean reverseDirection) {
+        //? if <1.20 {
+        return mergeItemStack(stack, start, end, reverseDirection);
+        //?} else {
+        /*return moveItemStackTo(stack, start, end, reverseDirection);
+        *///?}
     }
 
-    @Override
-    public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
+    private boolean handleFilterSlotClick(int slotId, int button, ClickType clickType, ItemStack carried) {
+        //? if <1.20 {
+        if (slotId < 0 || slotId >= inventorySlots.size()) return false;
+        Slot slot = inventorySlots.get(slotId);
+        //?} else {
+        /*if (slotId < 0 || slotId >= slots.size()) return false;
+        Slot slot = slots.get(slotId);
+        *///?}
+        if (!(slot instanceof FilterComponentSlot)) return false;
+        if (clickType == ClickType.PICKUP) {
+            ((FilterComponentSlot) slot).ghostClickWith(carried, button);
+        }
         return true;
     }
 
+    @Override
+    //? if <1.20 {
+    public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
+        if (handleFilterSlotClick(slotId, dragType, clickTypeIn, player.inventory.getItemStack())) return ItemStack.EMPTY;
+        return super.slotClick(slotId, dragType, clickTypeIn, player);
+    }
+    //?} else {
+    /*public void clicked(int slotId, int button, @NotNull ClickType clickType, @NotNull Player player) {
+        if (handleFilterSlotClick(slotId, button, clickType, getCarried())) return;
+        super.clicked(slotId, button, clickType, player);
+    }
+    *///?}
+
+    @Override
+    //? if <1.20 {
+    public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
+    //?} else {
+    /*public boolean stillValid(@NotNull Player playerIn) {
+    *///?}
+        return true;
+    }
+
+    //? if <1.20 {
     public void detectAndSendChanges() {
         if (isServer()) {
             for (IContainerListener listener : this.listeners) {
-                for (SyncData sd : this.syncData.values()) {
-                    sd.tick(listener);
-                }
+                guiSyncManager.detectAndSendChanges(createSyncSender(listener));
             }
         }
-
         super.detectAndSendChanges();
     }
 
+    private SyncSender createSyncSender(IContainerListener listener) {
+        return new SyncSender() {
+            @Override
+            public void sendInt(int channel, int value) {
+                listener.sendWindowProperty(CFNBaseContainer.this, channel, value);
+            }
+
+            @Override
+            public void sendLong(int channel, long value) {
+                if (listener instanceof EntityPlayerMP) {
+                    CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                        new ContainerProgressBar((short) channel, value),
+                        (EntityPlayerMP) listener
+                    );
+                }
+            }
+
+            @Override
+            public void sendString(int channel, String value) {
+                if (listener instanceof EntityPlayerMP) {
+                    CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                        new ContainerValueConfig((short) channel, value),
+                        (EntityPlayerMP) listener
+                    );
+                }
+            }
+        };
+    }
+    //?} else {
+    /*@Override
+    public void broadcastChanges() {
+        if (isServer()) {
+            guiSyncManager.detectAndSendChanges(createSyncSender());
+        }
+        super.broadcastChanges();
+    }
+
+    private SyncSender createSyncSender() {
+        // TODO: implement packet-based sync for 1.20+
+        return new SyncSender() {
+            @Override
+            public void sendInt(int channel, int value) {
+                if (player instanceof ServerPlayer sp) {
+                    sp.containerMenu.sendAllDataToRemote();
+                }
+            }
+
+            @Override
+            public void sendLong(int channel, long value) {
+                // TODO: implement via network packet
+            }
+
+            @Override
+            public void sendString(int channel, String value) {
+                // TODO: implement via network packet
+            }
+        };
+    }
+    *///?}
+
     protected final boolean isServer() {
+        //? if <1.20 {
         return !te.getWorld().isRemote;
+        //?} else {
+        /*return te.getLevel() != null && !te.getLevel().isClientSide;
+        *///?}
     }
 
     public final void updateFullProgressBar(int idx, long value) {
-        if (this.syncData.containsKey(idx)) {
-            this.syncData.get(idx).update(value);
+        if (guiSyncManager.hasChannel(idx)) {
+            guiSyncManager.updateField(idx, value);
         } else {
+            //? if <1.20 {
             this.updateProgressBar(idx, (int) value);
+            //?} else {
+            /*this.cfnUpdateProgressBar(idx, (int) value);
+            *///?}
         }
     }
 
     public final void stringSync(int idx, String value) {
-        if (this.syncData.containsKey(idx)) {
-            this.syncData.get(idx).update(value);
-        }
-
+        guiSyncManager.updateField(idx, value);
     }
 
+    //? if <1.20 {
     public final void updateProgressBar(int idx, int value) {
-        if (this.syncData.containsKey(idx)) {
-            this.syncData.get(idx).update((long) value);
-        }
+    //?} else {
+    /*public final void cfnUpdateProgressBar(int idx, int value) {
+    *///?}
+        guiSyncManager.updateField(idx, (long) value);
     }
 
     public void onUpdate(final String field, final Object oldValue, final Object newValue) {

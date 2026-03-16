@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.manager;
 
-import baubles.api.BaublesApi;
+import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
@@ -25,10 +25,18 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
+//? if <1.20 {
+import baubles.api.BaublesApi;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
+//?} else {
+/*import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+*///?}
+
+import net.minecraft.server.MinecraftServer;
 
 import java.util.Collection;
 import java.util.EnumMap;
@@ -36,33 +44,46 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.circulation.circulation_networks.CirculationFlowNetworks.server;
 import static com.circulation.circulation_networks.manager.EnergyMachineManager.transferEnergy;
 
 public final class ChargingManager {
 
     public static final ChargingManager INSTANCE = new ChargingManager();
+    //? if <1.20 {
     private static final boolean loadBaubles = Loader.isModLoaded("baubles");
+    //?} else {
+    /*private static final boolean loadBaubles = false;
+     *///?}
 
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
 
+    //? if <1.20 {
     @Optional.Method(modid = "baubles")
     private static void checkBaubles(Collection<IEnergyHandler> invs, EntityPlayer player) {
+        //?} else {
+    /*private static void checkBaubles(Collection<IEnergyHandler> invs, Player player) {
+        *///?}
+        //? if <1.20 {
         var h = BaublesApi.getBaublesHandler(player);
         for (var i = 0; i < h.getSlots(); i++) {
             var stack = h.getStackInSlot(i);
             var handler = IEnergyHandler.release(stack);
             if (handler == null) continue;
-            if (handler.canReceiveValue() > 0) {
+            if (canReceiveMore(handler)) {
                 invs.add(handler);
                 continue;
             }
             handler.recycle();
         }
+        //?}
     }
 
+    //? if <1.20 {
     private static List<IEnergyHandler> collectChargeablesForGrid(IGrid grid, EntityPlayer player, PlayerChargeState state) {
+        //?} else {
+        /*private static List<IEnergyHandler> collectChargeablesForGrid(IGrid grid, Player player, PlayerChargeState state) {
+        *///?}
         var preferences = resolveChargingPreferences(grid, player);
         if (preferences.isEmpty()) {
             return ObjectLists.emptyList();
@@ -76,15 +97,28 @@ public final class ChargingManager {
         if (preferences.contains(ChargingDefinition.HOTBAR)) {
             collectFromSlots(result, state.cache, ChargingDefinition.HOTBAR, state.inventory, 0, 9);
         } else {
+            //? if <1.20 {
             if (preferences.contains(ChargingDefinition.MAIN_HAND)) {
                 collectFromStackWithCache(result, state.cache, ChargingDefinition.MAIN_HAND, player.getHeldItemMainhand());
             }
             if (preferences.contains(ChargingDefinition.OFF_HAND)) {
                 collectFromStackWithCache(result, state.cache, ChargingDefinition.OFF_HAND, player.getHeldItemOffhand());
             }
+            //?} else {
+                    /*if (preferences.contains(ChargingDefinition.MAIN_HAND)) {
+                        collectFromStackWithCache(result, state.cache, ChargingDefinition.MAIN_HAND, player.getMainHandItem());
+                    }
+                    if (preferences.contains(ChargingDefinition.OFF_HAND)) {
+                        collectFromStackWithCache(result, state.cache, ChargingDefinition.OFF_HAND, player.getOffhandItem());
+                    }
+                    *///?}
         }
         if (preferences.contains(ChargingDefinition.ARMOR)) {
+            //? if <1.20 {
             var armorInventory = player.inventory.armorInventory;
+            //?} else {
+            /*var armorInventory = player.getInventory().armor;
+            *///?}
             collectFromSlots(result, state.cache, ChargingDefinition.ARMOR, armorInventory.toArray(new ItemStack[0]), 0, armorInventory.size());
         }
         if (loadBaubles && preferences.contains(ChargingDefinition.BAUBLES)) {
@@ -94,14 +128,22 @@ public final class ChargingManager {
         return result;
     }
 
+    //? if <1.20 {
     private static EnumSet<ChargingDefinition> resolveChargingPreferences(IGrid grid, EntityPlayer player) {
+        //?} else {
+        /*private static EnumSet<ChargingDefinition> resolveChargingPreferences(IGrid grid, Player player) {
+        *///?}
         var hubNode = grid.getHubNode();
         if (hubNode == null) {
             return EnumSet.allOf(ChargingDefinition.class);
         }
 
         var preferences = EnumSet.noneOf(ChargingDefinition.class);
+        //? if <1.20 {
         var hubPrefs = hubNode.getChargingPreference(player.getUniqueID());
+        //?} else {
+        /*var hubPrefs = hubNode.getChargingPreference(player.getUUID());
+        *///?}
         for (var type : ChargingDefinition.values()) {
             if (hubPrefs.getPreference(type)) {
                 preferences.add(type);
@@ -127,7 +169,7 @@ public final class ChargingManager {
             var stack = items[i];
             var handler = IEnergyHandler.release(stack);
             if (handler != null) {
-                if (handler.canReceiveValue() > 0) {
+                if (canReceiveMore(handler)) {
                     handlers.add(handler);
                     result.add(handler);
                 } else {
@@ -150,13 +192,22 @@ public final class ChargingManager {
 
         var handler = IEnergyHandler.release(stack);
         if (handler != null) {
-            if (handler.canReceiveValue() > 0) {
+            if (canReceiveMore(handler)) {
                 var handlers = ObjectLists.singleton(handler);
                 cache.put(definition, handlers);
                 result.add(handler);
             } else {
                 handler.recycle();
             }
+        }
+    }
+
+    private static boolean canReceiveMore(IEnergyHandler handler) {
+        EnergyAmount amount = handler.canReceiveValue();
+        try {
+            return amount.isPositive();
+        } finally {
+            amount.recycle();
         }
     }
 
@@ -215,7 +266,7 @@ public final class ChargingManager {
         }
     }
 
-    public void onServerTick(Reference2ObjectMap<IGrid, EnumMap<IEnergyHandler.EnergyType, Set<IEnergyHandler>>> machineMap) {
+    public void onServerTick(MinecraftServer server, Reference2ObjectMap<IGrid, EnumMap<IEnergyHandler.EnergyType, Set<IEnergyHandler>>> machineMap) {
         var players = server.getPlayerList().getPlayers();
         var playerGridMaps = new ObjectArrayList<Reference2ObjectMap<IGrid, List<IEnergyHandler>>>(players.size());
 
@@ -235,16 +286,28 @@ public final class ChargingManager {
         }
     }
 
+    //? if <1.20 {
     private Reference2ObjectMap<IGrid, List<IEnergyHandler>> collectPlayerChargeTargets(EntityPlayer player) {
+        //?} else {
+        /*private Reference2ObjectMap<IGrid, List<IEnergyHandler>> collectPlayerChargeTargets(Player player) {
+        *///?}
         Reference2ObjectMap<IGrid, List<IEnergyHandler>> gridMap = new Reference2ObjectOpenHashMap<>();
         gridMap.defaultReturnValue(ObjectLists.emptyList());
 
+        //? if <1.20 {
         var map = scopeNode.get(player.dimension);
+        //?} else {
+        /*var map = scopeNode.get(player.level().dimension().location().hashCode());
+        *///?}
         if (map == null || map.isEmpty()) {
             return gridMap;
         }
 
+        //? if <1.20 {
         var pos = player.getPosition();
+        //?} else {
+        /*var pos = player.blockPosition();
+        *///?}
         var nodeSet = map.get(Functions.mergeChunkCoords(pos));
         if (nodeSet == null || nodeSet.isEmpty()) {
             return gridMap;
@@ -289,7 +352,7 @@ public final class ChargingManager {
         int minChunkZ = (nodeZ - range) >> 4;
         int maxChunkZ = (nodeZ + range) >> 4;
 
-        int dimId = node.getWorld().provider.getDimension();
+        int dimId = getDimensionId(node);
 
         Long2ObjectMap<ReferenceSet<IChargingNode>> dimScopeMap = scopeNode.get(dimId);
         if (dimScopeMap == null) {
@@ -326,7 +389,7 @@ public final class ChargingManager {
             return;
         }
 
-        int dimId = node.getWorld().provider.getDimension();
+        int dimId = getDimensionId(node);
 
         Object2ObjectMap<IChargingNode, LongSet> dimNodeScopeMap = nodeScope.get(dimId);
         if (dimNodeScopeMap == null) {
@@ -356,22 +419,41 @@ public final class ChargingManager {
         }
     }
 
-    private static final class PlayerChargeState {
-        final EnumMap<ChargingDefinition, List<IEnergyHandler>> cache = new EnumMap<>(ChargingDefinition.class);
-        final ItemStack[] inventory;
-
-        PlayerChargeState(EntityPlayer player) {
-            this.inventory = player.inventory.mainInventory.toArray(new ItemStack[0]);
-        }
-
-        void clear() {
-            cache.values().forEach(handlers -> handlers.forEach(IEnergyHandler::recycle));
-            cache.clear();
-        }
-    }
-
     public void onServerStop() {
         scopeNode.clear();
         nodeScope.clear();
+    }
+
+    //? if <1.20 {
+    private static int getDimensionId(INode node) {
+        return node.getWorld().provider.getDimension();
+    }
+    //?} else {
+    /*private static int getDimensionId(INode node) {
+        return node.getWorld().dimension().location().hashCode();
+    }
+    *///?}
+
+    private static final class PlayerChargeState {
+        final EnumMap<ChargingDefinition, List<IEnergyHandler>> cache = new EnumMap<>(ChargingDefinition.class);
+        //? if <1.20 {
+        final ItemStack[] inventory;
+
+        PlayerChargeState(EntityPlayer player) {
+            //?} else {
+        /*final ItemStack[] inventory;
+
+        PlayerChargeState(Player player) {
+            *///?}
+            //? if <1.20 {
+            this.inventory = player.inventory.mainInventory.toArray(new ItemStack[0]);
+            //?} else {
+            /*this.inventory = player.getInventory().items.toArray(new ItemStack[0]);
+            *///?}
+        }
+
+        void clear() {
+            cache.clear();
+        }
     }
 }

@@ -1,10 +1,15 @@
 package com.circulation.circulation_networks.handlers;
 
-import com.circulation.circulation_networks.items.ItemInspectionTool;
-import com.circulation.circulation_networks.registry.RegistryItems;
+import com.circulation.circulation_networks.items.InspectionToolModeModel.InspectionMode;
+import com.circulation.circulation_networks.items.InspectionToolModeModel.ToolFunction;
+import com.circulation.circulation_networks.items.InspectionToolState;
+import com.circulation.circulation_networks.math.Vec3d;
+import com.circulation.circulation_networks.registry.CFNItems;
+import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+//? if <1.20 {
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -17,19 +22,44 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else {
+/*import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import org.lwjgl.opengl.GL11;
 
 import java.util.Arrays;
 import java.util.List;
 
+//? if <1.20 {
 @SideOnly(Side.CLIENT)
+//?} else {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public class SpoceRenderingHandler {
 
     protected static final float[] EMPTY_VERTS = new float[0];
@@ -38,7 +68,11 @@ public class SpoceRenderingHandler {
     public static SpoceRenderingHandler INSTANCE;
     private final float[] buildBuf = new float[BUILD_BUF_SIZE];
     private final double[] angleScratch = new double[9];
+    //? if <1.20 {
     protected TileEntity te;
+    //?} else {
+    /*protected BlockEntity te;
+    *///?}
     protected float linkScope;
     protected float energyScope;
     protected float chargingScope;
@@ -60,10 +94,6 @@ public class SpoceRenderingHandler {
 
     private static float bright(float v) {
         return Math.min(1.0f, v * 1.3f);
-    }
-
-    private static float easeOutCubic(float t) {
-        return (float) (1.0 - Math.pow(1.0 - t, 3));
     }
 
     private static int addCos(double[] buf, int count, double val) {
@@ -106,12 +136,28 @@ public class SpoceRenderingHandler {
     }
 
     private void draw(float rotation, float r, float g, float b, float radius, float r1, float g1, float b1) {
+        //? if <1.20 {
         GlStateManager.pushMatrix();
+        //?} else {
+        /*PoseStack modelViewStack = RenderSystem.getModelViewStack();
+        modelViewStack.pushPose();
+        *///?}
         drawSphere(r, g, b, radius, 0.2f);
+        //? if <1.20 {
         GlStateManager.rotate(rotation, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(rotation * 0.5F, 1.0F, 0.0F, 0.0F);
+        //?} else {
+        /*modelViewStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotation));
+        modelViewStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rotation * 0.5F));
+        RenderSystem.applyModelViewMatrix();
+        *///?}
         drawBuckyBallWireframe(r1, g1, b1, radius + 0.01f, 0.8f);
+        //? if <1.20 {
         GlStateManager.popMatrix();
+        //?} else {
+        /*modelViewStack.popPose();
+        RenderSystem.applyModelViewMatrix();
+        *///?}
     }
 
     protected void drawSphere(float r, float g, float b, float radius, float alpha) {
@@ -119,6 +165,7 @@ public class SpoceRenderingHandler {
     }
 
     protected void drawBuckyBallWireframe(float r, float g, float b, float radius, float alpha) {
+        //? if <1.20 {
         GlStateManager.color(r, g, b, alpha);
         GlStateManager.glLineWidth(2.0f);
         Tessellator tess = Tessellator.getInstance();
@@ -131,9 +178,28 @@ public class SpoceRenderingHandler {
             buf.pos(v2.x * radius, v2.y * radius, v2.z * radius).normal((float) v2.x, (float) v2.y, (float) v2.z).endVertex();
         }
         tess.draw();
+        //?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.lineWidth(2.0f);
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buf = tess.getBuilder();
+        buf.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        int ri = (int)(r * 255), gi = (int)(g * 255), bi = (int)(b * 255), ai = (int)(alpha * 255);
+        for (int[] edge : BuckyBallGeometry.edges) {
+            Vec3d v1 = BuckyBallGeometry.vertices.get(edge[0]);
+            Vec3d v2 = BuckyBallGeometry.vertices.get(edge[1]);
+            buf.vertex(v1.x * radius, v1.y * radius, v1.z * radius).color(ri, gi, bi, ai).normal((float) v1.x, (float) v1.y, (float) v1.z).endVertex();
+            buf.vertex(v2.x * radius, v2.y * radius, v2.z * radius).color(ri, gi, bi, ai).normal((float) v2.x, (float) v2.y, (float) v2.z).endVertex();
+        }
+        tess.end();
+        *///?}
     }
 
+    //? if <1.20 {
     public void setStaus(TileEntity te, double linkScope, double energyScope, double chargingScope) {
+    //?} else {
+    /*public void setStaus(BlockEntity te, double linkScope, double energyScope, double chargingScope) {
+    *///?}
         this.te = te;
         this.linkScope = (float) linkScope;
         this.energyScope = (float) energyScope;
@@ -162,7 +228,7 @@ public class SpoceRenderingHandler {
 
         lastAnimProgress = animProgress;
         if (animProgress < 1.0f) {
-            animProgress = Math.min(animProgress + 0.025f, 1.0f);
+            animProgress = AnimationUtils.advanceTowardsOne(animProgress, 0.025f);
         }
 
         if (!isAnimating()) {
@@ -174,12 +240,17 @@ public class SpoceRenderingHandler {
         }
     }
 
+    //? if <1.20 {
     protected void drawIntersectionImmediate(World world, float radius, float r, float g, float b) {
+    //?} else {
+    /*protected void drawIntersectionImmediate(Level world, float radius, float r, float g, float b) {
+    *///?}
         if (radius <= 0.1f) return;
         float[] verts = buildIntersectionGeometry(world, radius);
         drawCachedIntersection(verts, r, g, b);
     }
 
+    //? if <1.20 {
     protected float[] buildIntersectionGeometry(World world, double radius) {
         buildCount = 0;
         int radInt = (int) Math.ceil(radius);
@@ -192,6 +263,7 @@ public class SpoceRenderingHandler {
         double cy = center.getY() + 0.5;
         double cz = center.getZ() + 0.5;
 
+        List<AxisAlignedBB> boxes = new ObjectArrayList<>();
         for (int dx = -radInt; dx <= radInt; dx++) {
             double dx2 = (double) dx * dx;
             if (dx2 > outerSq) continue;
@@ -213,7 +285,7 @@ public class SpoceRenderingHandler {
                     double mathCellMinZ = dz - 0.5;
                     double mathCellMaxZ = dz + 0.5;
 
-                    List<AxisAlignedBB> boxes = new ObjectArrayList<>();
+                    boxes.clear();
                     state.addCollisionBoxToList(world, worldBP, new AxisAlignedBB(worldBP), boxes, null, false);
 
                     if (boxes.isEmpty()) {
@@ -371,6 +443,199 @@ public class SpoceRenderingHandler {
             }
         }
     }
+    //?} else {
+    /*protected float[] buildIntersectionGeometry(Level world, double radius) {
+        buildCount = 0;
+        int radInt = (int) Math.ceil(radius);
+        double inner = Math.max(0.0, radius - 1.0);
+        double outerSq = (radius + 1.0) * (radius + 1.0);
+        double innerSq = inner * inner;
+        BlockPos center = te.getBlockPos();
+
+        double cx = center.getX() + 0.5;
+        double cy = center.getY() + 0.5;
+        double cz = center.getZ() + 0.5;
+
+        for (int dx = -radInt; dx <= radInt; dx++) {
+            double dx2 = (double) dx * dx;
+            if (dx2 > outerSq) continue;
+            for (int dy = -radInt; dy <= radInt; dy++) {
+                double dy2 = (double) dy * dy;
+                if (dx2 + dy2 > outerSq) continue;
+                for (int dz = -radInt; dz <= radInt; dz++) {
+                    double distSq = dx2 + dy2 + (double) dz * dz;
+                    if (distSq > outerSq || distSq < innerSq) continue;
+
+                    BlockPos worldBP = center.offset(dx, dy, dz);
+                    BlockState state = world.getBlockState(worldBP);
+                    if (state.isAir()) continue;
+
+                    double mathCellMinX = dx - 0.5;
+                    double mathCellMaxX = dx + 0.5;
+                    double mathCellMinY = dy - 0.5;
+                    double mathCellMaxY = dy + 0.5;
+                    double mathCellMinZ = dz - 0.5;
+                    double mathCellMaxZ = dz + 0.5;
+
+                    VoxelShape collisionShape = state.getCollisionShape(world, worldBP);
+                    List<AABB> boxes = collisionShape.toAabbs();
+
+                    if (boxes.isEmpty()) {
+                        VoxelShape shape = state.getShape(world, worldBP);
+                        if (!shape.isEmpty()) {
+                            boxes = List.of(shape.bounds().move(worldBP.getX(), worldBP.getY(), worldBP.getZ()));
+                        }
+                    }
+
+                    for (AABB bb : boxes) {
+                        AABB mathBox = new AABB(
+                            bb.minX - cx, bb.minY - cy, bb.minZ - cz,
+                            bb.maxX - cx, bb.maxY - cy, bb.maxZ - cz
+                        );
+
+                        for (Direction face : Direction.values()) {
+                            boolean isFlush = switch (face) {
+                                case WEST -> Math.abs(mathBox.minX - mathCellMinX) < 1E-5;
+                                case EAST -> Math.abs(mathBox.maxX - mathCellMaxX) < 1E-5;
+                                case DOWN -> Math.abs(mathBox.minY - mathCellMinY) < 1E-5;
+                                case UP -> Math.abs(mathBox.maxY - mathCellMaxY) < 1E-5;
+                                case NORTH -> Math.abs(mathBox.minZ - mathCellMinZ) < 1E-5;
+                                case SOUTH -> Math.abs(mathBox.maxZ - mathCellMaxZ) < 1E-5;
+                            };
+
+                            boolean shouldDraw = true;
+                            if (isFlush) {
+                                if (world.getBlockState(worldBP.relative(face)).canOcclude()) {
+                                    shouldDraw = false;
+                                }
+                            }
+
+                            if (shouldDraw) {
+                                appendAABBFace(face, mathBox, radius);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return Arrays.copyOf(buildBuf, buildCount);
+    }
+
+    private void appendAABBFace(Direction face, AABB box, double R) {
+        double planeW, minU, maxU, minV, maxV;
+        switch (face) {
+            case UP:
+                planeW = box.maxY;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minZ;
+                maxV = box.maxZ;
+                break;
+            case DOWN:
+                planeW = box.minY;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minZ;
+                maxV = box.maxZ;
+                break;
+            case SOUTH:
+                planeW = box.maxZ;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case NORTH:
+                planeW = box.minZ;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case EAST:
+                planeW = box.maxX;
+                minU = box.minZ;
+                maxU = box.maxZ;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case WEST:
+                planeW = box.minX;
+                minU = box.minZ;
+                maxU = box.maxZ;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            default:
+                return;
+        }
+
+        double r2 = R * R - planeW * planeW;
+        if (r2 <= 1E-6) return;
+        double r = Math.sqrt(r2);
+
+        if (r < minU || -r > maxU || r < minV || -r > maxV) return;
+
+        double offset = (face.getAxisDirection() == Direction.AxisDirection.POSITIVE) ? 0.005 : -0.005;
+        double rp = planeW + offset;
+
+        int ac = 1;
+        angleScratch[0] = 0.0;
+        ac = addCos(angleScratch, ac, minU / r);
+        ac = addCos(angleScratch, ac, maxU / r);
+        ac = addSin(angleScratch, ac, minV / r);
+        ac = addSin(angleScratch, ac, maxV / r);
+        sortAngles(angleScratch, ac);
+
+        final int SUB = 8;
+        final double TWO_PI = Math.PI * 2.0;
+        Direction.Axis axis = face.getAxis();
+
+        for (int i = 0; i < ac; i++) {
+            double aStart = angleScratch[i];
+            double aEnd = (i + 1 < ac) ? angleScratch[i + 1] : TWO_PI;
+            if (aEnd - aStart < 1E-9) continue;
+
+            double aMid = (aStart + aEnd) * 0.5;
+            double uMid = r * Math.cos(aMid);
+            double vMid = r * Math.sin(aMid);
+            if (uMid < minU - 1E-6 || uMid > maxU + 1E-6 || vMid < minV - 1E-6 || vMid > maxV + 1E-6) continue;
+
+            double span = aEnd - aStart;
+            for (int j = 0; j < SUB; j++) {
+                double a1 = aStart + span * j / SUB;
+                double a2 = aStart + span * (j + 1) / SUB;
+                double u1 = r * Math.cos(a1), v1 = r * Math.sin(a1);
+                double u2 = r * Math.cos(a2), v2 = r * Math.sin(a2);
+                if (buildCount + 6 > buildBuf.length) return;
+
+                if (axis == Direction.Axis.Y) {
+                    buildBuf[buildCount++] = (float) u1;
+                    buildBuf[buildCount++] = (float) rp;
+                    buildBuf[buildCount++] = (float) v1;
+                    buildBuf[buildCount++] = (float) u2;
+                    buildBuf[buildCount++] = (float) rp;
+                    buildBuf[buildCount++] = (float) v2;
+                } else if (axis == Direction.Axis.Z) {
+                    buildBuf[buildCount++] = (float) u1;
+                    buildBuf[buildCount++] = (float) v1;
+                    buildBuf[buildCount++] = (float) rp;
+                    buildBuf[buildCount++] = (float) u2;
+                    buildBuf[buildCount++] = (float) v2;
+                    buildBuf[buildCount++] = (float) rp;
+                } else {
+                    buildBuf[buildCount++] = (float) rp;
+                    buildBuf[buildCount++] = (float) v1;
+                    buildBuf[buildCount++] = (float) u1;
+                    buildBuf[buildCount++] = (float) rp;
+                    buildBuf[buildCount++] = (float) v2;
+                    buildBuf[buildCount++] = (float) u2;
+                }
+            }
+        }
+    }
+    *///?}
 
     public void clear() {
         cleanupGL();
@@ -384,6 +649,7 @@ public class SpoceRenderingHandler {
     }
 
     @SubscribeEvent
+    //? if <1.20 {
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         if (te == null) return;
         if (te.isInvalid() || rs == null) {
@@ -400,9 +666,9 @@ public class SpoceRenderingHandler {
         }
 
         var stack = p.getHeldItemMainhand();
-        if (!(stack.getItem() == RegistryItems.inspectionTool
-            && RegistryItems.inspectionTool.getFunction(stack) == ItemInspectionTool.ToolFunction.INSPECTION
-            && ItemInspectionTool.InspectionMode.fromID(RegistryItems.inspectionTool.getSubMode(stack)).isMode(ItemInspectionTool.InspectionMode.SPOCE)))
+        if (!(stack.getItem() == CFNItems.inspectionTool
+            && InspectionToolState.getFunction(stack) == ToolFunction.INSPECTION
+            && InspectionMode.fromID(InspectionToolState.getSubMode(stack)).isMode(InspectionMode.SPOCE)))
             return;
 
         float partial = event.getPartialTicks();
@@ -414,7 +680,7 @@ public class SpoceRenderingHandler {
         double ty = pos.getY() + 0.5 - renderPosY;
         double tz = pos.getZ() + 0.5 - renderPosZ;
 
-        float interpFactor = easeOutCubic(lastAnimProgress + (animProgress - lastAnimProgress) * partial);
+        float interpFactor = AnimationUtils.easeOutCubic(lastAnimProgress + (animProgress - lastAnimProgress) * partial);
         boolean animating = isAnimating() || (animProgress == 1.0f && lastAnimProgress < 1.0f);
 
         World world = mc.world;
@@ -427,6 +693,52 @@ public class SpoceRenderingHandler {
         GlStateManager.disableLighting();
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
+    //?} else {
+    /*public void onRenderWorldLast(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        if (te == null) return;
+        if (te.isRemoved() || rs == null) {
+            clear();
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        BlockPos pos = te.getBlockPos();
+        if (!mc.level.dimension().equals(te.getLevel().dimension()) || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+            clear();
+            return;
+        }
+
+        var stack = p.getMainHandItem();
+        if (!(stack.getItem() == CFNItems.inspectionTool
+            && InspectionToolState.getFunction(stack) == ToolFunction.INSPECTION
+            && InspectionMode.fromID(InspectionToolState.getSubMode(stack)).isMode(InspectionMode.SPOCE)))
+            return;
+
+        float partial = event.getPartialTick();
+        double renderPosX = p.xOld + (p.getX() - p.xOld) * partial;
+        double renderPosY = p.yOld + (p.getY() - p.yOld) * partial;
+        double renderPosZ = p.zOld + (p.getZ() - p.zOld) * partial;
+
+        double tx = pos.getX() + 0.5 - renderPosX;
+        double ty = pos.getY() + 0.5 - renderPosY;
+        double tz = pos.getZ() + 0.5 - renderPosZ;
+
+        float interpFactor = AnimationUtils.easeOutCubic(lastAnimProgress + (animProgress - lastAnimProgress) * partial);
+        boolean animating = isAnimating() || (animProgress == 1.0f && lastAnimProgress < 1.0f);
+
+        Level world = mc.level;
+
+        PoseStack modelViewStack = RenderSystem.getModelViewStack();
+        modelViewStack.pushPose();
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        modelViewStack.translate(tx, ty, tz);
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.enableBlend();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+    *///?}
 
         if (!glInitialized) {
             initGL();
@@ -435,7 +747,11 @@ public class SpoceRenderingHandler {
 
         onPreRender();
 
+        //? if <1.20 {
         float time = world.getTotalWorldTime() + partial;
+        //?} else {
+        /*float time = world.getGameTime() + partial;
+        *///?}
         float rotation = time * 0.8f;
 
         if (linkScope > 0) {
@@ -446,10 +762,18 @@ public class SpoceRenderingHandler {
             pendingIntersectionR = bright(wr);
             pendingIntersectionG = bright(wg);
             pendingIntersectionB = bright(wb);
+            //? if <1.20 {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            //?} else {
+            /*RenderSystem.defaultBlendFunc();
+            *///?}
             draw(rotation * rs[0], 0, 0.4f, 0.8f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
+                //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                //?} else {
+                /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
+                *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {
@@ -470,10 +794,18 @@ public class SpoceRenderingHandler {
             pendingIntersectionR = bright(wr);
             pendingIntersectionG = bright(wg);
             pendingIntersectionB = bright(wb);
+            //? if <1.20 {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            //?} else {
+            /*RenderSystem.defaultBlendFunc();
+            *///?}
             draw(rotation * rs[1], 0.4f, 0.2f, 0.8f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
+                //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                //?} else {
+                /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
+                *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {
@@ -494,10 +826,18 @@ public class SpoceRenderingHandler {
             pendingIntersectionR = bright(wr);
             pendingIntersectionG = bright(wg);
             pendingIntersectionB = bright(wb);
+            //? if <1.20 {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            //?} else {
+            /*RenderSystem.defaultBlendFunc();
+            *///?}
             draw(rotation * rs[2], 0, 0.5f, 0.1f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
+                //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                //?} else {
+                /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
+                *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {
@@ -510,12 +850,20 @@ public class SpoceRenderingHandler {
             }
         }
 
+        //? if <1.20 {
         GlStateManager.depthMask(true);
         GlStateManager.enableCull();
         GlStateManager.enableLighting();
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
+        //?} else {
+        /*RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+        modelViewStack.popPose();
+        RenderSystem.applyModelViewMatrix();
+        *///?}
     }
 
     protected void initGL() {

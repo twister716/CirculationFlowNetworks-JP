@@ -1,27 +1,45 @@
 package com.circulation.circulation_networks.handlers;
 
-import com.circulation.circulation_networks.items.ItemInspectionTool;
-import com.circulation.circulation_networks.registry.RegistryItems;
+import com.circulation.circulation_networks.items.InspectionToolModeModel.InspectionMode;
+import com.circulation.circulation_networks.items.InspectionToolModeModel.ToolFunction;
+import com.circulation.circulation_networks.items.InspectionToolState;
+import com.circulation.circulation_networks.math.Vec3d;
+import com.circulation.circulation_networks.registry.CFNItems;
+import com.circulation.circulation_networks.utils.RenderingUtils;
+//? if <1.20 {
 import com.github.bsideup.jabel.Desugar;
+//?}
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+//? if <1.20 {
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else {
+/*import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import org.lwjgl.opengl.GL11;
 
+//? if <1.20 {
 @SideOnly(Side.CLIENT)
+//?} else {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public final class NodeNetworkRenderingHandler {
 
     public static final NodeNetworkRenderingHandler INSTANCE = new NodeNetworkRenderingHandler();
@@ -37,55 +55,6 @@ public final class NodeNetworkRenderingHandler {
     private final ObjectSet<Line> machineLinks = new ObjectLinkedOpenHashSet<>();
     private final Multiset<Pos> nodePoss = HashMultiset.create();
     private final Multiset<Pos> machinePoss = HashMultiset.create();
-
-    private static void drawLaserCylinder(Pos from, Pos to, float radius, float r, float g, float b, float alpha) {
-        double dx = to.x - from.x;
-        double dy = to.y - from.y;
-        double dz = to.z - from.z;
-        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 1e-6) return;
-
-        double ax = dx / len, ay = dy / len, az = dz / len;
-
-        double bx, by, bz;
-        if (Math.abs(ax) <= Math.abs(ay) && Math.abs(ax) <= Math.abs(az)) {
-            bx = 0;
-            by = -az;
-            bz = ay;
-        } else if (Math.abs(ay) <= Math.abs(az)) {
-            bx = -az;
-            by = 0;
-            bz = ax;
-        } else {
-            bx = -ay;
-            by = ax;
-            bz = 0;
-        }
-        double bLen = Math.sqrt(bx * bx + by * by + bz * bz);
-        bx /= bLen;
-        by /= bLen;
-        bz /= bLen;
-
-        double cx = ay * bz - az * by;
-        double cy = az * bx - ax * bz;
-        double cz = ax * by - ay * bx;
-
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-
-        GlStateManager.color(r, g, b, alpha);
-        buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION);
-        for (int i = 0; i <= CYLINDER_SIDES; i++) {
-            double angle = 2.0 * Math.PI * i / CYLINDER_SIDES;
-            double cos = Math.cos(angle), sin = Math.sin(angle);
-            double nx = radius * (cos * bx + sin * cx);
-            double ny = radius * (cos * by + sin * cy);
-            double nz = radius * (cos * bz + sin * cz);
-            buf.pos(from.x + nx, from.y + ny, from.z + nz).endVertex();
-            buf.pos(to.x + nx, to.y + ny, to.z + nz).endVertex();
-        }
-        tess.draw();
-    }
 
     private static void ensureSphereDisplayList() {
         if (sphereDisplayList >= 0) return;
@@ -116,11 +85,23 @@ public final class NodeNetworkRenderingHandler {
 
     private static void drawSphere(float r, float g, float b, float radius, float alpha) {
         ensureSphereDisplayList();
+        //? if <1.20 {
         GlStateManager.color(r, g, b, alpha);
         GlStateManager.pushMatrix();
         GlStateManager.scale(radius, radius, radius);
+        //?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.getModelViewStack().pushPose();
+        RenderSystem.getModelViewStack().scale(radius, radius, radius);
+        RenderSystem.applyModelViewMatrix();
+        *///?}
         GL11.glCallList(sphereDisplayList);
+        //? if <1.20 {
         GlStateManager.popMatrix();
+        //?} else {
+        /*RenderSystem.getModelViewStack().popPose();
+        RenderSystem.applyModelViewMatrix();
+        *///?}
     }
 
     public void addNodeLink(long a, long b) {
@@ -159,20 +140,38 @@ public final class NodeNetworkRenderingHandler {
     }
 
     @SubscribeEvent
+    //? if <1.20 {
     public void renderWorldLastEvent(RenderWorldLastEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP p = mc.player;
+    //?} else {
+    /*public void renderWorldLastEvent(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+    *///?}
 
+        //? if <1.20 {
         var stack = p.getHeldItemMainhand();
-        if (!(stack.getItem() == RegistryItems.inspectionTool
-            && RegistryItems.inspectionTool.getFunction(stack) == ItemInspectionTool.ToolFunction.INSPECTION
-            && ItemInspectionTool.InspectionMode.fromID(RegistryItems.inspectionTool.getSubMode(stack)).isMode(ItemInspectionTool.InspectionMode.LINK)))
+        //?} else {
+        /*var stack = p.getMainHandItem();
+        *///?}
+        if (!(stack.getItem() == CFNItems.inspectionTool
+            && InspectionToolState.getFunction(stack) == ToolFunction.INSPECTION
+            && InspectionMode.fromID(InspectionToolState.getSubMode(stack)).isMode(InspectionMode.LINK)))
             return;
 
+        //? if <1.20 {
         double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX) * event.getPartialTicks();
         double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY) * event.getPartialTicks();
         double doubleZ = p.lastTickPosZ + (p.posZ - p.lastTickPosZ) * event.getPartialTicks();
+        //?} else {
+        /*double doubleX = p.xOld + (p.getX() - p.xOld) * event.getPartialTick();
+        double doubleY = p.yOld + (p.getY() - p.yOld) * event.getPartialTick();
+        double doubleZ = p.zOld + (p.getZ() - p.zOld) * event.getPartialTick();
+        *///?}
 
+        //? if <1.20 {
         GlStateManager.pushMatrix();
         GlStateManager.translate(-doubleX, -doubleY, -doubleZ);
         GlStateManager.enableBlend();
@@ -181,22 +180,38 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.disableLighting();
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
-
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+        //?} else {
+        /*PoseStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.pushPose();
+        mvStack.translate(-doubleX, -doubleY, -doubleZ);
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.enableBlend();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        *///?}
 
         for (var link : nodeLinks) {
-            drawLaserCylinder(link.from, link.to, GLOW_RADIUS, 0.3f, 0.3f, 1.0f, 0.25f);
-            drawLaserCylinder(link.from, link.to, CORE_RADIUS, 0.3f, 0.3f, 1.0f, 1.0f);
+            RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 0.3f, 0.3f, 1.0f, 0.25f);
+            RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 0.3f, 0.3f, 1.0f, 1.0f);
         }
         for (var link : machineLinks) {
-            drawLaserCylinder(link.from, link.to, GLOW_RADIUS, 1.0f, 0.3f, 0.3f, 0.25f);
-            drawLaserCylinder(link.from, link.to, CORE_RADIUS, 1.0f, 0.3f, 0.3f, 1.0f);
+            RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 1.0f, 0.3f, 0.3f, 0.25f);
+            RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 1.0f, 0.3f, 0.3f, 1.0f);
         }
 
         for (var pos : nodePoss.elementSet()) {
             boolean alsoMachine = machinePoss.contains(pos);
+            //? if <1.20 {
             GlStateManager.pushMatrix();
             GlStateManager.translate(pos.x, pos.y, pos.z);
+            //?} else {
+            /*RenderSystem.getModelViewStack().pushPose();
+            RenderSystem.getModelViewStack().translate(pos.x, pos.y, pos.z);
+            RenderSystem.applyModelViewMatrix();
+            *///?}
             if (alsoMachine) {
                 drawSphere(1.0f, 0.0f, 1.0f, SPHERE_GLOW_RADIUS, 0.3f);
                 drawSphere(1.0f, 0.0f, 1.0f, SPHERE_CORE_RADIUS, 0.9f);
@@ -204,17 +219,34 @@ public final class NodeNetworkRenderingHandler {
                 drawSphere(0.0f, 0.0f, 1.0f, SPHERE_GLOW_RADIUS, 0.3f);
                 drawSphere(0.0f, 0.0f, 1.0f, SPHERE_CORE_RADIUS, 0.9f);
             }
+            //? if <1.20 {
             GlStateManager.popMatrix();
+            //?} else {
+            /*RenderSystem.getModelViewStack().popPose();
+            RenderSystem.applyModelViewMatrix();
+            *///?}
         }
         for (var pos : machinePoss.elementSet()) {
             if (nodePoss.contains(pos)) continue;
+            //? if <1.20 {
             GlStateManager.pushMatrix();
             GlStateManager.translate(pos.x, pos.y, pos.z);
+            //?} else {
+            /*RenderSystem.getModelViewStack().pushPose();
+            RenderSystem.getModelViewStack().translate(pos.x, pos.y, pos.z);
+            RenderSystem.applyModelViewMatrix();
+            *///?}
             drawSphere(1.0f, 0.0f, 0.0f, SPHERE_GLOW_RADIUS, 0.3f);
             drawSphere(1.0f, 0.0f, 0.0f, SPHERE_CORE_RADIUS, 0.9f);
+            //? if <1.20 {
             GlStateManager.popMatrix();
+            //?} else {
+            /*RenderSystem.getModelViewStack().popPose();
+            RenderSystem.applyModelViewMatrix();
+            *///?}
         }
 
+        //? if <1.20 {
         GlStateManager.depthMask(true);
         GlStateManager.enableCull();
         GlStateManager.enableLighting();
@@ -222,9 +254,19 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.enableDepth();
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
+        //?} else {
+        /*RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+        RenderSystem.getModelViewStack().popPose();
+        RenderSystem.applyModelViewMatrix();
+        *///?}
     }
 
+    //? if <1.20 {
     @Desugar
+    //?}
     private record Line(Pos from, Pos to, int hash) {
 
         private static Line create(long from, long to) {
@@ -252,7 +294,11 @@ public final class NodeNetworkRenderingHandler {
 
     private static class Pos extends Vec3d {
 
+        //? if <1.20 {
         private static final int NUM_X_BITS = 1 + MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(30000000));
+        //?} else {
+        /*private static final int NUM_X_BITS = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
+        *///?}
         private static final int NUM_Z_BITS = NUM_X_BITS;
         private static final int NUM_Y_BITS = 64 - NUM_X_BITS - NUM_Z_BITS;
         private static final int Y_SHIFT = NUM_Z_BITS;

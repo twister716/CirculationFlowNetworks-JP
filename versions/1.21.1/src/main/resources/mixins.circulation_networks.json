@@ -1,0 +1,11 @@
+{
+  "package": "",
+  "required": true,
+  "refmap": "mixins.circulation_networks.refmap.json",
+  "target": "@env(DEFAULT)",
+  "minVersion": "0.8.5",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "server": [],
+  "client": []
+}

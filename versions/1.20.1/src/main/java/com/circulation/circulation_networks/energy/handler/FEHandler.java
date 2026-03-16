@@ -1,0 +1,122 @@
+package com.circulation.circulation_networks.energy.handler;
+
+import com.circulation.circulation_networks.api.EnergyAmount;
+import com.circulation.circulation_networks.api.EnergyAmounts;
+import com.circulation.circulation_networks.api.IEnergyHandler;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.energy.IEnergyStorage;
+
+import javax.annotation.Nullable;
+
+public final class FEHandler implements IEnergyHandler {
+
+    @Nullable
+    private IEnergyStorage send;
+    @Nullable
+    private IEnergyStorage receive;
+    private EnergyType energyType;
+
+    public FEHandler(BlockEntity blockEntity) {
+        init(blockEntity);
+    }
+
+    public FEHandler(ItemStack stack) {
+        init(stack);
+    }
+
+    @Override
+    public IEnergyHandler init(BlockEntity blockEntity) {
+        for (Direction direction : Direction.values()) {
+            if (this.getType() == EnergyType.STORAGE) break;
+            var optional = blockEntity.getCapability(ForgeCapabilities.ENERGY, direction);
+            optional.ifPresent(ies -> {
+                if (ies.canExtract() && this.send == null) {
+                    this.send = ies;
+                }
+                if (ies.canReceive() && this.receive == null) {
+                    this.receive = ies;
+                }
+            });
+        }
+        return this;
+    }
+
+    @Override
+    public IEnergyHandler init(ItemStack itemStack) {
+        var optional = itemStack.getCapability(ForgeCapabilities.ENERGY);
+        optional.ifPresent(ies -> {
+            if (ies.canReceive()) {
+                this.receive = ies;
+            }
+        });
+        return this;
+    }
+
+    @Override
+    public void clear() {
+        send = null;
+        receive = null;
+        energyType = null;
+    }
+
+    @Override
+    public EnergyAmount extractEnergy(EnergyAmount maxExtract) {
+        if (send == null) return EnergyAmounts.ZERO;
+        EnergyAmount extractable = canExtractValue();
+        try {
+            int e = (int) Math.min(maxExtract.asLongClamped(), extractable.asLongClamped());
+            return EnergyAmount.obtain(send.extractEnergy(e, false));
+        } finally {
+            extractable.recycle();
+        }
+    }
+
+    @Override
+    public EnergyAmount receiveEnergy(EnergyAmount maxReceive) {
+        if (receive == null) return EnergyAmounts.ZERO;
+        EnergyAmount receivable = canReceiveValue();
+        try {
+            int e = (int) Math.min(maxReceive.asLongClamped(), receivable.asLongClamped());
+            return EnergyAmount.obtain(receive.receiveEnergy(e, false));
+        } finally {
+            receivable.recycle();
+        }
+    }
+
+    @Override
+    public EnergyAmount canExtractValue() {
+        return send == null ? EnergyAmounts.ZERO : EnergyAmount.obtain(send.extractEnergy(Integer.MAX_VALUE, true));
+    }
+
+    @Override
+    public EnergyAmount canReceiveValue() {
+        return receive == null ? EnergyAmounts.ZERO : EnergyAmount.obtain(receive.receiveEnergy(Integer.MAX_VALUE, true));
+    }
+
+    @Override
+    public EnergyType getType() {
+        if (energyType == null) {
+            boolean receive = this.receive != null;
+            if (send != null) {
+                return energyType = receive ? EnergyType.STORAGE : EnergyType.SEND;
+            } else if (receive) {
+                return energyType = EnergyType.RECEIVE;
+            }
+            return energyType = EnergyType.INVALID;
+        }
+        return energyType;
+    }
+
+    @Override
+    public boolean canExtract(IEnergyHandler receiveHandler) {
+        return send != null;
+    }
+
+    @Override
+    public boolean canReceive(IEnergyHandler sendHandler) {
+        return receive != null;
+    }
+}

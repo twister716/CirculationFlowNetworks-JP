@@ -1,10 +1,17 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+//? if <1.20 {
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else {
+/*import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -13,7 +20,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+//? if <1.20 {
 @SideOnly(Side.CLIENT)
+//?} else {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public final class ShaderHelper {
 
     private ShaderHelper() {
@@ -74,7 +85,11 @@ public final class ShaderHelper {
     }
 
     private static String readResource(ResourceLocation loc) {
+        //? if <1.20 {
         try (InputStream is = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
+        //?} else {
+        /*try (InputStream is = Minecraft.getInstance().getResourceManager().getResourceOrThrow(loc).open();
+        *///?}
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;

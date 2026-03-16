@@ -1,48 +1,9 @@
 package com.circulation.circulation_networks.gui.component;
 
-import com.circulation.circulation_networks.gui.CFNBaseGui;
 import com.circulation.circulation_networks.gui.component.base.Component;
-import com.circulation.circulation_networks.gui.component.base.RegisterComponentSpritesEvent;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import com.circulation.circulation_networks.gui.component.base.ComponentGuiContext;
 
-/**
- * Abstract base for all clickable button components.
- *
- * <p>Handles four visual states driven by {@link #getActiveLayers()}:
- * <ol>
- *   <li><b>disabled</b> — {@link #isEnabled()} is {@code false}; click events are suppressed
- *       by {@link Component#dispatchMouseClicked}, rendering proceeds normally
- *   <li><b>pressed</b>  — left mouse button is held down over the component
- *   <li><b>hovered</b>  — cursor is inside the bounds (but not pressed)
- *   <li><b>normal</b>   — default state
- * </ol>
- *
- * <p>Each state sprite is optional except {@code normalSprite}. When a state sprite is
- * not set, the component falls back to {@code normalSprite}. The same opt-in rule applies
- * to the per-state icon sprites: only set icon states you have art for.
- *
- * <p>The constructor only requires {@code normalSprite}. All other sprites are
- * configured via fluent setters:
- * <pre>{@code
- * new MyButton(x, y, 20, 20, "btn_normal")
- *         .setHoveredSprite("btn_hovered")
- *         .setPressedSprite("btn_pressed")
- *         .setIconNormal("icon_wrench");
- * }</pre>
- *
- * <p>Subclasses must implement {@link #onClick()}.
- *
- * <p>All sprite names refer to atlas sprites registered via
- * {@link RegisterComponentSpritesEvent}.
- */
 @SuppressWarnings("unused")
-@SideOnly(Side.CLIENT)
-@Setter
-@Accessors(chain = true)
 public abstract class AbstractButtonComponent extends Component {
 
     protected final String[] cache = new String[2];
@@ -54,12 +15,55 @@ public abstract class AbstractButtonComponent extends Component {
     private String iconHovered;
     private String iconPressed;
     private String iconDisabled;
-    @Getter
     private boolean pressed = false;
 
-    protected AbstractButtonComponent(int x, int y, int width, int height, CFNBaseGui gui, String normalSprite) {
+    protected AbstractButtonComponent(int x, int y, int width, int height, ComponentGuiContext gui, String normalSprite) {
         super(x, y, width, height, gui);
         this.normalSprite = normalSprite;
+    }
+
+    public boolean isPressed() {
+        return pressed;
+    }
+
+    public AbstractButtonComponent setHoveredSprite(String hoveredSprite) {
+        this.hoveredSprite = hoveredSprite;
+        return this;
+    }
+
+    public AbstractButtonComponent setPressedSprite(String pressedSprite) {
+        this.pressedSprite = pressedSprite;
+        return this;
+    }
+
+    public AbstractButtonComponent setDisabledSprite(String disabledSprite) {
+        this.disabledSprite = disabledSprite;
+        return this;
+    }
+
+    public AbstractButtonComponent setIconNormal(String iconNormal) {
+        this.iconNormal = iconNormal;
+        return this;
+    }
+
+    public AbstractButtonComponent setIconHovered(String iconHovered) {
+        this.iconHovered = iconHovered;
+        return this;
+    }
+
+    public AbstractButtonComponent setIconPressed(String iconPressed) {
+        this.iconPressed = iconPressed;
+        return this;
+    }
+
+    public AbstractButtonComponent setIconDisabled(String iconDisabled) {
+        this.iconDisabled = iconDisabled;
+        return this;
+    }
+
+    public AbstractButtonComponent setPressed(boolean pressed) {
+        this.pressed = pressed;
+        return this;
     }
 
     @Override
@@ -112,9 +116,5 @@ public abstract class AbstractButtonComponent extends Component {
         pressed = false;
     }
 
-    /**
-     * Called once when the player completes a left-click (press + release) over
-     * this button while it is enabled.
-     */
     protected abstract void onClick();
 }
