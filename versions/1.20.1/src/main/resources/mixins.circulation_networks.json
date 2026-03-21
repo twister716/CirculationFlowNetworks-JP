@@ -1,11 +1,16 @@
 {
-  "package": "",
-  "required": true,
-  "refmap": "mixins.circulation_networks.refmap.json",
-  "target": "@env(DEFAULT)",
-  "minVersion": "0.8.5",
-  "compatibilityLevel": "JAVA_17",
-  "mixins": [],
-  "server": [],
-  "client": []
+    "package": "com.circulation.circulation_networks.mixins",
+    "required": true,
+    "refmap": "mixins.circulation_networks.refmap.json",
+    "minVersion": "0.8.5",
+    "mixins": [
+        
+    ],
+    "server": [
+        
+    ],
+    "client": [
+        
+    ],
+    "compatibilityLevel": "JAVA_17"
 }

@@ -26,10 +26,18 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 
@@ -87,18 +95,24 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.color(r, g, b, alpha);
         GlStateManager.pushMatrix();
         GlStateManager.scale(radius, radius, radius);
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.setShaderColor(r, g, b, alpha);
         RenderSystem.getModelViewStack().pushPose();
         RenderSystem.getModelViewStack().scale(radius, radius, radius);
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.getModelViewStack().pushMatrix();
+        RenderSystem.getModelViewStack().scale(radius, radius, radius);
         *///?}
         GL11.glCallList(sphereDisplayList);
         //? if <1.20 {
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.getModelViewStack().popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.getModelViewStack().popMatrix();
         *///?}
     }
 
@@ -163,10 +177,15 @@ public final class NodeNetworkRenderingHandler {
         double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX) * event.getPartialTicks();
         double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY) * event.getPartialTicks();
         double doubleZ = p.lastTickPosZ + (p.posZ - p.lastTickPosZ) * event.getPartialTicks();
-        //?} else {
+        //?} else if <1.21 {
         /*double doubleX = p.xOld + (p.getX() - p.xOld) * event.getPartialTick();
         double doubleY = p.yOld + (p.getY() - p.yOld) * event.getPartialTick();
         double doubleZ = p.zOld + (p.getZ() - p.zOld) * event.getPartialTick();
+        *///?} else {
+        /*float _partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double doubleX = p.xOld + (p.getX() - p.xOld) * _partialTick;
+        double doubleY = p.yOld + (p.getY() - p.yOld) * _partialTick;
+        double doubleZ = p.zOld + (p.getZ() - p.zOld) * _partialTick;
         *///?}
 
         //? if <1.20 {
@@ -179,11 +198,20 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-        //?} else {
+        //?} else if <1.21 {
         /*PoseStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushPose();
         mvStack.translate(-doubleX, -doubleY, -doubleZ);
         RenderSystem.applyModelViewMatrix();
+        RenderSystem.enableBlend();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        *///?} else {
+        /*var mvStack = RenderSystem.getModelViewStack();
+        mvStack.pushMatrix();
+        mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         RenderSystem.enableBlend();
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
@@ -205,10 +233,13 @@ public final class NodeNetworkRenderingHandler {
             //? if <1.20 {
             GlStateManager.pushMatrix();
             GlStateManager.translate(pos.x, pos.y, pos.z);
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.getModelViewStack().pushPose();
             RenderSystem.getModelViewStack().translate(pos.x, pos.y, pos.z);
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.getModelViewStack().pushMatrix();
+            RenderSystem.getModelViewStack().translate((float) pos.x, (float) pos.y, (float) pos.z);
             *///?}
             if (alsoMachine) {
                 drawSphere(1.0f, 0.0f, 1.0f, SPHERE_GLOW_RADIUS, 0.3f);
@@ -219,9 +250,11 @@ public final class NodeNetworkRenderingHandler {
             }
             //? if <1.20 {
             GlStateManager.popMatrix();
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.getModelViewStack().popPose();
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.getModelViewStack().popMatrix();
             *///?}
         }
         for (var pos : machinePoss.elementSet()) {
@@ -229,18 +262,23 @@ public final class NodeNetworkRenderingHandler {
             //? if <1.20 {
             GlStateManager.pushMatrix();
             GlStateManager.translate(pos.x, pos.y, pos.z);
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.getModelViewStack().pushPose();
             RenderSystem.getModelViewStack().translate(pos.x, pos.y, pos.z);
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.getModelViewStack().pushMatrix();
+            RenderSystem.getModelViewStack().translate((float) pos.x, (float) pos.y, (float) pos.z);
             *///?}
             drawSphere(1.0f, 0.0f, 0.0f, SPHERE_GLOW_RADIUS, 0.3f);
             drawSphere(1.0f, 0.0f, 0.0f, SPHERE_CORE_RADIUS, 0.9f);
             //? if <1.20 {
             GlStateManager.popMatrix();
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.getModelViewStack().popPose();
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.getModelViewStack().popMatrix();
             *///?}
         }
 
@@ -252,13 +290,19 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.enableDepth();
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
         RenderSystem.getModelViewStack().popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+        RenderSystem.getModelViewStack().popMatrix();
         *///?}
     }
 

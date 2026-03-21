@@ -33,6 +33,9 @@ public class ChargingPreference {
 
     //? if <1.20 {
     public static ChargingPreference deserialize(NBTTagCompound nbt) {
+        //?} else {
+    /*public static ChargingPreference deserialize(CompoundTag nbt) {
+     *///?}
         return new ChargingPreference(
             nbt.getBoolean("inv"),
             nbt.getBoolean("hotbar"),

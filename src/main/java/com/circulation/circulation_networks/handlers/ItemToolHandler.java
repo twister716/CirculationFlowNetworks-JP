@@ -26,10 +26,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.InputEvent;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 //? if <1.20 {
@@ -52,11 +60,16 @@ public class ItemToolHandler {
         if (mc.player != null && mc.player.isSneaking()) {
             ItemStack stack = mc.player.getHeldItemMainhand();
             int delta = InspectionToolModeModel.normalizeScrollDelta(Mouse.getEventDWheel());
-    //?} else {
+    //?} else if <1.21 {
     /*public void onMouseEvent(InputEvent.MouseScrollingEvent event) {
         if (mc.player != null && mc.player.isShiftKeyDown()) {
             ItemStack stack = mc.player.getMainHandItem();
             int delta = InspectionToolModeModel.normalizeScrollDelta((int) event.getScrollDelta());
+    *///?} else {
+    /*public void onMouseEvent(InputEvent.MouseScrollingEvent event) {
+        if (mc.player != null && mc.player.isShiftKeyDown()) {
+            ItemStack stack = mc.player.getMainHandItem();
+            int delta = InspectionToolModeModel.normalizeScrollDelta((int) event.getScrollDeltaY());
     *///?}
             if (delta != 0 && stack.getItem() == CFNItems.inspectionTool) {
                 int mode = InspectionToolState.getSubMode(stack) + delta;

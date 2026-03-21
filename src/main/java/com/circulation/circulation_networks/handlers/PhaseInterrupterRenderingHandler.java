@@ -17,11 +17,20 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 /*import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 import java.util.Map;
@@ -46,8 +55,12 @@ public final class PhaseInterrupterRenderingHandler {
     private final Map<IPhaseInterrupterBlockEntity, Float> animProgress = new WeakHashMap<>();
 
     @SubscribeEvent
+    //? if <1.21 {
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.START) return;
+    //?} else {
+    /*public void onClientTick(ClientTickEvent.Pre event) {
+    *///?}
 
         animProgress.replaceAll((tile, progress) -> {
             if (tile.isShowingRange()) {
@@ -70,11 +83,21 @@ public final class PhaseInterrupterRenderingHandler {
         GlStateManager.disableCull();
         GlStateManager.enableDepth();
         GlStateManager.depthMask(false);
-        //?} else {
+        //?} else if <1.21 {
         /*PoseStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushPose();
         modelViewStack.translate(-playerX, -playerY, -playerZ);
         RenderSystem.applyModelViewMatrix();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        *///?} else {
+        /*var modelViewStack = RenderSystem.getModelViewStack();
+        modelViewStack.pushMatrix();
+        modelViewStack.translate((float) -playerX, (float) -playerY, (float) -playerZ);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -104,11 +127,15 @@ public final class PhaseInterrupterRenderingHandler {
         GlStateManager.enableLighting();
         GlStateManager.enableTexture2D();
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         modelViewStack.popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        modelViewStack.popMatrix();
         *///?}
     }
 
@@ -123,7 +150,7 @@ public final class PhaseInterrupterRenderingHandler {
         double playerZ = RenderingUtils.getPlayerRenderZ(event.getPartialTicks());
 
         int dimId = mc.player.dimension;
-    //?} else {
+    //?} else if <1.21 {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
 
@@ -133,6 +160,19 @@ public final class PhaseInterrupterRenderingHandler {
         double playerX = RenderingUtils.getPlayerRenderX(event.getPartialTick());
         double playerY = RenderingUtils.getPlayerRenderY(event.getPartialTick());
         double playerZ = RenderingUtils.getPlayerRenderZ(event.getPartialTick());
+
+        int dimId = mc.level.dimension().location().hashCode();
+    *///?} else {
+    /*public void onRenderWorldLast(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+
+        float _partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double playerX = RenderingUtils.getPlayerRenderX(_partialTick);
+        double playerY = RenderingUtils.getPlayerRenderY(_partialTick);
+        double playerZ = RenderingUtils.getPlayerRenderZ(_partialTick);
 
         int dimId = mc.level.dimension().location().hashCode();
     *///?}

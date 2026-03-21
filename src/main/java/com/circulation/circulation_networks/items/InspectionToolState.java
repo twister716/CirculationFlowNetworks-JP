@@ -9,6 +9,10 @@ import net.minecraft.nbt.NBTTagCompound;
 /*import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 *///?}
+//? if >=1.21 {
+/*import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+*///?}
 
 public final class InspectionToolState {
 
@@ -35,7 +39,13 @@ public final class InspectionToolState {
     }
 
     public static void setSubMode(ItemStack stack, int subMode) {
+        //? if <1.21 {
         putInt(Functions.getOrCreateTagCompound(stack), MODE_KEY, subMode);
+        //?} else {
+        /*CompoundTag tag = Functions.getOrCreateTagCompound(stack);
+        putInt(tag, MODE_KEY, subMode);
+        Functions.saveTagCompound(stack, tag);
+        *///?}
     }
 
     public static ToggleResult toggleFunction(ItemStack stack) {
@@ -44,6 +54,9 @@ public final class InspectionToolState {
         ToolFunction currentFunction = ToolFunction.fromID(InspectionToolModeModel.nextFunctionId(previousFunction.ordinal()));
         putInt(nbt, FUNCTION_KEY, currentFunction.ordinal());
         putInt(nbt, MODE_KEY, 0);
+        //? if >=1.21 {
+        /*Functions.saveTagCompound(stack, nbt);
+        *///?}
         return new ToggleResult(previousFunction, currentFunction);
     }
 
@@ -59,9 +72,14 @@ public final class InspectionToolState {
     private static void putInt(NBTTagCompound nbt, String key, int value) {
         nbt.setInteger(key, value);
     }
-    //?} else {
+    //?} else if <1.21 {
     /*private static CompoundTag getTag(ItemStack stack) {
         return stack.getTag();
+    }
+    *///?} else {
+    /*private static CompoundTag getTag(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data != null ? data.copyTag() : null;
     }
 
     private static int getInt(CompoundTag nbt, String key) {

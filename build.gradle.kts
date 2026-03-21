@@ -2,6 +2,8 @@
 
 import com.gtnewhorizons.retrofuturagradle.mcp.InjectTagsTask
 import com.gtnewhorizons.retrofuturagradle.modutils.ModUtils
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import groovy.lang.Binding
 import groovy.lang.GroovyObject
 import groovy.lang.GroovyShell
@@ -61,6 +63,79 @@ fun propertyStringList(key: String, delimiter: String = " "): List<String> =
     propertyString(key).split(delimiter).filter { it.isNotEmpty() }
 
 fun hasJavaSources(dir: File): Boolean = dir.exists() && dir.walkTopDown().any { it.isFile && it.extension == "java" }
+
+
+fun mixinEnvToBlockName(envName: String): String = when (envName.uppercase()) {
+    "DEFAULT", "MAIN" -> "mixins"
+    "CLIENT" -> "client"
+    "SERVER" -> "server"
+    else -> "mixins"
+}
+
+data class MixinRegistration(val alias: String, val block: String, val className: String)
+
+fun File.toMixinClassName(packageRoot: File): String =
+    relativeTo(packageRoot).path.removeSuffix(".$extension").replace('\\', '.').replace('/', '.')
+
+fun collectMixinRegistrations(): List<MixinRegistration> {
+    val mixinPackageRoot = propertyString("mixin_package")
+    val packagePath = mixinPackageRoot.replace('.', File.separatorChar)
+    val annotationPattern = Regex("@(?:[\\w.]+\\.)?MixinEnvironment\\((.*?)\\)", setOf(RegexOption.DOT_MATCHES_ALL))
+    val aliasPattern = Regex("value\\s*=\\s*\"([^\"]+)\"|\"([^\"]+)\"")
+    val typePattern = Regex("type\\s*=\\s*(?:[\\w.]+\\.)?(DEFAULT|MAIN|CLIENT|SERVER)")
+    val ignorePattern = Regex("@(?:[\\w.]+\\.)?MixinIgnore\\b")
+    val sourceRoots = listOf(
+        file("src/main/java"),
+        rootProject.file("src/main/java"),
+        file("src/main/kotlin"),
+        rootProject.file("src/main/kotlin")
+    )
+
+    return sourceRoots
+        .asSequence()
+        .map { File(it, packagePath) }
+        .filter { it.exists() }
+        .flatMap { packageRoot ->
+            packageRoot.walkTopDown()
+                .filter { it.isFile && (it.extension == "java" || it.extension == "kt") }
+                .mapNotNull { sourceFile ->
+                    val sourceText = sourceFile.readText()
+                    if (ignorePattern.containsMatchIn(sourceText)) {
+                        null
+                    } else {
+                        val args = annotationPattern.find(sourceText)?.groupValues?.get(1).orEmpty()
+                        val aliasMatch = aliasPattern.find(args)
+                        val alias = aliasMatch?.groups?.get(1)?.value ?: aliasMatch?.groups?.get(2)?.value ?: "default"
+                        val env = typePattern.find(args)?.groupValues?.get(1) ?: "DEFAULT"
+                        MixinRegistration(alias, mixinEnvToBlockName(env), sourceFile.toMixinClassName(packageRoot))
+                    }
+                }
+        }
+        .distinctBy { Triple(it.alias, it.block, it.className) }
+        .sortedBy { it.className }
+        .toList()
+}
+
+fun createDefaultMixinConfig(): MutableMap<String, Any> = mutableMapOf(
+    "package" to propertyString("mixin_package"),
+    "required" to true,
+    "refmap" to propertyString("mixin_refmap"),
+    "minVersion" to "0.8.5",
+    "compatibilityLevel" to mixinCompatibilityLevel,
+    "mixins" to mutableListOf<String>(),
+    "server" to mutableListOf<String>(),
+    "client" to mutableListOf<String>()
+)
+
+fun resolveMixinConfigFile(alias: String): File {
+    val configs = propertyStringList("mixin_configs")
+    val configName = when (alias) {
+        "default" -> configs.first()
+        in configs -> alias
+        else -> throw GradleException("Mixin alias $alias is not present in mixin_configs")
+    }
+    return File(activeResourcesDir, "mixins.$configName.json")
+}
 
 fun assertProperty(propertyName: String) {
     val property = resolvePropertyValue(propertyName)?.toString()
@@ -133,9 +208,24 @@ setDefaultProperty(
 version = propertyString("mod_version")
 group = propertyString("root_package")
 
+
 val configuredJavaVersion = (findProperty("java_version")?.toString()
     ?: if (propertyBool("use_modern_java_syntax")) "16" else "8").toInt()
-val mixinCompatibilityLevel = if (configuredJavaVersion <= 8) "JAVA_8" else "JAVA_$configuredJavaVersion"
+
+val configuredRunJavaVersion = (findProperty("run_java_version")?.toString()
+    ?: configuredJavaVersion.toString()).toInt()
+
+val runtimeJavaLauncher = javaToolchains.launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(if (isLegacyRfg) 8 else configuredRunJavaVersion))
+    vendor.set(JvmVendorSpec.AZUL)
+}
+
+val mixinCompatibilityLevel = if (isLegacyRfg) "JAVA_8" else "JAVA_17"
+val mixinDebugJvmArgs = listOf(
+    "-Dmixin.hotSwap=true",
+    "-Dmixin.checks.interfaces=true",
+    "-Dmixin.debug.export=true"
+)
 val mixinSourcePath = propertyString("mixin_package").replace('.', '/')
 val hasMixinSources = sequenceOf(
     file("src/main/java/$mixinSourcePath"),
@@ -188,11 +278,7 @@ if (isLegacyRfg) {
     run {
         val args = mutableListOf("-ea:$group")
         if (propertyBool("use_mixins")) {
-            args += listOf(
-                "-Dmixin.hotSwap=true",
-                "-Dmixin.checks.interfaces=true",
-                "-Dmixin.debug.export=true"
-            )
+            args += mixinDebugJvmArgs
         }
 
         (minecraftExtension.getProperty("extraRunJvmArguments") as ListProperty<String>)
@@ -341,23 +427,21 @@ dependencies {
             add("implementation", "com.cleanroommc:assetmover:${propertyString("asset_mover_version")}")
         }
 
-        if (propertyBool("use_mixins")) {
-            val modUtils = (project as GroovyObject).getProperty("modUtils") as ModUtils
-            val mixin = modUtils.enableMixins(
-                "zone.rong:mixinbooter:${propertyString("mixin_booter_version")}",
-                propertyString("mixin_refmap")
-            )
-            val mixinApiDependency = project.dependencies.create(mixin) as ExternalModuleDependency
-            mixinApiDependency.isTransitive = false
-            val mixinAnnotationProcessorDependency = project.dependencies.create(mixin) as ExternalModuleDependency
-            mixinAnnotationProcessorDependency.isTransitive = false
+        val modUtils = (project as GroovyObject).getProperty("modUtils") as ModUtils
+        val mixin = modUtils.enableMixins(
+            "zone.rong:mixinbooter:${propertyString("mixin_booter_version")}",
+            propertyString("mixin_refmap")
+        )
+        val mixinApiDependency = project.dependencies.create(mixin) as ExternalModuleDependency
+        mixinApiDependency.isTransitive = false
+        val mixinAnnotationProcessorDependency = project.dependencies.create(mixin) as ExternalModuleDependency
+        mixinAnnotationProcessorDependency.isTransitive = false
 
-            add("api", mixinApiDependency)
-            annotationProcessor("org.ow2.asm:asm-debug-all:5.2")
-            annotationProcessor("com.google.guava:guava:32.1.2-jre")
-            annotationProcessor("com.google.code.gson:gson:2.8.9")
-            add("annotationProcessor", mixinAnnotationProcessorDependency)
-        }
+        add("api", mixinApiDependency)
+        annotationProcessor("org.ow2.asm:asm-debug-all:5.2")
+        annotationProcessor("com.google.guava:guava:32.1.2-jre")
+        annotationProcessor("com.google.code.gson:gson:2.8.9")
+        add("annotationProcessor", mixinAnnotationProcessorDependency)
 
         if (propertyBool("enable_junit_testing")) {
             testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
@@ -426,7 +510,7 @@ tasks.named<ProcessResources>("processResources") {
         "neoforge" -> exclude("mcmod.info", "META-INF/mods.toml")
     }
 
-    val expansionMap = mapOf(
+    val expansionMap = mutableMapOf(
         "mod_id" to propertyString("mod_id"),
         "mod_name" to propertyString("mod_name"),
         "mod_version" to propertyString("mod_version"),
@@ -443,6 +527,14 @@ tasks.named<ProcessResources>("processResources") {
         "mixin_refmap" to propertyString("mixin_refmap"),
         "mixin_package" to propertyString("mixin_package")
     )
+
+    // Only add version range properties for versions that need them
+    if (currentPlatform in listOf("forgegradle", "legacyforge")) {
+        expansionMap["forge_version_range"] = propertyString("forge_version_range")
+    }
+    if (currentPlatform == "neoforge") {
+        expansionMap["neo_version_range"] = propertyString("neo_version_range")
+    }
 
     filesMatching(filterList) {
         expand(expansionMap)
@@ -489,6 +581,15 @@ if (isLegacyRfg) {
     }
 }
 
+tasks.withType<JavaExec>().configureEach {
+    if (name in setOf("runClient", "runServer", "runData")) {
+        javaLauncher.set(runtimeJavaLauncher)
+    }
+    if (!isLegacyRfg && propertyBool("use_mixins") && name in setOf("runClient", "runServer")) {
+        jvmArgs(mixinDebugJvmArgs)
+    }
+}
+
 tasks.named<Test>("test") {
     useJUnitPlatform()
     javaLauncher.set(javaToolchains.launcherFor {
@@ -503,31 +604,66 @@ tasks.named<Test>("test") {
 
 val generateMixinJson = tasks.register("generateMixinJson") {
     group = "cleanroom helpers"
-    val missingConfigProvider = providers.provider {
-        propertyStringList("mixin_configs").filter { !File(activeResourcesDir, "mixins.$it.json").exists() }
-    }
     onlyIf {
-        propertyBool("use_mixins") && propertyBool("generate_mixins_json") && missingConfigProvider.get().isNotEmpty()
+        propertyBool("use_mixins") && propertyBool("generate_mixins_json")
     }
     doLast {
-        missingConfigProvider.get().forEach { mixinConfig ->
+        val registrationsByFile = mutableMapOf<File, MutableMap<String, MutableList<String>>>()
+
+        if (!isLegacyRfg) {
+            collectMixinRegistrations().forEach { registration ->
+                val mixinFile = resolveMixinConfigFile(registration.alias)
+                val blockMap = registrationsByFile.getOrPut(mixinFile) {
+                    mutableMapOf(
+                        "mixins" to mutableListOf(),
+                        "server" to mutableListOf(),
+                        "client" to mutableListOf()
+                    )
+                }
+                blockMap.getValue(registration.block).add(registration.className)
+            }
+        }
+
+        propertyStringList("mixin_configs").forEach { mixinConfig ->
             val mixinFile = File(activeResourcesDir, "mixins.$mixinConfig.json")
+            val mixinFileExists = mixinFile.exists()
+            val existingConfig: MutableMap<String, Any?> = if (mixinFileExists) {
+                @Suppress("UNCHECKED_CAST")
+                (JsonSlurper().parse(mixinFile) as Map<String, Any?>).toMutableMap<String, Any?>()
+            } else {
+                createDefaultMixinConfig().toMutableMap()
+            }
+
+            existingConfig.putIfAbsent("package", propertyString("mixin_package"))
+            existingConfig.putIfAbsent("required", true)
+            existingConfig.putIfAbsent("refmap", propertyString("mixin_refmap"))
+            existingConfig.putIfAbsent("minVersion", "0.8.5")
+            existingConfig["compatibilityLevel"] = mixinCompatibilityLevel
+            existingConfig.putIfAbsent("mixins", mutableListOf<String>())
+            existingConfig.putIfAbsent("server", mutableListOf<String>())
+            existingConfig.putIfAbsent("client", mutableListOf<String>())
+
+            if (!mixinFileExists) {
+                val discoveredEntries = registrationsByFile[mixinFile].orEmpty()
+                listOf("mixins", "server", "client").forEach { blockName ->
+                    val existingEntries = (existingConfig[blockName] as? List<*>)
+                        ?.mapNotNull { it?.toString() }
+                        .orEmpty()
+                    val mergedEntries = (existingEntries + discoveredEntries[blockName].orEmpty())
+                        .distinct()
+                        .sorted()
+                    existingConfig[blockName] = mergedEntries
+                }
+            }
+
             mixinFile.parentFile.mkdirs()
-            mixinFile.writeText(
-                """{
-	\"package\": \"\",
-	\"required\": true,
-	\"refmap\": \"${propertyString("mixin_refmap")}\",
-	\"target\": \"@env(DEFAULT)\",
-	\"minVersion\": \"0.8.5\",
-    \"compatibilityLevel\": \"$mixinCompatibilityLevel\",
-	\"mixins\": [],
-	\"server\": [],
-	\"client\": []
-}""".trimIndent()
-            )
+            mixinFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(existingConfig)) + System.lineSeparator())
         }
     }
+}
+
+tasks.named<ProcessResources>("processResources") {
+    dependsOn(generateMixinJson)
 }
 
 tasks.withType<JavaCompile>().configureEach {

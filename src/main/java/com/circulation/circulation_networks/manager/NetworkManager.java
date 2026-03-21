@@ -549,11 +549,13 @@ public final class NetworkManager {
         for (File file : files) {
             try {
                 var nbt = readCompressedNbt(file);
-                if (nbt == null || !nbt.hasKey("dim")) continue;
+                if (nbt == null) continue;
                 //? if <1.20 {
+                if (!nbt.hasKey("dim")) continue;
                 int dimId = nbt.getInteger("dim");
                 //?} else {
-                /*int dimId = nbt.getInt("dim");
+                /*if (!nbt.contains("dim")) continue;
+                int dimId = nbt.getInt("dim");
                 *///?}
                 if (!isRegisteredDimension(dimId)) continue;
                 var grid = Grid.deserialize(nbt);

@@ -3,9 +3,12 @@ package com.circulation.circulation_networks.handlers;
 //? if <1.20 {
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else {
+//?} else if <1.21 {
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;

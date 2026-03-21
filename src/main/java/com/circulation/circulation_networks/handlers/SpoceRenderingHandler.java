@@ -44,11 +44,21 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+import com.mojang.blaze3d.vertex.BufferUploader;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 
@@ -138,25 +148,33 @@ public class SpoceRenderingHandler {
     private void draw(float rotation, float r, float g, float b, float radius, float r1, float g1, float b1) {
         //? if <1.20 {
         GlStateManager.pushMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*PoseStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushPose();
+        *///?} else {
+        /*var modelViewStack = RenderSystem.getModelViewStack();
+        modelViewStack.pushMatrix();
         *///?}
         drawSphere(r, g, b, radius, 0.2f);
         //? if <1.20 {
         GlStateManager.rotate(rotation, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(rotation * 0.5F, 1.0F, 0.0F, 0.0F);
-        //?} else {
+        //?} else if <1.21 {
         /*modelViewStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotation));
         modelViewStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rotation * 0.5F));
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*modelViewStack.rotate(com.mojang.math.Axis.YP.rotationDegrees(rotation));
+        modelViewStack.rotate(com.mojang.math.Axis.XP.rotationDegrees(rotation * 0.5F));
         *///?}
         drawBuckyBallWireframe(r1, g1, b1, radius + 0.01f, 0.8f);
         //? if <1.20 {
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*modelViewStack.popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*modelViewStack.popMatrix();
         *///?}
     }
 
@@ -178,7 +196,7 @@ public class SpoceRenderingHandler {
             buf.pos(v2.x * radius, v2.y * radius, v2.z * radius).normal((float) v2.x, (float) v2.y, (float) v2.z).endVertex();
         }
         tess.draw();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.setShaderColor(r, g, b, alpha);
         RenderSystem.lineWidth(2.0f);
         Tesselator tess = Tesselator.getInstance();
@@ -192,6 +210,19 @@ public class SpoceRenderingHandler {
             buf.vertex(v2.x * radius, v2.y * radius, v2.z * radius).color(ri, gi, bi, ai).normal((float) v2.x, (float) v2.y, (float) v2.z).endVertex();
         }
         tess.end();
+        *///?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.lineWidth(2.0f);
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        int ri = (int)(r * 255), gi = (int)(g * 255), bi = (int)(b * 255), ai = (int)(alpha * 255);
+        for (int[] edge : BuckyBallGeometry.edges) {
+            Vec3d v1 = BuckyBallGeometry.vertices.get(edge[0]);
+            Vec3d v2 = BuckyBallGeometry.vertices.get(edge[1]);
+            buf.addVertex((float)(v1.x * radius), (float)(v1.y * radius), (float)(v1.z * radius)).setColor(ri, gi, bi, ai).setNormal((float) v1.x, (float) v1.y, (float) v1.z);
+            buf.addVertex((float)(v2.x * radius), (float)(v2.y * radius), (float)(v2.z * radius)).setColor(ri, gi, bi, ai).setNormal((float) v2.x, (float) v2.y, (float) v2.z);
+        }
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         *///?}
     }
 
@@ -223,8 +254,13 @@ public class SpoceRenderingHandler {
     }
 
     @SubscribeEvent
+    //? if <1.21 {
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.START || te == null) return;
+    //?} else {
+    /*public void onClientTick(ClientTickEvent.Pre event) {
+        if (te == null) return;
+    *///?}
 
         lastAnimProgress = animProgress;
         if (animProgress < 1.0f) {
@@ -693,7 +729,7 @@ public class SpoceRenderingHandler {
         GlStateManager.disableLighting();
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
-    //?} else {
+    //?} else if <1.21 {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         if (te == null) return;
@@ -735,6 +771,50 @@ public class SpoceRenderingHandler {
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         modelViewStack.translate(tx, ty, tz);
         RenderSystem.applyModelViewMatrix();
+        RenderSystem.enableBlend();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+    *///?} else {
+    /*public void onRenderWorldLast(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        if (te == null) return;
+        if (te.isRemoved() || rs == null) {
+            clear();
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        BlockPos pos = te.getBlockPos();
+        if (!mc.level.dimension().equals(te.getLevel().dimension()) || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+            clear();
+            return;
+        }
+
+        var stack = p.getMainHandItem();
+        if (!(stack.getItem() == CFNItems.inspectionTool
+            && InspectionToolState.getFunction(stack) == ToolFunction.INSPECTION
+            && InspectionMode.fromID(InspectionToolState.getSubMode(stack)).isMode(InspectionMode.SPOCE)))
+            return;
+
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double renderPosX = p.xOld + (p.getX() - p.xOld) * partial;
+        double renderPosY = p.yOld + (p.getY() - p.yOld) * partial;
+        double renderPosZ = p.zOld + (p.getZ() - p.zOld) * partial;
+
+        double tx = pos.getX() + 0.5 - renderPosX;
+        double ty = pos.getY() + 0.5 - renderPosY;
+        double tz = pos.getZ() + 0.5 - renderPosZ;
+
+        float interpFactor = AnimationUtils.easeOutCubic(lastAnimProgress + (animProgress - lastAnimProgress) * partial);
+        boolean animating = isAnimating() || (animProgress == 1.0f && lastAnimProgress < 1.0f);
+
+        Level world = mc.level;
+
+        var modelViewStack = RenderSystem.getModelViewStack();
+        modelViewStack.pushMatrix();
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        modelViewStack.translate((float) tx, (float) ty, (float) tz);
         RenderSystem.enableBlend();
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
@@ -857,12 +937,17 @@ public class SpoceRenderingHandler {
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         modelViewStack.popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+        modelViewStack.popMatrix();
         *///?}
     }
 

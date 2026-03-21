@@ -13,8 +13,14 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 /*import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -163,20 +169,26 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
             GlStateManager.color(r, g, b, alpha);
             GlStateManager.pushMatrix();
             GlStateManager.scale(radius, radius, radius);
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.setShaderColor(r, g, b, alpha);
             RenderSystem.getModelViewStack().pushPose();
             RenderSystem.getModelViewStack().scale(radius, radius, radius);
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.setShaderColor(r, g, b, alpha);
+            RenderSystem.getModelViewStack().pushMatrix();
+            RenderSystem.getModelViewStack().scale(radius, radius, radius);
             *///?}
             GL30.glBindVertexArray(sphereVAO);
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, sphereVertexCount);
             GL30.glBindVertexArray(0);
             //? if <1.20 {
             GlStateManager.popMatrix();
-            //?} else {
+            //?} else if <1.21 {
             /*RenderSystem.getModelViewStack().popPose();
             RenderSystem.applyModelViewMatrix();
+            *///?} else {
+            /*RenderSystem.getModelViewStack().popMatrix();
             *///?}
             return;
         }
@@ -186,10 +198,13 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         //? if <1.20 {
         GlStateManager.pushMatrix();
         GlStateManager.scale(radius, radius, radius);
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.getModelViewStack().pushPose();
         RenderSystem.getModelViewStack().scale(radius, radius, radius);
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.getModelViewStack().pushMatrix();
+        RenderSystem.getModelViewStack().scale(radius, radius, radius);
         *///?}
 
         projBuf.clear();
@@ -239,9 +254,11 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
 
         //? if <1.20 {
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.getModelViewStack().popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.getModelViewStack().popMatrix();
         *///?}
 
         GL20.glUseProgram(0);
@@ -262,21 +279,28 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         GlStateManager.glLineWidth(2.0f);
         GlStateManager.pushMatrix();
         GlStateManager.scale(radius, radius, radius);
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.setShaderColor(r, g, b, alpha);
         RenderSystem.lineWidth(2.0f);
         RenderSystem.getModelViewStack().pushPose();
         RenderSystem.getModelViewStack().scale(radius, radius, radius);
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.lineWidth(2.0f);
+        RenderSystem.getModelViewStack().pushMatrix();
+        RenderSystem.getModelViewStack().scale(radius, radius, radius);
         *///?}
         GL30.glBindVertexArray(buckyVAO);
         GL11.glDrawArrays(GL11.GL_LINES, 0, buckyVertexCount);
         GL30.glBindVertexArray(0);
         //? if <1.20 {
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.getModelViewStack().popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.getModelViewStack().popMatrix();
         *///?}
     }
 

@@ -1,16 +1,21 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-//? if <1.20 {
 import net.minecraft.client.Minecraft;
+//? if <1.20 {
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else {
-/*import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;

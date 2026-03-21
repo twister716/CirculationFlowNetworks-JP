@@ -9,6 +9,10 @@ import net.minecraft.nbt.NBTTagCompound;
 /*import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 *///?}
+//? if >=1.21 {
+/*import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+*///?}
 
 import java.util.UUID;
 
@@ -27,6 +31,9 @@ public final class HubChannelPluginData {
         var tag = Functions.getOrCreateTagCompound(stack);
         putString(tag, CHANNEL_ID_KEY, channelId.toString());
         putString(tag, CHANNEL_NAME_KEY, channelName);
+        //? if >=1.21 {
+        /*Functions.saveTagCompound(stack, tag);
+        *///?}
     }
 
     public static UUID getChannelId(ItemStack stack) {
@@ -92,9 +99,26 @@ public final class HubChannelPluginData {
     private static void putString(NBTTagCompound tag, String key, String value) {
         tag.setString(key, value);
     }
-    //?} else {
+    //?} else if <1.21 {
     /*private static CompoundTag getTag(ItemStack stack) {
         return stack.getTag();
+    }
+
+    private static boolean contains(CompoundTag tag, String key) {
+        return tag.contains(key);
+    }
+
+    private static String getString(CompoundTag tag, String key) {
+        return tag.getString(key);
+    }
+
+    private static void putString(CompoundTag tag, String key, String value) {
+        tag.putString(key, value);
+    }
+    *///?} else {
+    /*private static CompoundTag getTag(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data != null ? data.copyTag() : null;
     }
 
     private static boolean contains(CompoundTag tag, String key) {

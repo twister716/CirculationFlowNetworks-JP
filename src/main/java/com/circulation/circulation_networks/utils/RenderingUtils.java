@@ -12,12 +12,19 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else {
 /*import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 
@@ -84,12 +91,17 @@ public final class RenderingUtils {
 
         GlStateManager.color(r, g, b, a);
         buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        //?} else {
+        //?} else if <1.21 {
         /*Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
 
         RenderSystem.setShaderColor(r, g, b, a);
         buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        *///?} else {
+        /*Tesselator tess = Tesselator.getInstance();
+
+        RenderSystem.setShaderColor(r, g, b, a);
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         *///?}
 
         //? if <1.20 {
@@ -118,7 +130,7 @@ public final class RenderingUtils {
         buf.pos(x1, y1, z1).endVertex();
         buf.pos(x1, y0, z1).endVertex();
         tess.draw();
-        //?} else {
+        //?} else if <1.21 {
         /*buf.vertex(x0, y0, z0).endVertex();
         buf.vertex(x1, y0, z0).endVertex();
         buf.vertex(x1, y0, z1).endVertex();
@@ -144,6 +156,32 @@ public final class RenderingUtils {
         buf.vertex(x1, y1, z1).endVertex();
         buf.vertex(x1, y0, z1).endVertex();
         tess.end();
+        *///?} else {
+        /*buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         *///?}
     }
 
@@ -158,13 +196,19 @@ public final class RenderingUtils {
         GlStateManager.color(r, g, b, a);
         GlStateManager.glLineWidth(lineWidth);
         buf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
-        //?} else {
+        //?} else if <1.21 {
         /*Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
 
         RenderSystem.setShaderColor(r, g, b, a);
         RenderSystem.lineWidth(lineWidth);
         buf.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION);
+        *///?} else {
+        /*Tesselator tess = Tesselator.getInstance();
+
+        RenderSystem.setShaderColor(r, g, b, a);
+        RenderSystem.lineWidth(lineWidth);
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION);
         *///?}
 
         //? if <1.20 {
@@ -193,7 +237,7 @@ public final class RenderingUtils {
         buf.pos(x0, y0, z1).endVertex();
         buf.pos(x0, y1, z1).endVertex();
         tess.draw();
-        //?} else {
+        //?} else if <1.21 {
         /*buf.vertex(x0, y0, z0).endVertex();
         buf.vertex(x1, y0, z0).endVertex();
         buf.vertex(x1, y0, z0).endVertex();
@@ -219,6 +263,32 @@ public final class RenderingUtils {
         buf.vertex(x0, y0, z1).endVertex();
         buf.vertex(x0, y1, z1).endVertex();
         tess.end();
+        *///?} else {
+        /*buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x0, (float) y0, (float) z0);
+        buf.addVertex((float) x0, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z0);
+        buf.addVertex((float) x1, (float) y1, (float) z0);
+        buf.addVertex((float) x1, (float) y0, (float) z1);
+        buf.addVertex((float) x1, (float) y1, (float) z1);
+        buf.addVertex((float) x0, (float) y0, (float) z1);
+        buf.addVertex((float) x0, (float) y1, (float) z1);
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         *///?}
     }
 
@@ -263,12 +333,17 @@ public final class RenderingUtils {
 
         GlStateManager.color(r, g, b, alpha);
         buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION);
-        //?} else {
+        //?} else if <1.21 {
         /*Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
 
         RenderSystem.setShaderColor(r, g, b, alpha);
         buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
+        *///?} else {
+        /*Tesselator tess = Tesselator.getInstance();
+
+        RenderSystem.setShaderColor(r, g, b, alpha);
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
         *///?}
         for (int i = 0; i <= CYLINDER_SIDES; i++) {
             double angle = CYLINDER_ANGLE_STEP * i;
@@ -279,15 +354,20 @@ public final class RenderingUtils {
             //? if <1.20 {
             buf.pos(fromX + nx, fromY + ny, fromZ + nz).endVertex();
             buf.pos(toX + nx, toY + ny, toZ + nz).endVertex();
-            //?} else {
+            //?} else if <1.21 {
             /*buf.vertex(fromX + nx, fromY + ny, fromZ + nz).endVertex();
             buf.vertex(toX + nx, toY + ny, toZ + nz).endVertex();
+            *///?} else {
+            /*buf.addVertex((float)(fromX + nx), (float)(fromY + ny), (float)(fromZ + nz));
+            buf.addVertex((float)(toX + nx), (float)(toY + ny), (float)(toZ + nz));
             *///?}
         }
         //? if <1.20 {
         tess.draw();
-        //?} else {
+        //?} else if <1.21 {
         /*tess.end();
+        *///?} else {
+        /*BufferUploader.drawWithShader(buf.buildOrThrow());
         *///?}
     }
 
@@ -300,10 +380,14 @@ public final class RenderingUtils {
         GlStateManager.color(r, g, b, alpha);
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.setShaderColor(r, g, b, alpha);
         Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
+        int ri = (int)(r * 255), gi = (int)(g * 255), bi = (int)(b * 255), ai = (int)(alpha * 255);
+        *///?} else {
+        /*RenderSystem.setShaderColor(r, g, b, alpha);
+        Tesselator tess = Tesselator.getInstance();
         int ri = (int)(r * 255), gi = (int)(g * 255), bi = (int)(b * 255), ai = (int)(alpha * 255);
         *///?}
 
@@ -317,8 +401,10 @@ public final class RenderingUtils {
             double sinPhi2 = Math.sin(phi2), cosPhi2 = Math.cos(phi2);
             //? if <1.20 {
             buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION_NORMAL);
-            //?} else {
+            //?} else if <1.21 {
             /*buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+            *///?} else {
+            /*BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
             *///?}
             for (int j = 0; j <= stacks; j++) {
                 double theta = thetaStep * j;
@@ -328,22 +414,28 @@ public final class RenderingUtils {
                 float z1 = (float) (radius * sinPhi1 * sinTheta);
                 //? if <1.20 {
                 buf.pos(x1, y1, z1).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
-                //?} else {
+                //?} else if <1.21 {
                 /*buf.vertex(x1, y1, z1).color(ri, gi, bi, ai).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
+                *///?} else {
+                /*buf.addVertex(x1, y1, z1).setColor(ri, gi, bi, ai).setNormal(x1 / radius, y1 / radius, z1 / radius);
                 *///?}
                 float x2 = (float) (radius * sinPhi2 * cosTheta);
                 float y2 = (float) (radius * cosPhi2);
                 float z2 = (float) (radius * sinPhi2 * sinTheta);
                 //? if <1.20 {
                 buf.pos(x2, y2, z2).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
-                //?} else {
+                //?} else if <1.21 {
                 /*buf.vertex(x2, y2, z2).color(ri, gi, bi, ai).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
+                *///?} else {
+                /*buf.addVertex(x2, y2, z2).setColor(ri, gi, bi, ai).setNormal(x2 / radius, y2 / radius, z2 / radius);
                 *///?}
             }
             //? if <1.20 {
             tess.draw();
-            //?} else {
+            //?} else if <1.21 {
             /*tess.end();
+            *///?} else {
+            /*BufferUploader.drawWithShader(buf.buildOrThrow());
             *///?}
         }
     }
@@ -399,7 +491,7 @@ public final class RenderingUtils {
             buf.pos(verts[i], verts[i + 1], verts[i + 2]).endVertex();
         }
         tess.draw();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.setShaderColor(r, g, b, 1.0f);
         RenderSystem.lineWidth(lineWidth);
         Tesselator tess = Tesselator.getInstance();
@@ -409,6 +501,15 @@ public final class RenderingUtils {
             buf.vertex(verts[i], verts[i + 1], verts[i + 2]).endVertex();
         }
         tess.end();
+        *///?} else {
+        /*RenderSystem.setShaderColor(r, g, b, 1.0f);
+        RenderSystem.lineWidth(lineWidth);
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION);
+        for (int i = 0; i < verts.length; i += 3) {
+            buf.addVertex(verts[i], verts[i + 1], verts[i + 2]);
+        }
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         *///?}
     }
 

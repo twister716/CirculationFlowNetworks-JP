@@ -22,10 +22,18 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+*///?}
+//? if <1.20 {
+//?} else if <1.21 {
+/*import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 //? if <1.20 {
@@ -84,20 +92,29 @@ public final class ConfigOverrideRenderingHandler {
         double doubleX = RenderingUtils.getPlayerRenderX(event.getPartialTicks());
         double doubleY = RenderingUtils.getPlayerRenderY(event.getPartialTicks());
         double doubleZ = RenderingUtils.getPlayerRenderZ(event.getPartialTicks());
-        //?} else {
+        //?} else if <1.21 {
         /*double doubleX = RenderingUtils.getPlayerRenderX(event.getPartialTick());
         double doubleY = RenderingUtils.getPlayerRenderY(event.getPartialTick());
         double doubleZ = RenderingUtils.getPlayerRenderZ(event.getPartialTick());
+        *///?} else {
+        /*float _partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double doubleX = RenderingUtils.getPlayerRenderX(_partialTick);
+        double doubleY = RenderingUtils.getPlayerRenderY(_partialTick);
+        double doubleZ = RenderingUtils.getPlayerRenderZ(_partialTick);
         *///?}
 
         //? if <1.20 {
         GlStateManager.pushMatrix();
         GlStateManager.translate(-doubleX, -doubleY, -doubleZ);
-        //?} else {
+        //?} else if <1.21 {
         /*PoseStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushPose();
         mvStack.translate(-doubleX, -doubleY, -doubleZ);
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*var mvStack = RenderSystem.getModelViewStack();
+        mvStack.pushMatrix();
+        mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         *///?}
         RenderingUtils.setupWorldRenderState();
         RenderingUtils.setupAdditiveBlend();
@@ -137,9 +154,11 @@ public final class ConfigOverrideRenderingHandler {
         RenderingUtils.restoreWorldRenderState();
         //? if <1.20 {
         GlStateManager.popMatrix();
-        //?} else {
+        //?} else if <1.21 {
         /*RenderSystem.getModelViewStack().popPose();
         RenderSystem.applyModelViewMatrix();
+        *///?} else {
+        /*RenderSystem.getModelViewStack().popMatrix();
         *///?}
     }
 }
