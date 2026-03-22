@@ -44,8 +44,4 @@ public final class FEHandlerManager implements IEnergyHandlerManager {
         return new FEHandler(itemStack);
     }
 
-    @Override
-    public String getUnit() {
-        return "FE";
-    }
 }

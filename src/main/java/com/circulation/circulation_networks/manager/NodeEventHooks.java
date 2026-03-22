@@ -58,8 +58,8 @@ final class NodeEventHooks {
         //? if <1.21 {
         return eventBus.post(new AddNodeEvent.Pre(node, blockEntity));
         //?} else {
-        /^ return eventBus.post(new AddNodeEvent.Pre(node, blockEntity)).isCanceled();
-         ^///?}
+        /^return eventBus.post(new AddNodeEvent.Pre(node, blockEntity)).isCanceled();
+        ^///?}
     }
 
     static void postAddNodePost(INode node, BlockEntity blockEntity) {

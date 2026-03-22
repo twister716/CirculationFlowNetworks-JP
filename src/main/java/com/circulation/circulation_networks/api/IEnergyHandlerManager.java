@@ -31,7 +31,9 @@ public interface IEnergyHandlerManager extends Comparable<IEnergyHandlerManager>
 
     IEnergyHandler newInstance(ItemStack itemStack);
 
-    String getUnit();
+    default String getUnit() {
+        return "FE";
+    }
 
     default double getMultiplying() {
         return 1;

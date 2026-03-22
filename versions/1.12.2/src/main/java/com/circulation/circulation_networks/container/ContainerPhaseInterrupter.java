@@ -15,7 +15,7 @@ public class ContainerPhaseInterrupter extends CFNBaseContainer {
     public int scope;
 
     public ContainerPhaseInterrupter(EntityPlayer player, TileEntityPhaseInterrupter te) {
-        super(player, te);
+        super(player);
         this.te = te;
     }
 

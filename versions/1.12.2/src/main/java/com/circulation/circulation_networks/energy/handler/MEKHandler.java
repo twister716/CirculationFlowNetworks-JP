@@ -161,7 +161,7 @@ public final class MEKHandler implements IEnergyHandler {
     public EnergyAmount canExtractValue() {
         if (send == null) return EnergyAmounts.ZERO;
         if (creative) return EnergyAmounts.LONG_MAX;
-        double o = send.getEnergy() / 2.5;
+        double o = send.getEnergy() * 0.4;
         return EnergyAmount.obtain(Math.min((long) o, maxOutput));
     }
 
@@ -171,7 +171,7 @@ public final class MEKHandler implements IEnergyHandler {
             return EnergyAmount.obtain(needEnergy);
         } else {
             if (receive == null) return EnergyAmounts.ZERO;
-            double i = (receive.getMaxEnergy() - receive.getEnergy()) / 2.5;
+            double i = (receive.getMaxEnergy() - receive.getEnergy()) * 0.4;
             return EnergyAmount.obtain(Math.min((long) i, maxOutput));
         }
     }
@@ -185,7 +185,7 @@ public final class MEKHandler implements IEnergyHandler {
     @Override
     public boolean canReceive(IEnergyHandler sendHandler) {
         if (isItem) return needEnergy > 0;
-        else return receive != null && (receive.getMaxEnergy() - receive.getEnergy()) / 2.5 >= 0;
+        else return receive != null && (receive.getMaxEnergy() - receive.getEnergy()) * 0.4 >= 0;
     }
 
     @Override

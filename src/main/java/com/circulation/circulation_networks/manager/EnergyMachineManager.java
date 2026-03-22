@@ -297,7 +297,7 @@ public final class EnergyMachineManager {
                 var players = NodeNetworkRendering.getPlayers(node.getGrid());
                 if (players != null && !players.isEmpty()) {
                     for (var player : players) {
-                        CirculationFlowNetworks.NET_CHANNEL.sendTo(new NodeNetworkRendering(player, blockEntity, node, NodeNetworkRendering.MACHINE_ADD), player);
+                        CirculationFlowNetworks.sendToPlayer(new NodeNetworkRendering(player, blockEntity, node, NodeNetworkRendering.MACHINE_ADD), player);
                     }
                 }
                 //?}
@@ -321,7 +321,7 @@ public final class EnergyMachineManager {
             var players = NodeNetworkRendering.getPlayers(node.getGrid());
             if (players != null && !players.isEmpty()) {
                 for (var player : players) {
-                    CirculationFlowNetworks.NET_CHANNEL.sendTo(new NodeNetworkRendering(player, blockEntity, node, NodeNetworkRendering.MACHINE_REMOVE), player);
+                    CirculationFlowNetworks.sendToPlayer(new NodeNetworkRendering(player, blockEntity, node, NodeNetworkRendering.MACHINE_REMOVE), player);
                 }
             }
             //?}
@@ -632,8 +632,8 @@ public final class EnergyMachineManager {
 
     @SuppressWarnings("unused")
     public static class Interaction {
-        private final EnergyAmount input = new EnergyAmount(0L);
-        private final EnergyAmount output = new EnergyAmount(0L);
+        private final EnergyAmount input = EnergyAmount.obtain(0L);
+        private final EnergyAmount output = EnergyAmount.obtain(0L);
 
         public EnergyAmount getInput() {
             return input;

@@ -11,6 +11,14 @@ public final class CirculationFlowNetworks {
     public static final String MOD_ID = "circulation_networks";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
+    public static void sendToPlayer(Object packet, Object player) {
+        throw new UnsupportedOperationException("Packet sending is not implemented for 1.20.1 yet");
+    }
+
+    public static void sendToServer(Object packet) {
+        throw new UnsupportedOperationException("Packet sending is not implemented for 1.20.1 yet");
+    }
+
     public CirculationFlowNetworks() {
         CFNConfig.register();
         var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();

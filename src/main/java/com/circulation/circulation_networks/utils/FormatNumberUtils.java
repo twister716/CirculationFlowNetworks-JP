@@ -41,7 +41,7 @@ public class FormatNumberUtils {
         String digits = abs.toString();
         int exponent = digits.length() - 1;
         float mantissa = Integer.parseInt(digits.substring(0, 3)) / 100f;
-        return (amount.isNegative() ? "-" : "") + mantissa + " * 10 ^ " + exponent;
+        return (amount.isNegative() ? "-" : "") + mantissa + "E" + exponent;
     }
 
     public static String formatNumber(long value, int decimalFraction) {

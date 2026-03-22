@@ -29,23 +29,23 @@ public final class AtlasRenderHelper {
         buf.pos(screenX, screenY, 0).tex(region.u0(), region.v0()).endVertex();
         tess.draw();
         //?} else {
-        /*Tesselator tess = Tesselator.getInstance();
-        //? if <1.21 {
-        BufferBuilder buf = tess.getBuilder();
-        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        buf.vertex(screenX, screenY + renderH, 0).uv(region.u0(), region.v1()).endVertex();
-        buf.vertex(screenX + renderW, screenY + renderH, 0).uv(region.u1(), region.v1()).endVertex();
-        buf.vertex(screenX + renderW, screenY, 0).uv(region.u1(), region.v0()).endVertex();
-        buf.vertex(screenX, screenY, 0).uv(region.u0(), region.v0()).endVertex();
-        tess.end();
-        //?} else {
-        BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        buf.addVertex(screenX, screenY + renderH, 0).setUv(region.u0(), region.v1());
-        buf.addVertex(screenX + renderW, screenY + renderH, 0).setUv(region.u1(), region.v1());
-        buf.addVertex(screenX + renderW, screenY, 0).setUv(region.u1(), region.v0());
-        buf.addVertex(screenX, screenY, 0).setUv(region.u0(), region.v0());
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buf.buildOrThrow());
-        //?}
+            /*Tesselator tess = Tesselator.getInstance();
+            //? if <1.21 {
+            BufferBuilder buf = tess.getBuilder();
+            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            buf.vertex(screenX, screenY + renderH, 0).uv(region.u0(), region.v1()).endVertex();
+            buf.vertex(screenX + renderW, screenY + renderH, 0).uv(region.u1(), region.v1()).endVertex();
+            buf.vertex(screenX + renderW, screenY, 0).uv(region.u1(), region.v0()).endVertex();
+            buf.vertex(screenX, screenY, 0).uv(region.u0(), region.v0()).endVertex();
+            tess.end();
+            //?} else {
+            BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            buf.addVertex(screenX, screenY + renderH, 0).setUv(region.u0(), region.v1());
+            buf.addVertex(screenX + renderW, screenY + renderH, 0).setUv(region.u1(), region.v1());
+            buf.addVertex(screenX + renderW, screenY, 0).setUv(region.u1(), region.v0());
+            buf.addVertex(screenX, screenY, 0).setUv(region.u0(), region.v0());
+            com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buf.buildOrThrow());
+            //?}
         *///?}
     }
 }

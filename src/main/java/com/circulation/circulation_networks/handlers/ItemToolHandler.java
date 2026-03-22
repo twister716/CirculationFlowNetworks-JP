@@ -76,7 +76,7 @@ public class ItemToolHandler {
                 InspectionToolState.setSubMode(stack, mode);
 
                 //? if <1.20 {
-                CirculationFlowNetworks.NET_CHANNEL.sendToServer(new UpdateItemModeMessage(mode));
+                CirculationFlowNetworks.sendToServer(new UpdateItemModeMessage(mode));
                 //?}
 
                 InspectionToolSelection selection = InspectionToolSelection.fromStack(stack);

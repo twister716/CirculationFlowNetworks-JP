@@ -121,10 +121,10 @@ public class ItemInspectionTool extends BaseItem {
         InspectionExecutionPlan plan = InspectionExecutionPlan.fromNode(node, subMode);
         var snapshot = plan.snapshot();
         if (plan.renderSpoce()) {
-            CirculationFlowNetworks.NET_CHANNEL.sendTo(new SpoceRendering(snapshot.pos(), snapshot.linkScope(), snapshot.energyScope(), snapshot.chargingScope()), player);
+            CirculationFlowNetworks.sendToPlayer(new SpoceRendering(snapshot.pos(), snapshot.linkScope(), snapshot.energyScope(), snapshot.chargingScope()), player);
         }
         if (plan.renderLink()) {
-            CirculationFlowNetworks.NET_CHANNEL.sendTo(new NodeNetworkRendering(player, snapshot.grid()), player);
+            CirculationFlowNetworks.sendToPlayer(new NodeNetworkRendering(player, snapshot.grid()), player);
             NodeNetworkRendering.addPlayer(snapshot.grid(), player);
         }
         return EnumActionResult.SUCCESS;

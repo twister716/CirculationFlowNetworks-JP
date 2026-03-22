@@ -246,7 +246,7 @@ public final class HubNode extends Node implements IHubNode {
             }
         }
     }
-    //?} else {
+    //?} else if <1.21 {
     /*@Override
     public CompoundTag serialize() {
         var nbt = super.serialize();
@@ -293,6 +293,85 @@ public final class HubNode extends Node implements IHubNode {
             var pluginList = nbt.getList("plugins", Tag.TAG_COMPOUND);
             for (int i = 0; i < Math.min(pluginList.size(), plugins.length); i++) {
                 plugins[i] = ItemStack.of(pluginList.getCompound(i));
+            }
+        }
+
+        playerPreferences.clear();
+        if (nbt.contains("chargingPreferences", Tag.TAG_LIST)) {
+            var prefList = nbt.getList("chargingPreferences", Tag.TAG_COMPOUND);
+            for (int i = 0; i < prefList.size(); i++) {
+                var prefNbt = prefList.getCompound(i);
+                if (prefNbt.contains("playerUUID")) {
+                    try {
+                        var playerId = UUID.fromString(prefNbt.getString("playerUUID"));
+                        playerPreferences.put(playerId, ChargingPreference.deserialize(prefNbt));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        }
+
+        channelId = null;
+        channelName = null;
+        for (var plugin : plugins) {
+            if (!plugin.isEmpty()) {
+                channelId = HubChannelPluginData.getChannelId(plugin);
+                channelName = HubChannelPluginData.getChannelName(plugin);
+                if (HubChannelPluginData.isComplete(channelId, channelName)) {
+                    break;
+                }
+            }
+        }
+    }
+    *///?} else {
+    /*@Override
+    public CompoundTag serialize() {
+        var nbt = super.serialize();
+        nbt.putDouble("energyScope", energyScope);
+        nbt.putDouble("chargingScope", chargingScope);
+        serializeHubData(nbt);
+        return nbt;
+    }
+
+    private void serializeHubData(CompoundTag nbt) {
+        nbt.putInt("permissionMode", permissionMode.getId());
+
+        if (owner != null) {
+            nbt.putString("ownerUUID", owner.toString());
+        }
+
+        var pluginList = new ListTag();
+        var provider = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer().registryAccess();
+        for (var plugin : plugins) {
+            pluginList.add(plugin.saveOptional(provider));
+        }
+        nbt.put("plugins", pluginList);
+
+        var prefList = new ListTag();
+        for (var entry : playerPreferences.entrySet()) {
+            var prefNbt = entry.getValue().serialize();
+            prefNbt.putString("playerUUID", entry.getKey().toString());
+            prefList.add(prefNbt);
+        }
+        nbt.put("chargingPreferences", prefList);
+    }
+
+    private void deserializeHubData(CompoundTag nbt) {
+        permissionMode = PermissionMode.fromId(nbt.getInt("permissionMode"));
+
+        if (nbt.contains("ownerUUID")) {
+            try {
+                owner = UUID.fromString(nbt.getString("ownerUUID"));
+            } catch (IllegalArgumentException ignored) {
+                owner = null;
+            }
+        }
+
+        if (nbt.contains("plugins", Tag.TAG_LIST)) {
+            var pluginList = nbt.getList("plugins", Tag.TAG_COMPOUND);
+            var provider = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer().registryAccess();
+            for (int i = 0; i < Math.min(pluginList.size(), plugins.length); i++) {
+                plugins[i] = ItemStack.parseOptional(provider, pluginList.getCompound(i));
             }
         }
 

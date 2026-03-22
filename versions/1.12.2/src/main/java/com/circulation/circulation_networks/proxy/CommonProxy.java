@@ -78,6 +78,7 @@ public class CommonProxy implements IGuiHandler {
         NetworkRegistry.INSTANCE.registerGuiHandler(CirculationFlowNetworks.instance, this);
         registerMessage(PhaseInterrupterSyncPacket.class, Side.SERVER);
         registerMessage(UpdateItemModeMessage.class, Side.SERVER);
+        registerMessage(ContainerProgressBar.class, Side.SERVER);
 
         registerMessage(SpoceRendering.class, Side.CLIENT);
         registerMessage(NodeNetworkRendering.class, Side.CLIENT);

@@ -254,7 +254,7 @@ public final class NetworkManager {
         var players = NodeNetworkRendering.getPlayers(removedNode.getGrid());
         if (players != null && !players.isEmpty()) {
             for (var player : players) {
-                CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                CirculationFlowNetworks.sendToPlayer(
                     new NodeNetworkRendering(player, removedNode, NodeNetworkRendering.NODE_REMOVE), player);
             }
         }
@@ -349,7 +349,7 @@ public final class NetworkManager {
                     //? if <1.20 {
                     if (watchingPlayers != null) {
                         for (var player : watchingPlayers) {
-                            CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                            CirculationFlowNetworks.sendToPlayer(
                                 new NodeNetworkRendering(player, splitGrid), player);
                         }
                     }
@@ -477,7 +477,7 @@ public final class NetworkManager {
         var players = NodeNetworkRendering.getPlayers(newNode.getGrid());
         if (players != null && !players.isEmpty()) {
             for (var player : players) {
-                CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                CirculationFlowNetworks.sendToPlayer(
                     new NodeNetworkRendering(player, newNode, NodeNetworkRendering.NODE_ADD), player);
             }
         }

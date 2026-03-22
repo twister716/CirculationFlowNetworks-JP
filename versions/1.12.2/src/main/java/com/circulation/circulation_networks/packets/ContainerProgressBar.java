@@ -34,9 +34,18 @@ public class ContainerProgressBar implements Packet<ContainerProgressBar> {
 
     @Override
     public IMessage onMessage(ContainerProgressBar message, MessageContext ctx) {
-        var c = Minecraft.getMinecraft().player.openContainer;
-        if (c instanceof CFNBaseContainer cc) {
-            cc.updateFullProgressBar(this.id, this.value);
+        switch (ctx.side) {
+            case SERVER -> {
+                if (ctx.getServerHandler().player.openContainer instanceof CFNBaseContainer c) {
+                    c.init();
+                }
+            }
+            case CLIENT -> {
+                var c = Minecraft.getMinecraft().player.openContainer;
+                if (c instanceof CFNBaseContainer cc) {
+                    cc.updateFullProgressBar(this.id, this.value);
+                }
+            }
         }
         return null;
     }

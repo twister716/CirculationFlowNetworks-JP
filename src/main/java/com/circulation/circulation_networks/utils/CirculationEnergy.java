@@ -10,7 +10,7 @@ import java.math.BigInteger;
 public class CirculationEnergy {
 
     private final IMachineNode node;
-    private final EnergyAmount energy = new EnergyAmount(0L);
+    private final EnergyAmount energy = EnergyAmount.obtain(0L);
 
     private CirculationEnergy(IMachineNodeBlockEntity be) {
         node = be.getNode();

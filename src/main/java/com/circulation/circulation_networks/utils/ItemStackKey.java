@@ -5,6 +5,9 @@ import net.minecraft.item.ItemStack;
 //?} else {
 /*import net.minecraft.world.item.ItemStack;
 *///?}
+//? if >=1.21 {
+/*import net.minecraft.core.component.DataComponents;
+*///?}
 
 import java.util.Objects;
 import java.util.Queue;
@@ -19,7 +22,6 @@ public final class ItemStackKey {
 
     private ItemStackKey(ItemStack key) {
         set(key);
-
     }
 
     public static ItemStackKey get(ItemStack key) {
@@ -37,8 +39,10 @@ public final class ItemStackKey {
         this.key = key;
         //? if <1.20 {
         this.hashCode = Objects.hash(key.getItem(), key.getTagCompound());
-        //?} else {
+        //?} else if <1.21 {
         /*this.hashCode = Objects.hash(key.getItem(), key.getTag());
+        *///?} else {
+        /*this.hashCode = Objects.hash(key.getItem(), key.get(DataComponents.CUSTOM_DATA));
         *///?}
         return this;
     }
@@ -76,9 +80,12 @@ public final class ItemStackKey {
         return this.key.getItem() == key.getItem()
             && (this.key.getMetadata() == key.getMetadata() || this.key.getMetadata() == 32767 || key.getMetadata() == 32767)
             && Objects.equals(this.key.getTagCompound(), key.getTagCompound());
-        //?} else {
+        //?} else if <1.21 {
         /*return this.key.getItem() == key.getItem()
             && Objects.equals(this.key.getTag(), key.getTag());
+        *///?} else {
+        /*return this.key.getItem() == key.getItem()
+            && Objects.equals(this.key.get(DataComponents.CUSTOM_DATA), key.get(DataComponents.CUSTOM_DATA));
         *///?}
     }
 

@@ -17,6 +17,11 @@ public class SyncData {
     private long numericVersion = 0L;
     private String stringVersion = null;
 
+    public void init() {
+        numericVersion = 0L;
+        stringVersion = null;
+    }
+
     public SyncData(Object container, Field field, GuiSync annotation, SyncUpdateCallback updateCallback) {
         this.source = container;
         this.field = field;

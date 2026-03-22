@@ -21,7 +21,7 @@ public class ContainerCirculationFurnace extends CFNBaseContainer {
     public long demandFlow;
 
     public ContainerCirculationFurnace(EntityPlayer player, TileEntityCirculationFurnace te) {
-        super(player, te);
+        super(player);
         this.te = te;
 
         inputLayout = new ComponentSlotLayout()

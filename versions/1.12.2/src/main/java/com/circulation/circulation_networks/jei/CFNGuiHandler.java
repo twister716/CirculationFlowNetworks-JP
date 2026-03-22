@@ -4,22 +4,26 @@ import com.circulation.circulation_networks.gui.CFNBaseGui;
 import mezz.jei.api.gui.IAdvancedGuiHandler;
 import mezz.jei.api.gui.IGhostIngredientHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.Rectangle;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("rawtypes")
 public class CFNGuiHandler implements IAdvancedGuiHandler<CFNBaseGui>, IGhostIngredientHandler<CFNBaseGui> {
+
     @Override
     public @NotNull Class<CFNBaseGui> getGuiContainerClass() {
         return CFNBaseGui.class;
     }
 
     @Override
-    public @Nullable List<Rectangle> getGuiExtraAreas(@NotNull CFNBaseGui guiContainer) {
-        return Arrays.asList(guiContainer.getAllComponents());
+    public @NotNull List<Rectangle> getGuiExtraAreas(@NotNull CFNBaseGui guiContainer) {
+        return getAreas(guiContainer);
+    }
+
+    public List<Rectangle> getAreas(CFNBaseGui<?> guiContainer) {
+        return guiContainer.getGuiExtraAreas();
     }
 
     @Override

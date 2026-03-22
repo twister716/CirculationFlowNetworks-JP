@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.api.node.IMachineNode;
+import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
@@ -12,34 +13,55 @@ import com.circulation.circulation_networks.CFNConfig;
 //? if <1.20 {
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import org.jetbrains.annotations.NotNull;
 //?} else {
  /*import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity; 
 *///?}
 
-import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 @SuppressWarnings("unused")
 public final class RegistryEnergyHandler {
 
+
     private static Class<?>[] blackListClass;
     private static Class<?>[] supplyBlackListClass;
+    private static Pair[] managerUnit;
     private static String[] blackPrefixArray;
     private static String[] supplyPrefixArray;
     private static List<IEnergyHandlerManager> list = new ObjectArrayList<>();
 
     private static ReferenceSet<Class<?>> registeredBlackClasses = new ReferenceOpenHashSet<>();
     private static ReferenceSet<Class<?>> registeredSupplyBlackClasses = new ReferenceOpenHashSet<>();
+    private static ReferenceSet<Pair> referenceSet = new ReferenceOpenHashSet<>();
+
+    //? if <1.20 {
+    @Desugar
+        //?}
+    public record Pair(double multiplying, String unit, int p) implements Comparable<Pair> {
+
+        @Override
+        public int compareTo(@NotNull RegistryEnergyHandler.Pair o) {
+            return Integer.compare(p, o.p);
+        }
+    }
+
+    public static Pair getPair(int o) {
+        return managerUnit[Math.floorMod(o, managerUnit.length)];
+    }
 
     /**
      * Registers an energy handler manager. Must be called before {@link #lock()}.
      */
     public static void registerEnergyHandler(IEnergyHandlerManager manager) {
         list.add(manager);
-        IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ArrayDeque<>());
+        IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ConcurrentLinkedDeque<>());
+        referenceSet.add(new Pair(manager.getMultiplying(), manager.getUnit(), manager.getPriority()));
     }
+
 
     /**
      * Registers a tile entity class to be excluded from automatic energy network integration.
@@ -66,7 +88,7 @@ public final class RegistryEnergyHandler {
     //? if <1.20 {
     public static boolean isBlack(TileEntity blockEntity) {
         if (blockEntity instanceof IMachineNodeBlockEntity) return true;
-    //?} else {
+        //?} else {
      /*public static boolean isBlack(BlockEntity blockEntity) {
         if (blockEntity instanceof IMachineNodeBlockEntity) return true;
     *///?}
@@ -86,9 +108,9 @@ public final class RegistryEnergyHandler {
 
     //? if <1.20 {
     public static boolean isSupplyBlack(TileEntity blockEntity) {
-    //?} else {
-     /*public static boolean isSupplyBlack(BlockEntity blockEntity) { 
-    *///?}
+        //?} else {
+        /*public static boolean isSupplyBlack(BlockEntity blockEntity) {
+         *///?}
         if (supplyBlackListClass != null) {
             for (Class<?> listClass : supplyBlackListClass) {
                 if (listClass.isInstance(blockEntity)) return true;
@@ -153,6 +175,11 @@ public final class RegistryEnergyHandler {
     public static void lock() {
         list.sort(Comparator.reverseOrder());
         list = ImmutableList.copyOf(list);
+        var rl = new ObjectArrayList<>(referenceSet);
+        referenceSet.clear();
+        referenceSet = null;
+        rl.sort(Comparator.reverseOrder());
+        managerUnit = rl.isEmpty() ? new Pair[]{new Pair(1, "RF", 0)} : rl.toArray(new Pair[0]);
 
         final List<String> blackPrefixes = new ObjectArrayList<>();
         final List<String> supplyPrefixes = new ObjectArrayList<>();

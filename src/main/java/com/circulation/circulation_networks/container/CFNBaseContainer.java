@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.container;
 
 import com.circulation.circulation_networks.utils.GuiSyncManager;
 import com.circulation.circulation_networks.utils.SyncSender;
+import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 //? if <1.20 {
 import com.circulation.circulation_networks.CirculationFlowNetworks;
@@ -14,7 +15,6 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IContainerListener;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 //?} else {
 /*import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -33,12 +33,10 @@ import java.util.List;
 //? if <1.20 {
 public abstract class CFNBaseContainer extends Container {
 
-    protected final TileEntity te;
     protected final EntityPlayer player;
-//?} else {
+    //?} else {
 /*public abstract class CFNBaseContainer extends AbstractContainerMenu {
 
-    protected final BlockEntity te;
     protected final Player player;
 *///?}
     private final GuiSyncManager guiSyncManager = new GuiSyncManager();
@@ -49,14 +47,12 @@ public abstract class CFNBaseContainer extends Container {
     }
 
     //? if <1.20 {
-    public CFNBaseContainer(EntityPlayer player, TileEntity te) {
-        this.te = te;
+    public CFNBaseContainer(EntityPlayer player) {
         this.player = player;
     }
     //?} else {
-    /*public CFNBaseContainer(MenuType<?> menuType, int containerId, Player player, BlockEntity te) {
+    /*public CFNBaseContainer(MenuType<?> menuType, int containerId, Player player) {
         super(menuType, containerId);
-        this.te = te;
         this.player = player;
     }
     *///?}
@@ -71,8 +67,9 @@ public abstract class CFNBaseContainer extends Container {
         registerLayoutInternal(layout, false);
     }
 
-    protected void registerPlayerLayout(ComponentSlotLayout layout) {
+    protected ComponentSlotLayout registerPlayerLayout(ComponentSlotLayout layout) {
         registerLayoutInternal(layout, true);
+        return layout;
     }
 
     private void registerLayoutInternal(ComponentSlotLayout layout, boolean isPlayerInventory) {
@@ -89,11 +86,11 @@ public abstract class CFNBaseContainer extends Container {
     }
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer playerIn, int index) {
         Slot slot = inventorySlots.get(index);
         if (slot == null || !slot.getHasStack()) return ItemStack.EMPTY;
-    //?} else {
+        //?} else {
     /*public @NotNull ItemStack quickMoveStack(@NotNull Player playerIn, int index) {
         Slot slot = slots.get(index);
         if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
@@ -103,7 +100,7 @@ public abstract class CFNBaseContainer extends Container {
         ItemStack stack = slot.getStack();
         //?} else {
         /*ItemStack stack = slot.getItem();
-        *///?}
+         *///?}
         ItemStack result = stack.copy();
 
         if (slot instanceof FilterComponentSlot) return result;
@@ -128,7 +125,7 @@ public abstract class CFNBaseContainer extends Container {
             if (merged) slot.onSlotChange(stack, result);
             //?} else {
             /*if (merged) slot.onQuickCraft(stack, result);
-            *///?}
+             *///?}
         } else if (source != null && source.isPlayerInventory) {
             for (LayoutEntry e : layouts) {
                 if (!e.isPlayerInventory) {
@@ -163,7 +160,7 @@ public abstract class CFNBaseContainer extends Container {
         return mergeItemStack(stack, start, end, reverseDirection);
         //?} else {
         /*return moveItemStackTo(stack, start, end, reverseDirection);
-        *///?}
+         *///?}
     }
 
     private boolean handleFilterSlotClick(int slotId, int button, ClickType clickType, ItemStack carried) {
@@ -182,9 +179,10 @@ public abstract class CFNBaseContainer extends Container {
     }
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
-        if (handleFilterSlotClick(slotId, dragType, clickTypeIn, player.inventory.getItemStack())) return ItemStack.EMPTY;
+        if (handleFilterSlotClick(slotId, dragType, clickTypeIn, player.inventory.getItemStack()))
+            return ItemStack.EMPTY;
         return super.slotClick(slotId, dragType, clickTypeIn, player);
     }
     //?} else {
@@ -195,11 +193,11 @@ public abstract class CFNBaseContainer extends Container {
     *///?}
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
-    //?} else {
-    /*public boolean stillValid(@NotNull Player playerIn) {
-    *///?}
+        //?} else {
+        /*public boolean stillValid(@NotNull Player playerIn) {
+         *///?}
         return true;
     }
 
@@ -223,7 +221,7 @@ public abstract class CFNBaseContainer extends Container {
             @Override
             public void sendLong(int channel, long value) {
                 if (listener instanceof EntityPlayerMP) {
-                    CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                    CirculationFlowNetworks.sendToPlayer(
                         new ContainerProgressBar((short) channel, value),
                         (EntityPlayerMP) listener
                     );
@@ -233,7 +231,7 @@ public abstract class CFNBaseContainer extends Container {
             @Override
             public void sendString(int channel, String value) {
                 if (listener instanceof EntityPlayerMP) {
-                    CirculationFlowNetworks.NET_CHANNEL.sendTo(
+                    CirculationFlowNetworks.sendToPlayer(
                         new ContainerValueConfig((short) channel, value),
                         (EntityPlayerMP) listener
                     );
@@ -275,10 +273,10 @@ public abstract class CFNBaseContainer extends Container {
 
     protected final boolean isServer() {
         //? if <1.20 {
-        return !te.getWorld().isRemote;
+        return !this.player.world.isRemote;
         //?} else {
-        /*return te.getLevel() != null && !te.getLevel().isClientSide;
-        *///?}
+        /*return !player.level().isClientSide;
+         *///?}
     }
 
     public final void updateFullProgressBar(int idx, long value) {
@@ -289,7 +287,7 @@ public abstract class CFNBaseContainer extends Container {
             this.updateProgressBar(idx, (int) value);
             //?} else {
             /*this.cfnUpdateProgressBar(idx, (int) value);
-            *///?}
+             *///?}
         }
     }
 
@@ -299,27 +297,23 @@ public abstract class CFNBaseContainer extends Container {
 
     //? if <1.20 {
     public final void updateProgressBar(int idx, int value) {
-    //?} else {
-    /*public final void cfnUpdateProgressBar(int idx, int value) {
-    *///?}
+        //?} else {
+        /*public final void cfnUpdateProgressBar(int idx, int value) {
+         *///?}
         guiSyncManager.updateField(idx, (long) value);
+    }
+
+    public void init() {
+        guiSyncManager.init();
     }
 
     public void onUpdate(final String field, final Object oldValue, final Object newValue) {
 
     }
 
-    private static final class LayoutEntry {
-        final ComponentSlotLayout layout;
-        final int start;
-        final int end;
-        final boolean isPlayerInventory;
-
-        LayoutEntry(ComponentSlotLayout layout, int start, int end, boolean isPlayerInventory) {
-            this.layout = layout;
-            this.start = start;
-            this.end = end;
-            this.isPlayerInventory = isPlayerInventory;
-        }
+    //? if <1.20 {
+    @Desugar
+        //?}
+    private record LayoutEntry(ComponentSlotLayout layout, int start, int end, boolean isPlayerInventory) {
     }
 }

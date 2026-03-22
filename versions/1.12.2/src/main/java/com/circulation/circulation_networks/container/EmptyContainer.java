@@ -6,9 +6,10 @@ import org.jetbrains.annotations.NotNull;
 public final class EmptyContainer extends CFNBaseContainer {
 
     public EmptyContainer() {
-        super(null, null);
+        super(null);
     }
 
+    //? if <1.20 {
     @Override
     public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
         return false;

@@ -14,7 +14,4 @@ public class SlotComponent extends Component {
         bindLayout(layout);
     }
 
-    @Override
-    protected void render(int mouseX, int mouseY, float partialTicks) {
-    }
 }

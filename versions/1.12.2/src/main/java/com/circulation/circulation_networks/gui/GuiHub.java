@@ -1,10 +1,15 @@
 package com.circulation.circulation_networks.gui;
 
+import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.gui.component.BackgroundComponent;
+import com.circulation.circulation_networks.gui.component.ButtonComponent;
+import com.circulation.circulation_networks.gui.component.InventoryComponent;
 import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.gui.component.base.RenderPhase;
+import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
+import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.relauncher.Side;
@@ -12,23 +17,48 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @SideOnly(Side.CLIENT)
-public class GuiHub extends CFNBaseGui {
+public class GuiHub extends CFNBaseGui<ContainerHub> {
 
-    private final ContainerHub container;
+    private int state;
+    private String oldInput;
+    private String oldOutput;
+    private String oldFI;
+    private String oldFO;
 
     public GuiHub(EntityPlayer player, TileEntityHub te) {
         super(new ContainerHub(player, te));
-        this.container = (ContainerHub) inventorySlots;
-        this.xSize = 200;
-        this.ySize = 180;
+        this.xSize = 178;
+        this.ySize = 233;
     }
 
     @Override
     protected void buildComponents(Map<RenderPhase, List<Component>> components) {
         List<Component> bg = components.computeIfAbsent(RenderPhase.BACKGROUND, k -> new ObjectArrayList<>());
-        bg.add(new BackgroundComponent(315, 233, "test", this));
+        bg.add(new BackgroundComponent("hub_base", this));
+        bg.add(new InventoryComponent(7, 145, container.playerInvLayout, this));
+        bg.add(new Component(-34, 0, 33, 80, this)
+            .setSpriteLayers("hub_1_3_button")
+            .addChild(
+                new ButtonComponent(7, 7, 19, 19, this, "node", ButtonComponent.EMPTY),
+                new ButtonComponent(7, 29, 19, 19, this, "player_power_supply", ButtonComponent.EMPTY),
+                new ButtonComponent(7, 51, 19, 19, this, "upgrade_plugin", ButtonComponent.EMPTY)
+            )
+        );
+        bg.add(new Component(179, 0, 33, 80, this)
+            .setSpriteLayers("hub_1_3_button")
+            .addChild(
+                new ButtonComponent(7, 7, 19, 19, this, "channel", ButtonComponent.EMPTY),
+                new ButtonComponent(7, 29, 19, 19, this, "permission", ButtonComponent.EMPTY),
+                new ButtonComponent(7, 51, 19, 19, this, "settings", ButtonComponent.EMPTY)
+            )
+        );
+        bg.add(new Component(-34, 197, 33, 36, this)
+            .setSpriteLayers("hub_1_1_button")
+            .addChild(new ButtonComponent(7, 7, 19, 19, this, "energy_unit", () -> ++state))
+        );
     }
 
     @Override
@@ -37,7 +67,31 @@ public class GuiHub extends CFNBaseGui {
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
-        fontRenderer.drawString(container.input, 45, 14, 0x79d7ff);
-        fontRenderer.drawString(container.output, 139, 128, 0x79d7ff);
+        fontRenderer.drawString(f(container.input,true), 11, 12, 0x79d7ff);
+        fontRenderer.drawString(f(container.output,false), 105, 127, 0x79d7ff);
+    }
+
+    private String f(String string,boolean IO) {
+        if (IO) {
+            if (Objects.equals(string, oldInput)) {
+                return oldFI;
+            } else {
+                oldInput = string;
+            }
+        } else {
+            if (Objects.equals(string, oldOutput)) {
+                return oldFO;
+            } else {
+                oldOutput = string;
+            }
+        }
+        var e = EnergyAmount.obtain(string);
+        var p = RegistryEnergyHandler.getPair(state);
+        if (p.multiplying() != 0) {
+            e.divide(p.multiplying());
+        }
+        final String o = (IO ? "I : " : "O : ") + FormatNumberUtils.formatNumber(e) + " " + p.unit() + "/t";
+        e.recycle();
+        return IO ? (oldFI = o) : (oldFO = o);
     }
 }

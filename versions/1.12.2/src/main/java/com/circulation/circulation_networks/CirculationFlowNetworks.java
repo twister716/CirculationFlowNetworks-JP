@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.proxy.CommonProxy;
 import com.circulation.circulation_networks.recipes.FurnaceRecipe;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
@@ -22,6 +23,7 @@ import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,6 +57,14 @@ public class CirculationFlowNetworks {
 
     public static void openGui(int guiId, EntityPlayer player, World world, int x, int y, int z) {
         player.openGui(CirculationFlowNetworks.instance, guiId, world, x, y, z);
+    }
+
+    public static void sendToPlayer(IMessage packet, EntityPlayerMP player) {
+        NET_CHANNEL.sendTo(packet, player);
+    }
+
+    public static void sendToServer(IMessage packet) {
+        NET_CHANNEL.sendToServer(packet);
     }
 
     @Mod.EventHandler

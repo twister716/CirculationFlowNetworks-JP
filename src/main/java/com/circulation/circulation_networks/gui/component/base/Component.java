@@ -2,11 +2,6 @@ package com.circulation.circulation_networks.gui.component.base;
 
 import com.circulation.circulation_networks.container.ComponentSlotLayout;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//? if <1.20 {
-import net.minecraft.client.renderer.GlStateManager;
-//?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
-*///?}
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -17,10 +12,11 @@ import java.util.Comparator;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public abstract class Component extends Rectangle {
+public class Component extends Rectangle {
 
     private final List<Component> children = new ObjectArrayList<>();
     private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
+    private final String[] EMPTY = new String[0];
     @Nonnull
     private final ComponentGuiContext gui;
     protected boolean visible = true;
@@ -31,9 +27,9 @@ public abstract class Component extends Rectangle {
     private Component parent;
     private boolean hovered = false;
 
-    private String[] spriteLayers = new String[0];
+    private String[] spriteLayers = EMPTY;
 
-    protected Component(int x, int y, int width, int height, @Nonnull ComponentGuiContext gui) {
+    public Component(int x, int y, int width, int height, @Nonnull ComponentGuiContext gui) {
         super(x, y, width, height);
         this.gui = gui;
         update = true;
@@ -82,10 +78,19 @@ public abstract class Component extends Rectangle {
         update = true;
     }
 
-    public void addChild(Component child) {
-        child.parent = this;
+    public Component addChild(Component child) {
         children.add(child);
         children.sort(Comparator.comparingInt(c -> c.zIndex));
+        return child.parent = this;
+    }
+
+    public Component addChild(Component... childs) {
+        for (var child : childs) {
+            child.parent = this;
+            children.add(child);
+            children.sort(Comparator.comparingInt(c -> c.zIndex));
+        }
+        return this;
     }
 
     public void removeChild(Component child) {
@@ -103,14 +108,13 @@ public abstract class Component extends Rectangle {
     }
 
     public boolean contains(int mouseX, int mouseY) {
-        if (!isVisible()) return false;
         int w = this.width;
         int h = this.height;
         if ((w | h) < 0) {
             return false;
         }
         int x = this.getAbsoluteX();
-        int y = this.getAbsoluteX();
+        int y = this.getAbsoluteY();
         if (mouseX < x || mouseY < y) {
             return false;
         }
@@ -121,7 +125,6 @@ public abstract class Component extends Rectangle {
     }
 
     public boolean contains(int X, int Y, int W, int H) {
-        if (!isVisible()) return false;
         int w = this.width;
         int h = this.height;
         if ((w | h | W | H) < 0) {
@@ -161,39 +164,18 @@ public abstract class Component extends Rectangle {
         render(mouseX, mouseY, partialTicks);
 
         if (children.isEmpty()) return;
-        //? if <1.20 {
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(getAbsoluteX(), getAbsoluteY(), 0);
-        //?} else {
-        /*var modelView = RenderSystem.getModelViewStack();
-        //? if <1.21 {
-        modelView.pushPose();
-        modelView.translate(getAbsoluteX(), getAbsoluteY(), 0);
-        RenderSystem.applyModelViewMatrix();
-        //?} else {
-        modelView.pushMatrix();
-        modelView.translate(getAbsoluteX(), getAbsoluteY(), 0);
-        //?}
-        *///?}
         for (Component child : children) {
             child.renderComponent(mouseX, mouseY, partialTicks);
         }
-        //? if <1.20 {
-        GlStateManager.popMatrix();
-        //?} else {
-        /*//? if <1.21 {
-        modelView.popPose();
-        RenderSystem.applyModelViewMatrix();
-        //?} else {
-        modelView.popMatrix();
-        //?}
-        *///?}
     }
 
-    protected abstract void render(int mouseX, int mouseY, float partialTicks);
+    protected void render(int mouseX, int mouseY, float partialTicks) {
 
-    protected final void setSpriteLayers(String... layers) {
-        this.spriteLayers = layers != null ? layers : new String[0];
+    }
+
+    public final Component setSpriteLayers(String... layers) {
+        this.spriteLayers = layers != null ? layers : EMPTY;
+        return this;
     }
 
     protected String[] getActiveLayers() {
@@ -315,7 +297,7 @@ public abstract class Component extends Rectangle {
     }
 
     public void syncSlotPositions() {
-        if (!update && boundLayouts.isEmpty()) return;
+        if (!update || boundLayouts.isEmpty()) return;
         int ax = getAbsoluteX();
         int ay = getAbsoluteY();
         for (ComponentSlotLayout layout : boundLayouts) {

@@ -9,6 +9,12 @@ import java.lang.reflect.Field;
 public class GuiSyncManager {
     private final Int2ObjectMap<SyncData> syncData = new Int2ObjectOpenHashMap<>();
 
+    public void init() {
+        for (var value : this.syncData.values()) {
+             value.init();
+        }
+    }
+
     public void scan(Object container, SyncData.SyncUpdateCallback updateCallback) {
         for (Field f : container.getClass().getFields()) {
             if (f.isAnnotationPresent(GuiSync.class)) {

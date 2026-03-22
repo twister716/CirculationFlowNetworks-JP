@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.container;
 
+import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 //? if <1.20 {
 import net.minecraft.entity.player.InventoryPlayer;
@@ -26,9 +27,9 @@ public class ComponentSlotLayout {
 
     //? if <1.20 {
     public static ComponentSlotLayout playerInventory(InventoryPlayer inventoryPlayer) {
-    //?} else {
-    /*public static ComponentSlotLayout playerInventory(Inventory inventoryPlayer) {
-    *///?}
+        //?} else {
+        /*public static ComponentSlotLayout playerInventory(Inventory inventoryPlayer) {
+         *///?}
         ComponentSlotLayout layout = new ComponentSlotLayout();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
@@ -43,9 +44,9 @@ public class ComponentSlotLayout {
 
     //? if <1.20 {
     public ComponentSlotLayout addSlot(IInventory inventory, int index, int relX, int relY) {
-    //?} else {
-    /*public ComponentSlotLayout addSlot(Container inventory, int index, int relX, int relY) {
-    *///?}
+        //?} else {
+        /*public ComponentSlotLayout addSlot(Container inventory, int index, int relX, int relY) {
+         *///?}
         if (registered) {
             throw new IllegalStateException("Cannot add slot specs after registerInto() has been called");
         }
@@ -63,17 +64,17 @@ public class ComponentSlotLayout {
 
     //? if <1.20 {
     public ComponentSlotLayout addOutput(IInventory inventory, int index, int relX, int relY) {
-    //?} else {
-    /*public ComponentSlotLayout addOutput(Container inventory, int index, int relX, int relY) {
-    *///?}
+        //?} else {
+        /*public ComponentSlotLayout addOutput(Container inventory, int index, int relX, int relY) {
+         *///?}
         return addPrebuilt(new OutputComponentSlot(inventory, index, relX, relY));
     }
 
     //? if <1.20 {
     public ComponentSlotLayout addFilter(IInventory inventory, int index, int relX, int relY, int maxCount) {
-    //?} else {
-    /*public ComponentSlotLayout addFilter(Container inventory, int index, int relX, int relY, int maxCount) {
-    *///?}
+        //?} else {
+        /*public ComponentSlotLayout addFilter(Container inventory, int index, int relX, int relY, int maxCount) {
+         *///?}
         return addPrebuilt(new FilterComponentSlot(inventory, index, relX, relY, maxCount));
     }
 
@@ -108,23 +109,10 @@ public class ComponentSlotLayout {
         return Collections.unmodifiableList(slots);
     }
 
-    private static final class SlotSpec {
-        //? if <1.20 {
-        final IInventory inventory;
-        //?} else {
-        /*final Container inventory;
-        *///?}
-        final int index, relX, relY;
-
-        //? if <1.20 {
-        SlotSpec(IInventory inventory, int index, int relX, int relY) {
-        //?} else {
-        /*SlotSpec(Container inventory, int index, int relX, int relY) {
-        *///?}
-            this.inventory = inventory;
-            this.index = index;
-            this.relX = relX;
-            this.relY = relY;
-        }
-    }
+    //? if <1.20 {
+    @Desugar
+    private record SlotSpec(IInventory inventory, int index, int relX, int relY) { }
+    //?} else {
+    /*private record SlotSpec(Container inventory, int index, int relX, int relY) { }
+     *///?}
 }

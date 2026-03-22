@@ -11,7 +11,7 @@ public class InventoryComponent extends Component {
 
     public InventoryComponent(int x, int y, ComponentGuiContext gui) {
         super(x, y, WIDTH, HEIGHT, gui);
-        setSpriteLayers("inventory");
+        setSpriteLayers("bg/inventory");
     }
 
     public InventoryComponent(int x, int y, ComponentSlotLayout layout, ComponentGuiContext gui) {
@@ -19,7 +19,4 @@ public class InventoryComponent extends Component {
         bindLayout(layout);
     }
 
-    @Override
-    protected void render(int mouseX, int mouseY, float partialTicks) {
-    }
 }

@@ -15,13 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 @SideOnly(Side.CLIENT)
-public class GuiCirculationFurnace extends CFNBaseGui {
-
-    private final ContainerCirculationFurnace container;
+public class GuiCirculationFurnace extends CFNBaseGui<ContainerCirculationFurnace> {
 
     public GuiCirculationFurnace(EntityPlayer player, TileEntityCirculationFurnace te) {
         super(new ContainerCirculationFurnace(player, te));
-        this.container = (ContainerCirculationFurnace) inventorySlots;
         this.xSize = 176;
         this.ySize = 166;
     }

@@ -9,7 +9,6 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.eventbus.api.Cancelable;
 *///?} else {
 /*import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.bus.api.ICancellable;
 *///?}
 
 // Shared node-add event whose attached world object is treated as a block entity.
@@ -40,27 +39,29 @@ public class AddNodeEvent extends NodeEvent {
     }
     *///?}
 
-    //? if <1.21 {
+    //? if <1.20 {
     @Cancelable
     public static class Pre extends AddNodeEvent {
 
-        //? if <1.20 {
         public Pre(INode node, TileEntity blockEntity) {
-        //?} else {
-        /*public Pre(INode node, BlockEntity blockEntity) {
-        *///?}
             super(node, blockEntity);
         }
 
-        //? if <1.20 {
         @Override
         public boolean isCancelable() {
             return true;
         }
-        //?}
     }
-    //?} else {
-    /*public static class Pre extends AddNodeEvent implements ICancellable {
+    //?} else if <1.21 {
+    /*@Cancelable
+    public static class Pre extends AddNodeEvent {
+
+        public Pre(INode node, BlockEntity blockEntity) {
+            super(node, blockEntity);
+        }
+    }
+    *///?} else {
+    /*public static class Pre extends AddNodeEvent {
 
         private boolean canceled;
 
@@ -68,12 +69,14 @@ public class AddNodeEvent extends NodeEvent {
             super(node, blockEntity);
         }
 
-        @Override
+        public boolean isCancelable() {
+            return true;
+        }
+
         public boolean isCanceled() {
             return canceled;
         }
 
-        @Override
         public void setCanceled(boolean canceled) {
             this.canceled = canceled;
         }

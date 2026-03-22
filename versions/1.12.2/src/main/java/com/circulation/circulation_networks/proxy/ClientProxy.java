@@ -22,6 +22,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -81,12 +82,12 @@ public final class ClientProxy extends CommonProxy {
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
         MinecraftForge.EVENT_BUS.register(ComponentAtlas.INSTANCE);
-        File modConfigDir = new File(event.getModConfigurationDirectory(), CirculationFlowNetworks.MOD_ID);
-        ComponentAtlas.INSTANCE.startAsync(modConfigDir);
     }
 
     public void init() {
         super.init();
+        File modConfigDir = new File(Loader.instance().getConfigDir(), CirculationFlowNetworks.MOD_ID);
+        ComponentAtlas.INSTANCE.startAsync(modConfigDir);
         openGLLevel = detectOpenGLLevel();
         SpoceRenderingHandler.INSTANCE = createSpoceHandler();
     }
@@ -137,9 +138,7 @@ public final class ClientProxy extends CommonProxy {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-
-        } else {
+        if (event.phase != TickEvent.Phase.START) {
             MachineNodeBlockEntityManager.INSTANCE.onClientTick();
         }
     }

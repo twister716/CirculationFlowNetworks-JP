@@ -2,31 +2,34 @@ package com.circulation.circulation_networks.api;
 
 import java.math.BigInteger;
 
-final class ConstantEnergyAmount extends EnergyAmount {
+public final class ConstantEnergyAmount extends EnergyAmount {
 
-    ConstantEnergyAmount(long value) {
-        super();
-        assignLongDirect(value);
+    public ConstantEnergyAmount(long value) {
+        super(value);
     }
 
     @Override
     public EnergyAmount init(long value) {
-        throw immutableError();
+        if (state != STATE_UNINITIALIZED) throw immutableError();
+        return super.init(value);
     }
 
     @Override
     public EnergyAmount init(String value) {
-        throw immutableError();
+        if (state != STATE_UNINITIALIZED) throw immutableError();
+        return super.init(value);
     }
 
     @Override
     public EnergyAmount init(BigInteger value) {
-        throw immutableError();
+        if (state != STATE_UNINITIALIZED) throw immutableError();
+        return super.init(value);
     }
 
     @Override
     public EnergyAmount copyFrom(EnergyAmount other) {
-        throw immutableError();
+        if (state != STATE_UNINITIALIZED) throw immutableError();
+        return super.copyFrom(other);
     }
 
     @Override

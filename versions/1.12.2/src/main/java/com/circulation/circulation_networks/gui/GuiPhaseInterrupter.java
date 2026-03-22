@@ -93,7 +93,7 @@ public class GuiPhaseInterrupter extends GuiContainer {
             if (val >= 0 && val <= MAX_SCOPE && val != container.scope) {
                 container.scope = val;
                 tileEntity.setScope(val);
-                CirculationFlowNetworks.NET_CHANNEL.sendToServer(new PhaseInterrupterSyncPacket(tileEntity));
+                CirculationFlowNetworks.sendToServer(new PhaseInterrupterSyncPacket(tileEntity));
             }
         } catch (NumberFormatException ignored) {
         }
@@ -106,7 +106,7 @@ public class GuiPhaseInterrupter extends GuiContainer {
         } else if (button.id == 3) {
             tileEntity.toggleRedstoneMode();
             this.redstoneModeButton.displayString = getRedstoneModeButtonText();
-            CirculationFlowNetworks.NET_CHANNEL.sendToServer(new PhaseInterrupterSyncPacket(tileEntity));
+            CirculationFlowNetworks.sendToServer(new PhaseInterrupterSyncPacket(tileEntity));
         } else if (button.id == 4) {
             this.mc.displayGuiScreen(null);
         }

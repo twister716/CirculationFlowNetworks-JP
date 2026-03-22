@@ -1,30 +1,39 @@
 package com.circulation.circulation_networks.gui;
 
+import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.container.CFNBaseContainer;
-import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
-import com.circulation.circulation_networks.gui.component.base.AtlasRenderHelper;
 import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.gui.component.base.ComponentGuiContext;
 import com.circulation.circulation_networks.gui.component.base.ComponentScreenController;
 import com.circulation.circulation_networks.gui.component.base.RenderPhase;
 //? if <1.20 {
+import com.circulation.circulation_networks.packets.ContainerProgressBar;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Mouse;
-//?} else {
+//?} else if <1.21 {
 /*import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.player.Inventory;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 import javax.annotation.Nonnull;
 //? if <1.20 {
+import java.awt.Rectangle;
 import java.io.IOException;
 //?}
 import java.util.EnumMap;
@@ -53,11 +62,13 @@ import java.util.Map;
 @SuppressWarnings("unused")
 //? if <1.20 {
 @SideOnly(Side.CLIENT)
-public abstract class CFNBaseGui extends GuiContainer implements ComponentGuiContext {
+public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContainer implements ComponentGuiContext {
 //?} else {
 /*@OnlyIn(Dist.CLIENT)
 public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContainer> implements ComponentGuiContext {
 *///?}
+
+    protected final T container;
 
     private final ComponentScreenController componentController = new ComponentScreenController();
 
@@ -66,24 +77,16 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
     // -------------------------------------------------------------------------
 
     //? if <1.20 {
-    protected CFNBaseGui(@Nonnull CFNBaseContainer container) {
+    protected CFNBaseGui(@Nonnull T container) {
         super(container);
+        this.container = container;
     }
     //?} else {
-    /*protected CFNBaseGui(@Nonnull CFNBaseContainer container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
+    /*protected CFNBaseGui(@Nonnull T container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
         super(container, playerInventory, title);
+        this.container = container;
     }
     *///?}
-
-    /**
-     * Renders a UI background sprite from the shared {@link ComponentAtlas}.
-     */
-    protected static void drawAtlasBackground(String name, int screenX, int screenY, int w, int h) {
-        ComponentAtlas atlas = ComponentAtlas.INSTANCE;
-        AtlasRegion region = atlas.getBackground(name);
-        if (region == null) return;
-        AtlasRenderHelper.drawRegion(atlas, region, screenX, screenY, w, h);
-    }
 
     @Override
     public int getGuiLeft() {
@@ -91,7 +94,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
         return guiLeft;
         //?} else {
         /*return leftPos;
-        *///?}
+         *///?}
     }
 
     @Override
@@ -100,7 +103,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
         return guiTop;
         //?} else {
         /*return topPos;
-        *///?}
+         *///?}
     }
 
     // -------------------------------------------------------------------------
@@ -119,13 +122,14 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
     // -------------------------------------------------------------------------
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     public void initGui() {
         super.initGui();
-    //?} else {
+        //?} else {
     /*protected void init() {
         super.init();
     *///?}
+        CirculationFlowNetworks.sendToServer(new ContainerProgressBar());
         Map<RenderPhase, List<Component>> phaseMap = new EnumMap<>(RenderPhase.class);
         buildComponents(phaseMap);
         componentController.initializeComponents(phaseMap);
@@ -223,6 +227,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
         this.drawFG(this.leftPos, this.topPos, mouseX, mouseY);
     }
 
+    //? if <1.21 {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
@@ -244,6 +249,29 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
+    //?} else {
+    /^@Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        componentController.handleActiveDrag(mouseX, mouseY);
+        resetColor();
+        componentController.renderPhase(RenderPhase.NORMAL, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        resetColor();
+        componentController.renderPhase(RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
+
+        List<String> componentTooltip = componentController.collectTooltip(mouseX, mouseY);
+        if (componentTooltip != null && !componentTooltip.isEmpty()) {
+            List<net.minecraft.network.chat.Component> mcTooltip = new java.util.ArrayList<>();
+            for (String line : componentTooltip) {
+                mcTooltip.add(net.minecraft.network.chat.Component.literal(line));
+            }
+            guiGraphics.renderTooltip(this.font, mcTooltip, java.util.Optional.empty(), mouseX, mouseY);
+        }
+
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+    ^///?}
 
     @Override
     protected void containerTick() {
@@ -257,7 +285,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
     // -------------------------------------------------------------------------
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         if (componentController.mouseClicked(mouseX, mouseY, mouseButton)) {
             return;
@@ -274,7 +302,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
     *///?}
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     protected void mouseReleased(int mouseX, int mouseY, int state) {
         if (componentController.mouseReleased(mouseX, mouseY, state)) {
             return;
@@ -291,7 +319,7 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
     *///?}
 
     @Override
-    //? if <1.20 {
+        //? if <1.20 {
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (componentController.keyTyped(typedChar, keyCode)) {
             return;
@@ -320,7 +348,8 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
         }
     }
     //?} else {
-    /*@Override
+    /*//? if <1.21 {
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (delta != 0) {
             int d = delta > 0 ? 1 : -1;
@@ -328,9 +357,26 @@ public abstract class CFNBaseGui extends AbstractContainerScreen<CFNBaseContaine
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
+    //?} else {
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY != 0) {
+            int d = scrollY > 0 ? 1 : -1;
+            componentController.mouseScrolled((int) mouseX, (int) mouseY, d);
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+    //?}
     *///?}
 
-    public Component[] getAllComponents() {
-        return componentController.getAllComponents();
+    public List<Rectangle> getGuiExtraAreas() {
+        var list = new ObjectArrayList<Rectangle>();
+        for (Component component : componentController.getAllComponents()) {
+            if (!component.isVisible()) continue;
+            var r = component.getBounds();
+            r.setLocation(component.getAbsoluteX(), component.getAbsoluteY());
+            list.add(r);
+        }
+        return list;
     }
 }

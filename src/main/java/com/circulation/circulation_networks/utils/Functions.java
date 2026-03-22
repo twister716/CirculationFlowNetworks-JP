@@ -9,6 +9,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.BlockPos;
 *///?}
+//? if >=1.21 {
+/*import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+*///?}
 
 import javax.annotation.Nonnull;
 
@@ -23,10 +27,19 @@ public final class Functions {
         }
         return nbt;
     }
-    //?} else {
+    //?} else if <1.21 {
     /*@Nonnull
     public static CompoundTag getOrCreateTagCompound(ItemStack stack) {
         return stack.getOrCreateTag();
+    }
+    *///?} else {
+    /*@Nonnull
+    public static CompoundTag getOrCreateTagCompound(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
+    public static void saveTagCompound(ItemStack stack, CompoundTag tag) {
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
     *///?}
 
