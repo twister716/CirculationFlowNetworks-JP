@@ -20,6 +20,7 @@ public final class ComponentScreenController {
 
     private final Component[][] phaseComponents = new Component[RenderPhase.VALUES.length][];
     private Component[] allComponents = EMPTY;
+    private Component[] allComponentsTopFirst = EMPTY;
     @Nullable
     private DraggableComponent dragTarget;
 
@@ -30,7 +31,8 @@ public final class ComponentScreenController {
     public void initializeComponents(Map<RenderPhase, List<Component>> phaseMap) {
         dragTarget = null;
         List<Component> all = new ObjectArrayList<>();
-        for (RenderPhase phase : RenderPhase.VALUES) {
+        RenderPhase[] phases = RenderPhase.VALUES;
+        for (RenderPhase phase : phases) {
             List<Component> list = phaseMap.getOrDefault(phase, Collections.emptyList());
             if (list.isEmpty()) {
                 phaseComponents[phase.ordinal()] = EMPTY;
@@ -43,6 +45,20 @@ public final class ComponentScreenController {
         }
         all.sort(Comparator.comparingInt(Component::getZIndex));
         allComponents = all.toArray(new Component[0]);
+        allComponentsTopFirst = reverseCopy(allComponents);
+    }
+
+    private static Component[] reverseCopy(Component[] source) {
+        int length = source.length;
+        if (length == 0) {
+            return EMPTY;
+        }
+
+        Component[] reversed = new Component[length];
+        for (int i = 0; i < length; i++) {
+            reversed[i] = source[length - 1 - i];
+        }
+        return reversed;
     }
 
     public void handleActiveDrag(int mouseX, int mouseY) {
@@ -58,8 +74,9 @@ public final class ComponentScreenController {
         /*var modelView = RenderSystem.getModelViewStack();
         //? if <1.21 {
         modelView.pushPose();
-        //?} else {
-        modelView.pushMatrix();
+        Component[] components = phaseComponents[phase.ordinal()];
+        for (int i = 0, length = components.length; i < length; i++) {
+            components[i].renderComponent(mouseX, mouseY, partialTicks);
         //?}
         *///?}
         for (Component component : phaseComponents[phase.ordinal()]) {
@@ -78,14 +95,14 @@ public final class ComponentScreenController {
     }
 
     public void updateComponents() {
-        for (Component component : allComponents) {
-            component.update();
+        for (Component allComponent : allComponents) {
+            allComponent.update();
         }
     }
 
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        for (int i = allComponents.length - 1; i >= 0; i--) {
-            if (allComponents[i].dispatchMouseClicked(mouseX, mouseY, mouseButton)) {
+        for (Component component : allComponentsTopFirst) {
+            if (component.dispatchMouseClicked(mouseX, mouseY, mouseButton)) {
                 dragTarget = ComponentTreeUtils.findDraggingComponent(allComponents);
                 return true;
             }
@@ -99,8 +116,8 @@ public final class ComponentScreenController {
             dragTarget = null;
             return true;
         }
-        for (int i = allComponents.length - 1; i >= 0; i--) {
-            if (allComponents[i].dispatchMouseReleased(mouseX, mouseY, state)) {
+        for (Component component : allComponentsTopFirst) {
+            if (component.dispatchMouseReleased(mouseX, mouseY, state)) {
                 return true;
             }
         }
@@ -108,8 +125,8 @@ public final class ComponentScreenController {
     }
 
     public boolean keyTyped(char typedChar, int keyCode) {
-        for (int i = allComponents.length - 1; i >= 0; i--) {
-            if (allComponents[i].dispatchKeyTyped(typedChar, keyCode)) {
+        for (Component component : allComponentsTopFirst) {
+            if (component.dispatchKeyTyped(typedChar, keyCode)) {
                 return true;
             }
         }
@@ -117,8 +134,8 @@ public final class ComponentScreenController {
     }
 
     public boolean mouseScrolled(int mouseX, int mouseY, int delta) {
-        for (int i = allComponents.length - 1; i >= 0; i--) {
-            if (allComponents[i].dispatchMouseScrolled(mouseX, mouseY, delta)) {
+        for (Component component : allComponentsTopFirst) {
+            if (component.dispatchMouseScrolled(mouseX, mouseY, delta)) {
                 return true;
             }
         }
@@ -126,10 +143,10 @@ public final class ComponentScreenController {
     }
 
     public List<String> collectTooltip(int mouseX, int mouseY) {
-        if (allComponents.length == 0) {
+        if (allComponentsTopFirst.length == 0) {
             return Collections.emptyList();
         }
-        var list = ComponentTreeUtils.collectTopTooltip(allComponents, mouseX, mouseY);
+        var list = ComponentTreeUtils.collectTopTooltip(allComponentsTopFirst, mouseX, mouseY);
         if (list.isEmpty()) {
             return Collections.emptyList();
         }
@@ -142,10 +159,10 @@ public final class ComponentScreenController {
 
     @Nullable
     public Component getTopComponentAt(int mouseX, int mouseY) {
-        if (allComponents.length == 0) {
+        if (allComponentsTopFirst.length == 0) {
             return null;
         }
-        return ComponentTreeUtils.findTopComponentAt(allComponents, mouseX, mouseY);
+        return ComponentTreeUtils.findTopComponentAt(allComponentsTopFirst, mouseX, mouseY);
     }
 
     public Component[] getAllComponents() {

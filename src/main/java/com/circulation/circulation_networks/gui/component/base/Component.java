@@ -30,7 +30,7 @@ public class Component extends Rectangle {
 
     private final List<Component> children = new ObjectArrayList<>();
     private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
-    private final String[] EMPTY = new String[0];
+    private static final String[] EMPTY = new String[0];
     @Nonnull
     protected final CFNBaseGui<?> gui;
     protected boolean visible = true;
@@ -107,7 +107,11 @@ public class Component extends Rectangle {
     }
 
     public Component addChild(Component... childs) {
-        for (var child : childs) {
+        int childCount = childs.length;
+        if (childCount == 0) {
+            return this;
+        }
+        for (Component child : childs) {
             child.parent = this;
             children.add(child);
             children.sort(Comparator.comparingInt(c -> c.zIndex));
@@ -219,7 +223,9 @@ public class Component extends Rectangle {
         RenderHelper.enableGUIStandardItemLighting();
 
         for (ComponentSlotLayout layout : boundLayouts) {
-            for (Slot slot : layout.getSlots()) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
                 if (!slot.isEnabled()) continue;
 
                 int sx = slot.xPos;
@@ -331,7 +337,9 @@ public class Component extends Rectangle {
         Minecraft mc = Minecraft.getMinecraft();
 
         for (ComponentSlotLayout layout : boundLayouts) {
-            for (Slot slot : layout.getSlots()) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
                 if (!slot.isEnabled()) continue;
 
                 int sx = slot.xPos;
@@ -347,6 +355,9 @@ public class Component extends Rectangle {
                     mc.gameSettings.advancedItemTooltips
                         ? ITooltipFlag.TooltipFlags.ADVANCED
                         : ITooltipFlag.TooltipFlags.NORMAL);
+                if (lines.isEmpty()) {
+                    return Collections.emptyList();
+                }
                 List<LocalizedComponent> tips = new ObjectArrayList<>(lines.size());
                 for (String line : lines) {
                     tips.add(() -> line);
@@ -365,7 +376,9 @@ public class Component extends Rectangle {
         int localMouseY = mouseY - gui.getGuiTop();
 
         for (ComponentSlotLayout layout : boundLayouts) {
-            for (Slot slot : layout.getSlots()) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
                 if (!slot.isEnabled()) continue;
                 if (isMouseOverSlot(localMouseX, localMouseY, slot.xPos, slot.yPos)) {
                     return true;
@@ -380,8 +393,11 @@ public class Component extends Rectangle {
         if (hasBoundSlotAt(mouseX, mouseY)) {
             return true;
         }
+        if (children.isEmpty()) {
+            return false;
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             Component child = children.get(i);
             if (!child.isVisible()) continue;
             if (child.hasAnyBoundSlotAt(mouseX, mouseY)) {
@@ -410,8 +426,11 @@ public class Component extends Rectangle {
     @NotNull
     public final List<LocalizedComponent> collectTooltip(int mouseX, int mouseY) {
         if (!isVisible() || !contains(mouseX, mouseY)) return Collections.emptyList();
+        if (children.isEmpty()) {
+            return getTooltip(mouseX, mouseY);
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             Component child = children.get(i);
             if (!child.isVisible() || !child.contains(mouseX, mouseY)) continue;
             return child.collectTooltip(mouseX, mouseY);
@@ -422,8 +441,11 @@ public class Component extends Rectangle {
 
     public final boolean dispatchMouseClicked(int mouseX, int mouseY, int button) {
         if (!isVisible() || !isEnabled() || !contains(mouseX, mouseY)) return false;
+        if (children.isEmpty()) {
+            return onMouseClicked(mouseX, mouseY, button);
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             if (children.get(i).dispatchMouseClicked(mouseX, mouseY, button)) return true;
         }
 
@@ -432,8 +454,11 @@ public class Component extends Rectangle {
 
     public final boolean dispatchMouseReleased(int mouseX, int mouseY, int button) {
         if (!isVisible() || !isEnabled() || !contains(mouseX, mouseY)) return false;
+        if (children.isEmpty()) {
+            return onMouseReleased(mouseX, mouseY, button);
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             if (children.get(i).dispatchMouseReleased(mouseX, mouseY, button)) return true;
         }
 
@@ -442,8 +467,11 @@ public class Component extends Rectangle {
 
     public final boolean dispatchMouseScrolled(int mouseX, int mouseY, int delta) {
         if (!isVisible() || !isEnabled() || !contains(mouseX, mouseY)) return false;
+        if (children.isEmpty()) {
+            return onMouseScrolled(mouseX, mouseY, delta);
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             if (children.get(i).dispatchMouseScrolled(mouseX, mouseY, delta)) return true;
         }
 
@@ -452,8 +480,11 @@ public class Component extends Rectangle {
 
     public final boolean dispatchKeyTyped(char typedChar, int keyCode) {
         if (!isVisible() || !isEnabled()) return false;
+        if (children.isEmpty()) {
+            return onKeyTyped(typedChar, keyCode);
+        }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
+        for (int i = children.size(); i-- > 0;) {
             if (children.get(i).dispatchKeyTyped(typedChar, keyCode)) return true;
         }
 
@@ -483,6 +514,9 @@ public class Component extends Rectangle {
     }
 
     public void update() {
+        if (children.isEmpty()) {
+            return;
+        }
         for (Component child : children) {
             child.update();
         }
@@ -521,6 +555,9 @@ public class Component extends Rectangle {
 
     private void invalidateSubtree() {
         update = true;
+        if (children.isEmpty()) {
+            return;
+        }
         for (Component child : children) {
             child.invalidateSubtree();
         }
@@ -528,6 +565,9 @@ public class Component extends Rectangle {
 
     private void syncSlotTreePositions() {
         syncSlotPositions();
+        if (children.isEmpty()) {
+            return;
+        }
         for (Component child : children) {
             child.syncSlotTreePositions();
         }

@@ -12,8 +12,8 @@ public final class ComponentTreeUtils {
     @Nullable
     public static DraggableComponent findDraggingComponent(Component[] nodes) {
         for (Component component : nodes) {
-            if (component instanceof DraggableComponent && ((DraggableComponent) component).isDragging()) {
-                return (DraggableComponent) component;
+            if (component instanceof DraggableComponent c && c.isDragging()) {
+                return c;
             }
             DraggableComponent found = findDraggingComponent(component.getChildren());
             if (found != null) return found;
@@ -23,9 +23,12 @@ public final class ComponentTreeUtils {
 
     @Nullable
     public static DraggableComponent findDraggingComponent(List<Component> nodes) {
+        if (nodes.isEmpty()) {
+            return null;
+        }
         for (Component component : nodes) {
-            if (component instanceof DraggableComponent && ((DraggableComponent) component).isDragging()) {
-                return (DraggableComponent) component;
+            if (component instanceof DraggableComponent c && c.isDragging()) {
+                return c;
             }
             DraggableComponent found = findDraggingComponent(component.getChildren());
             if (found != null) return found;
@@ -34,8 +37,7 @@ public final class ComponentTreeUtils {
     }
 
     public static List<Component.LocalizedComponent> collectTopTooltip(Component[] components, int mouseX, int mouseY) {
-        for (int i = components.length - 1; i >= 0; i--) {
-            Component component = components[i];
+        for (Component component : components) {
             if (!component.isVisible() || !component.contains(mouseX, mouseY)) continue;
             return component.collectTooltip(mouseX, mouseY);
         }
@@ -44,8 +46,7 @@ public final class ComponentTreeUtils {
 
     @Nullable
     public static Component findTopComponentAt(Component[] components, int mouseX, int mouseY) {
-        for (int i = components.length - 1; i >= 0; i--) {
-            Component component = components[i];
+        for (Component component : components) {
             if (!component.isVisible() || !component.contains(mouseX, mouseY)) continue;
             return findTopComponentAt(component, mouseX, mouseY);
         }
@@ -55,7 +56,10 @@ public final class ComponentTreeUtils {
     @Nullable
     private static Component findTopComponentAt(Component component, int mouseX, int mouseY) {
         List<Component> children = component.getChildren();
-        for (int i = children.size() - 1; i >= 0; i--) {
+        if (children.isEmpty()) {
+            return component;
+        }
+        for (int i = children.size(); i-- > 0;) {
             Component child = children.get(i);
             if (!child.isVisible() || !child.contains(mouseX, mouseY)) continue;
             return findTopComponentAt(child, mouseX, mouseY);

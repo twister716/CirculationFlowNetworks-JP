@@ -42,6 +42,9 @@ public abstract class ComponentAtlasRegistry {
 
     protected final void replaceRegions(Collection<AtlasRegion> atlasRegions) {
         regions.clear();
+        if (atlasRegions.isEmpty()) {
+            return;
+        }
         for (AtlasRegion region : atlasRegions) {
             regions.put(region.name, region);
         }

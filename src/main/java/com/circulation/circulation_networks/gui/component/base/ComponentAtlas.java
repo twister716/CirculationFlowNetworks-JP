@@ -90,10 +90,14 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
     // ── Public API ────────────────────────────────────────────────────────────
 
     private static StitchResult stitch(List<SpriteData> sprites) {
+        if (sprites.isEmpty()) {
+            return StitchResult.EMPTY;
+        }
         List<SpriteData> sorted = new ObjectArrayList<>(sprites);
         sortSpritesForPacking(sorted);
 
-        for (AtlasDimensions dimensions : candidateDimensions()) {
+        List<AtlasDimensions> dimensionsList = candidateDimensions();
+        for (AtlasDimensions dimensions : dimensionsList) {
             StitchResult result = tryPack(sorted, dimensions.width, dimensions.height);
             if (result != null) {
                 int usedArea = usedArea(result.regions);
@@ -125,6 +129,10 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         g.clearRect(0, 0, width, height);
 
         List<AtlasRegion> regions = new ObjectArrayList<>(placements.size());
+        if (placements.isEmpty()) {
+            g.dispose();
+            return new StitchResult(atlas, regions);
+        }
         for (PackedSprite placement : placements) {
             g.drawImage(placement.sprite.image, placement.x, placement.y, null);
             regions.add(new AtlasRegion(
@@ -150,6 +158,10 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
 
         //noinspection DataFlowIssue
         List<AtlasRegion> regions = new ObjectArrayList<>(placements.size());
+        if (placements.isEmpty()) {
+            g.dispose();
+            return new StitchResult(atlas, regions);
+        }
         for (PackedSprite placement : placements) {
             g.drawImage(placement.sprite.image, placement.x, placement.y, null);
             regions.add(new AtlasRegion(
@@ -177,6 +189,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         }
 
         List<AtlasRegion> regions = new ObjectArrayList<>(placements.size());
+        if (placements.isEmpty()) {
+            return new StitchResult(cachedImage, regions);
+        }
         for (PackedSprite placement : placements) {
             regions.add(new AtlasRegion(
                 placement.sprite.name,
@@ -196,6 +211,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         List<FreeRect> freeRects = new ObjectArrayList<>();
         freeRects.add(new FreeRect(PADDING, PADDING, atlasWidth - PADDING, atlasHeight - PADDING));
         List<PackedSprite> placements = new ObjectArrayList<>(sprites.size());
+        if (sprites.isEmpty()) {
+            return placements;
+        }
 
         for (SpriteData sprite : sprites) {
             int requiredWidth = sprite.image.getWidth() + PADDING;
@@ -225,7 +243,7 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         int bestAreaWaste = Integer.MAX_VALUE;
         int bestShortSideWaste = Integer.MAX_VALUE;
 
-        for (int i = 0; i < freeRects.size(); i++) {
+        for (int i = 0, size = freeRects.size(); i < size; i++) {
             FreeRect free = freeRects.get(i);
             if (free.width < requiredWidth || free.height < requiredHeight) {
                 continue;
@@ -274,6 +292,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
     }
 
     private static int usedArea(List<AtlasRegion> regions) {
+        if (regions.isEmpty()) {
+            return 0;
+        }
         int usedArea = 0;
         for (AtlasRegion region : regions) {
             usedArea += region.width * region.height;
@@ -335,6 +356,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
 
     private static String computeHash(List<SpriteData> sortedSprites) {
         CRC32 crc = new CRC32();
+        if (sortedSprites.isEmpty()) {
+            return String.format("%016x", crc.getValue());
+        }
         for (SpriteData s : sortedSprites) {
             crc.update(s.name.getBytes(StandardCharsets.UTF_8));
             int w = s.image.getWidth();
@@ -342,7 +366,7 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
             int[] pixels = new int[w * h];
             s.image.getRGB(0, 0, w, h, pixels, 0, w);
             ByteBuffer buf = ByteBuffer.allocate(pixels.length * 4);
-            for (int p : pixels) buf.putInt(p);
+            for (int pixel : pixels) buf.putInt(pixel);
             crc.update(buf.array());
         }
         return String.format("%016x", crc.getValue());
@@ -401,8 +425,14 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         //?} else {
         /*NeoForge.EVENT_BUS.post(event);
          *///?}
-        for (String name : event.getSprites()) addSprite(name);
-        for (String name : event.getBackgrounds()) addBackground(name);
+        List<String> sprites = event.getSprites();
+        if (!sprites.isEmpty()) {
+            for (String sprite : sprites) addSprite(sprite);
+        }
+        List<String> backgrounds = event.getBackgrounds();
+        if (!backgrounds.isEmpty()) {
+            for (String background : backgrounds) addBackground(background);
+        }
 
         cacheDir = modConfigDir;
         if (!cacheDir.exists()) {
@@ -473,22 +503,25 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
 
         future = CompletableFuture.supplyAsync(() -> {
             try {
-                List<SpriteData> sprites = new ObjectArrayList<>();
+                List<SpriteData> stitchedSprites = new ObjectArrayList<>();
+                if (rawSprites.isEmpty()) {
+                    return StitchResult.EMPTY;
+                }
                 for (RawSprite raw : rawSprites) {
                     BufferedImage img = ImageIO.read(new ByteArrayInputStream(raw.bytes));
-                    if (img != null) sprites.add(new SpriteData(raw.name, img));
+                    if (img != null) stitchedSprites.add(new SpriteData(raw.name, img));
                 }
-                if (sprites.isEmpty()) return StitchResult.EMPTY;
+                if (stitchedSprites.isEmpty()) return StitchResult.EMPTY;
 
-                sprites.sort(Comparator.comparing(s -> s.name));
+                stitchedSprites.sort(Comparator.comparing(s -> s.name));
 
-                String hash = computeHash(sprites);
+                String hash = computeHash(stitchedSprites);
                 File cacheFile = new File(cacheDir, "atlas_" + hash + ".png");
 
                 if (cacheFile.exists()) {
                     BufferedImage cached = ImageIO.read(cacheFile);
                     if (cached != null) {
-                        StitchResult cachedResult = buildRegions(sprites, cached);
+                        StitchResult cachedResult = buildRegions(stitchedSprites, cached);
                         if (cachedResult != StitchResult.EMPTY && !cachedResult.regions.isEmpty()) {
                             CirculationFlowNetworks.LOGGER.info(
                                 "Atlas cache hit (hash {})", hash);
@@ -502,13 +535,13 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
 
                 CirculationFlowNetworks.LOGGER.info(
                     "Stitching atlas for {} sprites (hash {})…",
-                    sprites.size(), hash);
-                StitchResult result = stitch(sprites);
+                    stitchedSprites.size(), hash);
+                StitchResult result = stitch(stitchedSprites);
 
                 File[] old = cacheDir.listFiles(f ->
                     f.isFile() && f.getName().startsWith("atlas_") && f.getName().endsWith(".png"));
                 if (old != null) {
-                    for (File f : old) f.delete();
+                    for (File file : old) file.delete();
                 }
                 try {
                     ImageIO.write(result.image, "PNG", cacheFile);
