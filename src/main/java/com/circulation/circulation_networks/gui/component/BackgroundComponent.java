@@ -18,7 +18,7 @@ public class BackgroundComponent extends Component {
 
     public BackgroundComponent(int width, int height, @Nonnull String bgSprite, @Nonnull CFNBaseGui<?> gui) {
         super(0, 0, width, height, gui);
-        setSpriteLayers("bg/" + bgSprite);
+        setSpriteLayers(bgSprite);
     }
 
     @Override

@@ -74,7 +74,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
     public static final ComponentAtlas INSTANCE = new ComponentAtlas();
 
     private static final String COMPONENT_DIR = "textures/gui/component/";
-    private static final String BACKGROUND_DIR = "textures/gui/background/";
     private static final String DOMAIN = CirculationFlowNetworks.MOD_ID;
     private static final int MIN_SIZE = 256;
     private static final int MAX_SIZE = 8192;
@@ -399,10 +398,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         if (!sprites.isEmpty()) {
             for (String sprite : sprites) addSprite(sprite);
         }
-        List<String> backgrounds = event.getBackgrounds();
-        if (!backgrounds.isEmpty()) {
-            for (String background : backgrounds) addBackground(background);
-        }
 
         cacheDir = modConfigDir;
         if (!cacheDir.exists()) {
@@ -415,32 +410,8 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         /*Minecraft mc = Minecraft.getInstance();
          *///?}
         String[] names = registeredSpriteNames();
-        String[] bgNames = registeredBackgroundNames();
 
         List<RawSprite> rawSprites = new ObjectArrayList<>();
-        for (String bgName : bgNames) {
-            //? if <1.20 {
-            ResourceLocation loc = new ResourceLocation(DOMAIN, BACKGROUND_DIR + bgName + ".png");
-            try (InputStream is = mc.getResourceManager().getResource(loc).getInputStream()) {
-                //?} else {
-            /*ResourceLocation loc =
-            //? if <1.21 {
-            new ResourceLocation(DOMAIN, BACKGROUND_DIR + bgName + ".png");
-            //?} else {
-            ResourceLocation.fromNamespaceAndPath(DOMAIN, BACKGROUND_DIR + bgName + ".png");
-            //?}
-            try (InputStream is = mc.getResourceManager().getResourceOrThrow(loc).open()) {
-            *///?}
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] chunk = new byte[8192];
-                int n;
-                while ((n = is.read(chunk)) != -1) baos.write(chunk, 0, n);
-                rawSprites.add(new RawSprite(backgroundName(bgName), baos.toByteArray()));
-            } catch (Exception e) {
-                CirculationFlowNetworks.LOGGER.warn(
-                    "Could not load background '{}': {}", bgName, e.getMessage());
-            }
-        }
         for (String name : names) {
             //? if <1.20 {
             ResourceLocation loc = new ResourceLocation(DOMAIN, COMPONENT_DIR + name + ".png");

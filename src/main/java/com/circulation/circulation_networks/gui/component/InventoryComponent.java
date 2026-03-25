@@ -11,7 +11,7 @@ public class InventoryComponent extends Component {
 
     public InventoryComponent(int x, int y, CFNBaseGui<?> gui) {
         super(x, y, WIDTH, HEIGHT, gui);
-        setSpriteLayers("bg/inventory");
+        setSpriteLayers("inventory");
     }
 
     public InventoryComponent(int x, int y, ComponentSlotLayout layout, CFNBaseGui<?> gui) {

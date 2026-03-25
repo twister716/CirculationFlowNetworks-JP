@@ -16,28 +16,16 @@ import java.util.Set;
  */
 public abstract class ComponentAtlasRegistry {
 
-    protected static final String BG_PREFIX = "bg/";
-
     private final Object2ObjectOpenHashMap<String, AtlasRegion> regions = new Object2ObjectOpenHashMap<>();
     private final Set<String> registeredSprites = new ObjectLinkedOpenHashSet<>();
-    private final Set<String> registeredBackgrounds = new ObjectLinkedOpenHashSet<>();
 
     @Nullable
     public final AtlasRegion getRegion(String name) {
         return regions.get(name);
     }
 
-    @Nullable
-    public final AtlasRegion getBackground(String name) {
-        return regions.get(backgroundName(name));
-    }
-
     final void addSprite(String name) {
         registeredSprites.add(name);
-    }
-
-    final void addBackground(String name) {
-        registeredBackgrounds.add(name);
     }
 
     protected final void replaceRegions(Collection<AtlasRegion> atlasRegions) {
@@ -56,13 +44,5 @@ public abstract class ComponentAtlasRegistry {
 
     protected final String[] registeredSpriteNames() {
         return registeredSprites.toArray(new String[0]);
-    }
-
-    protected final String[] registeredBackgroundNames() {
-        return registeredBackgrounds.toArray(new String[0]);
-    }
-
-    protected static String backgroundName(String name) {
-        return BG_PREFIX + name;
     }
 }

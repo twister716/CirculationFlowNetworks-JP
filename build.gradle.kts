@@ -88,8 +88,7 @@ fun collectPngResourceNames(resourceRoots: List<File>, relativePath: String): Li
 
 fun buildGeneratedComponentAtlasRegistrationSource(
     packageName: String,
-    sprites: List<String>,
-    backgrounds: List<String>
+    sprites: List<String>
 ): String = buildString {
     appendLine("package $packageName;")
     appendLine()
@@ -100,9 +99,6 @@ fun buildGeneratedComponentAtlasRegistrationSource(
     appendLine("    public static void register(RegisterComponentSpritesEvent event) {")
     for (sprite in sprites) {
         appendLine("        event.register(\"${escapeJavaString(sprite)}\");")
-    }
-    for (background in backgrounds) {
-        appendLine("        event.registerBackground(\"${escapeJavaString(background)}\");")
     }
     appendLine("    }")
     appendLine("}")
@@ -389,10 +385,7 @@ val atlasResourceRoots = listOf(sharedResourcesDir, localResourcesDir)
     .distinctBy { it.absolutePath }
     .filter { it.exists() }
 val atlasComponentRelativePath = "assets/${propertyString("mod_id")}/textures/gui/component"
-val atlasBackgroundRelativePath = "assets/${propertyString("mod_id")}/textures/gui/background"
-val componentAtlasInputDirs = atlasResourceRoots.flatMap { root ->
-    listOf(File(root, atlasComponentRelativePath), File(root, atlasBackgroundRelativePath)).filter { it.exists() }
-}
+val componentAtlasInputDirs = atlasResourceRoots.map { File(it, atlasComponentRelativePath) }.filter { it.exists() }
 
 repositories {
     exclusiveContent {
@@ -756,8 +749,7 @@ val generateComponentAtlasRegistration = tasks.register("generateComponentAtlasR
             file,
             buildGeneratedComponentAtlasRegistrationSource(
                 generatedComponentAtlasPackage,
-                collectPngResourceNames(atlasResourceRoots, atlasComponentRelativePath),
-                collectPngResourceNames(atlasResourceRoots, atlasBackgroundRelativePath)
+                collectPngResourceNames(atlasResourceRoots, atlasComponentRelativePath)
             )
         )
     }
