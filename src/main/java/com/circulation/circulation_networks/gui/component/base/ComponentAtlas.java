@@ -378,37 +378,7 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
 
     @SubscribeEvent
     public void onRegisterSprites(RegisterComponentSpritesEvent event) {
-        var buttonUtil = new RegisterButtonUtil(event);
-        event.register("slot");
-        buttonUtil.register("settings");
-        buttonUtil.register("player_power_supply");
-        buttonUtil.register("upgrade_plugin");
-        event.register("upgrade_plugin_ui");
-        event.register("upgrade_plugin_slot");
-        buttonUtil.register("channel");
-        buttonUtil.register("permission");
-        buttonUtil.register("node");
-        buttonUtil.register("energy_unit");
-        buttonUtil.register("slider_button");
-        buttonUtil.register("ui_close");
-        event.register("slider");
-        event.register("hub_1_1_button");
-        event.register("hub_1_3_button");
-
-        event.registerBackground("hub_base");
-        event.registerBackground("inventory");
-    }
-
-    //? if < 1.20.1{
-    @Desugar
-        //?}
-    public record RegisterButtonUtil(RegisterComponentSpritesEvent event) {
-        public void register(String name) {
-            event.register(name);
-            event.register(name + "_hovered");
-            event.register(name + "_pressed");
-            event.register(name + "_disabled");
-        }
+        GeneratedComponentAtlasRegistration.register(event);
     }
 
     /**

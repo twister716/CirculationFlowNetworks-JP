@@ -34,7 +34,7 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
     IInventory getPlugins();
     //?} else {
     /*Container getPlugins();
-     *///
+        *///?}
 
     @Nonnull
     UUID getChannelId();

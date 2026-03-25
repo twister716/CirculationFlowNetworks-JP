@@ -32,6 +32,7 @@ val isLegacyRfg = currentPlatform == "rfg"
 val sharedResourcesDir = rootProject.file("src/main/resources")
 val localResourcesDir = file("src/main/resources")
 val activeResourcesDir = if (localResourcesDir.exists()) localResourcesDir else sharedResourcesDir
+val generatedComponentAtlasDir = layout.buildDirectory.dir("generated/sources/componentAtlas/main/java")
 val rootDependenciesFile = rootProject.file("dependencies.gradle")
 val localDependenciesFile = file("dependencies.gradle")
 
@@ -63,6 +64,66 @@ fun propertyStringList(key: String, delimiter: String = " "): List<String> =
     propertyString(key).split(delimiter).filter { it.isNotEmpty() }
 
 fun hasJavaSources(dir: File): Boolean = dir.exists() && dir.walkTopDown().any { it.isFile && it.extension == "java" }
+
+fun File.collectPngResourceNames(): List<String> {
+    if (!exists()) {
+        return emptyList()
+    }
+    return walkTopDown()
+        .filter { it.isFile && it.extension == "png" }
+        .map { it.relativeTo(this).invariantSeparatorsPath.removeSuffix(".png") }
+        .distinct()
+        .sorted()
+        .toList()
+}
+
+fun collectPngResourceNames(resourceRoots: List<File>, relativePath: String): List<String> =
+    resourceRoots.asSequence()
+        .map { File(it, relativePath) }
+        .filter { it.exists() }
+        .flatMap { it.collectPngResourceNames().asSequence() }
+        .distinct()
+        .sorted()
+        .toList()
+
+fun buildGeneratedComponentAtlasRegistrationSource(
+    packageName: String,
+    sprites: List<String>,
+    backgrounds: List<String>
+): String = buildString {
+    appendLine("package $packageName;")
+    appendLine()
+    appendLine("public final class GeneratedComponentAtlasRegistration {")
+    appendLine("    private GeneratedComponentAtlasRegistration() {")
+    appendLine("    }")
+    appendLine()
+    appendLine("    public static void register(RegisterComponentSpritesEvent event) {")
+    for (sprite in sprites) {
+        appendLine("        event.register(\"${escapeJavaString(sprite)}\");")
+    }
+    for (background in backgrounds) {
+        appendLine("        event.registerBackground(\"${escapeJavaString(background)}\");")
+    }
+    appendLine("    }")
+    appendLine("}")
+}
+
+fun writeIfChanged(target: File, content: String) {
+    target.parentFile.mkdirs()
+    if (!target.exists() || target.readText() != content) {
+        target.writeText(content)
+    }
+}
+
+fun escapeJavaString(value: String): String = buildString(value.length) {
+    value.forEach { ch ->
+        when (ch) {
+            '\\' -> append("\\\\")
+            '"' -> append("\\\"")
+            else -> append(ch)
+        }
+    }
+}
 
 
 fun mixinEnvToBlockName(envName: String): String = when (envName.uppercase()) {
@@ -314,6 +375,23 @@ if (currentPlatform == "legacyforge" && propertyBool("use_mixins") && hasMixinSo
     propertyStringList("mixin_configs").forEach { mixinConfig ->
         mixinExtension.invokeMethod("config", arrayOf("mixins.$mixinConfig.json"))
     }
+}
+
+the<JavaPluginExtension>().sourceSets.named("main") {
+    java.srcDir(generatedComponentAtlasDir)
+}
+
+val generatedComponentAtlasPackage = "com.circulation.circulation_networks.gui.component.base"
+val generatedComponentAtlasFile = generatedComponentAtlasDir.map {
+    it.file(generatedComponentAtlasPackage.replace('.', '/') + "/GeneratedComponentAtlasRegistration.java").asFile
+}
+val atlasResourceRoots = listOf(sharedResourcesDir, localResourcesDir)
+    .distinctBy { it.absolutePath }
+    .filter { it.exists() }
+val atlasComponentRelativePath = "assets/${propertyString("mod_id")}/textures/gui/component"
+val atlasBackgroundRelativePath = "assets/${propertyString("mod_id")}/textures/gui/background"
+val componentAtlasInputDirs = atlasResourceRoots.flatMap { root ->
+    listOf(File(root, atlasComponentRelativePath), File(root, atlasBackgroundRelativePath)).filter { it.exists() }
 }
 
 repositories {
@@ -662,8 +740,35 @@ val generateMixinJson = tasks.register("generateMixinJson") {
     }
 }
 
+val generateComponentAtlasRegistration = tasks.register("generateComponentAtlasRegistration") {
+    group = "cleanroom helpers"
+
+    inputs.files(componentAtlasInputDirs)
+    outputs.file(generatedComponentAtlasFile)
+
+    doLast {
+        val file = generatedComponentAtlasFile.get()
+        val staleImpl = File(file.parentFile, "GeneratedComponentAtlasRegistrationImpl.java")
+        if (staleImpl.exists()) {
+            staleImpl.delete()
+        }
+        writeIfChanged(
+            file,
+            buildGeneratedComponentAtlasRegistrationSource(
+                generatedComponentAtlasPackage,
+                collectPngResourceNames(atlasResourceRoots, atlasComponentRelativePath),
+                collectPngResourceNames(atlasResourceRoots, atlasBackgroundRelativePath)
+            )
+        )
+    }
+}
+
 tasks.named<ProcessResources>("processResources") {
     dependsOn(generateMixinJson)
+}
+
+tasks.named("compileJava") {
+    dependsOn(generateComponentAtlasRegistration)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -706,6 +811,7 @@ tasks.withType<AbstractCopyTask>().configureEach { dependsOn(prepareKsp) }
 val cleanroomAfterSync = tasks.register("cleanroomAfterSync") {
     group = "cleanroom helpers"
     dependsOn(generateMixinJson)
+    dependsOn(generateComponentAtlasRegistration)
     if (isLegacyRfg) {
         dependsOn("injectTags")
     }
