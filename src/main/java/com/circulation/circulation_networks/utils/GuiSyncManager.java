@@ -11,7 +11,7 @@ public class GuiSyncManager {
 
     public void init() {
         for (var value : this.syncData.values()) {
-             value.init();
+            value.init();
         }
     }
 

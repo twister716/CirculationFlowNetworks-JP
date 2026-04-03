@@ -6,8 +6,6 @@ import java.util.function.Supplier;
 
 public interface LocalizedComponent extends Supplier<String> {
 
-    String get();
-
     static LocalizedComponent of(String key) {
         return () -> CI18n.format(key);
     }
@@ -31,4 +29,6 @@ public interface LocalizedComponent extends Supplier<String> {
     static LocalizedComponent literal(String text) {
         return () -> text;
     }
+
+    String get();
 }

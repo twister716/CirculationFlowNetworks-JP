@@ -10,47 +10,49 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import net.minecraft.client.Minecraft;
+//? if <1.20 {
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 //? if <1.20 {
 import com.github.bsideup.jabel.Desugar;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else {
 /*import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 *///?}
 //? if <1.20 {
 //?} else if <1.21 {
-/*import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/*//~ neo_imports
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 *///?} else {
-/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+/*//~ neo_imports
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 *///?}
 import org.lwjgl.opengl.GL11;
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public final class NodeNetworkRenderingHandler {
 
     public static final NodeNetworkRenderingHandler INSTANCE = new NodeNetworkRenderingHandler();
 
-    private static final int CYLINDER_SIDES = 8;
     private static final float CORE_RADIUS = 0.04f;
     private static final float GLOW_RADIUS = 0.10f;
 
@@ -113,7 +115,7 @@ public final class NodeNetworkRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*RenderSystem.getModelViewStack().popMatrix();
-        *///?}
+         *///?}
     }
 
     public void addNodeLink(long a, long b) {
@@ -152,11 +154,11 @@ public final class NodeNetworkRenderingHandler {
     }
 
     @SubscribeEvent
-    //? if <1.20 {
+        //? if <1.20 {
     public void renderWorldLastEvent(RenderWorldLastEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP p = mc.player;
-    //?} else {
+        //?} else {
     /*public void renderWorldLastEvent(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         Minecraft mc = Minecraft.getInstance();
@@ -167,7 +169,7 @@ public final class NodeNetworkRenderingHandler {
         var stack = p.getHeldItemMainhand();
         //?} else {
         /*var stack = p.getMainHandItem();
-        *///?}
+         *///?}
         if (!(stack.getItem() == CFNItems.inspectionTool
             && InspectionToolState.getFunction(stack) == ToolFunction.INSPECTION
             && InspectionMode.fromID(InspectionToolState.getSubMode(stack)).isMode(InspectionMode.LINK)))
@@ -255,7 +257,7 @@ public final class NodeNetworkRenderingHandler {
             RenderSystem.applyModelViewMatrix();
             *///?} else {
             /*RenderSystem.getModelViewStack().popMatrix();
-            *///?}
+             *///?}
         }
         for (var pos : machinePoss.elementSet()) {
             if (nodePoss.contains(pos)) continue;
@@ -279,7 +281,7 @@ public final class NodeNetworkRenderingHandler {
             RenderSystem.applyModelViewMatrix();
             *///?} else {
             /*RenderSystem.getModelViewStack().popMatrix();
-            *///?}
+             *///?}
         }
 
         //? if <1.20 {
@@ -308,7 +310,7 @@ public final class NodeNetworkRenderingHandler {
 
     //? if <1.20 {
     @Desugar
-    //?}
+        //?}
     private record Line(Pos from, Pos to, int hash) {
 
         private static Line create(long from, long to) {
@@ -340,7 +342,7 @@ public final class NodeNetworkRenderingHandler {
         private static final int NUM_X_BITS = 1 + MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(30000000));
         //?} else {
         /*private static final int NUM_X_BITS = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
-        *///?}
+         *///?}
         private static final int NUM_Z_BITS = NUM_X_BITS;
         private static final int NUM_Y_BITS = 64 - NUM_X_BITS - NUM_Z_BITS;
         private static final int Y_SHIFT = NUM_Z_BITS;

@@ -8,6 +8,10 @@ public final class ConstantEnergyAmount extends EnergyAmount {
         super(value);
     }
 
+    private static UnsupportedOperationException immutableError() {
+        return new UnsupportedOperationException("Constant EnergyAmount cannot be modified");
+    }
+
     @Override
     public EnergyAmount init(long value) {
         if (state != STATE_UNINITIALIZED) throw immutableError();
@@ -74,9 +78,5 @@ public final class ConstantEnergyAmount extends EnergyAmount {
     @Override
     public EnergyAmount max(EnergyAmount other) {
         throw immutableError();
-    }
-
-    private static UnsupportedOperationException immutableError() {
-        return new UnsupportedOperationException("Constant EnergyAmount cannot be modified");
     }
 }

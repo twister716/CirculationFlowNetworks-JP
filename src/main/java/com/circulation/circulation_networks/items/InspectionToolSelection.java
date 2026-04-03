@@ -8,7 +8,12 @@ import net.minecraft.item.ItemStack;
 
 import java.util.List;
 
-public final class InspectionToolSelection {
+//? if <1.20 {
+import com.github.bsideup.jabel.Desugar;
+
+@Desugar
+//?}
+public record InspectionToolSelection(ToolFunction function, int subMode) {
 
     public static final String MODE_DISPLAY_KEY = "item.circulation_networks.inspection_tool.mode_display";
     public static final String CURRENT_MODE_KEY = "item.circulation_networks.inspection_tool.current_mode";
@@ -16,24 +21,8 @@ public final class InspectionToolSelection {
     public static final String SWITCH_MODE_USAGE_KEY = "item.circulation_networks.inspection_tool.usage.switch_mode";
     public static final String SWITCH_SUBMODE_USAGE_KEY = "item.circulation_networks.inspection_tool.usage.switch_submode";
 
-    private final ToolFunction function;
-    private final int subMode;
-
-    public InspectionToolSelection(ToolFunction function, int subMode) {
-        this.function = function;
-        this.subMode = subMode;
-    }
-
     public static InspectionToolSelection fromStack(ItemStack stack) {
         return new InspectionToolSelection(InspectionToolState.getFunction(stack), InspectionToolState.getSubMode(stack));
-    }
-
-    public ToolFunction function() {
-        return function;
-    }
-
-    public int subMode() {
-        return subMode;
     }
 
     public String modeLangKey() {

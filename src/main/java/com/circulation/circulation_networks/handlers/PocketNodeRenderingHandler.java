@@ -1,0 +1,301 @@
+package com.circulation.circulation_networks.handlers;
+
+import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
+import com.circulation.circulation_networks.pocket.PocketNodeRecord;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectList;
+import net.minecraft.client.Minecraft;
+//~ mc_imports
+import net.minecraft.util.math.BlockPos;
+//? if <1.20 {
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+*///?} else {
+/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
+//? if <1.20 {
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
+import net.minecraft.util.EnumFacing;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
+import org.lwjgl.opengl.GL11;
+//?} else {
+/*import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemDisplayContext;
+//~ neo_imports
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+*///?}
+
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
+@SideOnly(Side.CLIENT)
+//~}
+public final class PocketNodeRenderingHandler {
+
+    public static final PocketNodeRenderingHandler INSTANCE = new PocketNodeRenderingHandler();
+    private static final double FACE_OFFSET = 0.501D;
+    private static final float FACE_SCALE = 0.5F;
+    private final Int2ObjectMap<Long2ObjectMap<PocketNodeClientHost>> hosts = new Int2ObjectOpenHashMap<>();
+
+    private PocketNodeRenderingHandler() {
+    }
+
+    private static void unregisterHost(PocketNodeClientHost host) {
+        if (host != null) {
+            MachineNodeBlockEntityManager.INSTANCE.unregisterClientMachine(host);
+        }
+    }
+
+    private static long pack(BlockPos pos) {
+        //? if <1.20 {
+        return pos.toLong();
+        //?} else {
+        /*return pos.asLong();
+         *///?}
+    }
+
+    //? if <1.20 {
+    private static void applyFaceTransform(EnumFacing face) {
+        EnumFacing resolved = face == null ? EnumFacing.UP : face;
+        switch (resolved) {
+            case DOWN -> {
+                GlStateManager.translate(0.0D, -FACE_OFFSET, 0.0D);
+                GlStateManager.rotate(90.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(180.0F, 0.0F, 0.0F, 1.0F);
+            }
+            case NORTH -> {
+                GlStateManager.translate(0.0D, 0.0D, -FACE_OFFSET);
+                GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
+            }
+            case SOUTH -> GlStateManager.translate(0.0D, 0.0D, FACE_OFFSET);
+            case WEST -> {
+                GlStateManager.translate(-FACE_OFFSET, 0.0D, 0.0D);
+                GlStateManager.rotate(-90.0F, 0.0F, 1.0F, 0.0F);
+            }
+            case EAST -> {
+                GlStateManager.translate(FACE_OFFSET, 0.0D, 0.0D);
+                GlStateManager.rotate(90.0F, 0.0F, 1.0F, 0.0F);
+            }
+            default -> {
+                GlStateManager.translate(0.0D, FACE_OFFSET, 0.0D);
+                GlStateManager.rotate(-90.0F, 1.0F, 0.0F, 0.0F);
+            }
+        }
+        GlStateManager.scale(FACE_SCALE, FACE_SCALE, FACE_SCALE);
+    }
+    //?}
+
+    private Long2ObjectMap<PocketNodeClientHost> getDimHosts(int dimId) {
+        return hosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
+    }
+
+    public void setDimensionState(int dimId, ObjectList<PocketNodeRecord> records) {
+        clearDimension(dimId);
+        for (var record : records) {
+            add(record);
+        }
+    }
+
+    public void add(PocketNodeRecord record) {
+        long posLong = pack(record.pos());
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = getDimHosts(record.dimensionId());
+        unregisterHost(dimHosts.put(posLong, new PocketNodeClientHost(record)));
+        MachineNodeBlockEntityManager.INSTANCE.registerClientMachine(dimHosts.get(posLong));
+    }
+
+    public void remove(int dimId, BlockPos pos) {
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
+        if (dimHosts == null) {
+            return;
+        }
+        unregisterHost(dimHosts.remove(pack(pos)));
+        if (dimHosts.isEmpty()) {
+            hosts.remove(dimId);
+        }
+    }
+
+    public void clearDimension(int dimId) {
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.remove(dimId);
+        if (dimHosts == null) {
+            return;
+        }
+        for (var host : dimHosts.values()) {
+            unregisterHost(host);
+        }
+    }
+
+    public void clear() {
+        for (var dimHosts : hosts.values()) {
+            for (var host : dimHosts.values()) {
+                unregisterHost(host);
+            }
+        }
+        hosts.clear();
+    }
+
+    //? if >=1.20 {
+    /*@SubscribeEvent
+    public void renderWorldLastEvent(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null || mc.level == null) {
+            return;
+        }
+
+        int dimId = mc.level.dimension().location().hashCode();
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
+        if (dimHosts == null || dimHosts.isEmpty()) {
+            return;
+        }
+
+        //? if <1.21 {
+        double cameraX = player.xOld + (player.getX() - player.xOld) * event.getPartialTick();
+        double cameraY = player.yOld + (player.getY() - player.yOld) * event.getPartialTick();
+        double cameraZ = player.zOld + (player.getZ() - player.zOld) * event.getPartialTick();
+        //?} else {
+        /^float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        double cameraX = player.xOld + (player.getX() - player.xOld) * partialTick;
+        double cameraY = player.yOld + (player.getY() - player.yOld) * partialTick;
+        double cameraZ = player.zOld + (player.getZ() - player.zOld) * partialTick;
+        ^///?}
+
+        for (var host : dimHosts.values()) {
+            if (host.getRenderStack().isEmpty()) {
+                continue;
+            }
+
+            BlockPos pos = host.getRecord().getPos();
+            PoseStack poseStack = event.getPoseStack();
+            poseStack.pushPose();
+            poseStack.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
+            applyFaceTransform(poseStack, host.getRecord().getAttachmentFace());
+            if (mc.getItemRenderer().getModel(host.getRenderStack(), mc.level, null, 0).isGui3d()) {
+                poseStack.scale(1.0F, 1.0F, 0.002F);
+            }
+
+            MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+            mc.getItemRenderer().renderStatic(
+                host.getRenderStack(),
+                ItemDisplayContext.GUI,
+                LightTexture.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY,
+                poseStack,
+                bufferSource,
+                mc.level,
+                0
+            );
+            bufferSource.endBatch();
+            poseStack.popPose();
+        }
+    }
+    *///?}
+
+    public boolean hasNode(int dimId, BlockPos pos) {
+        if (pos == null) {
+            return false;
+        }
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
+        return dimHosts != null && dimHosts.containsKey(pack(pos));
+    }
+
+    //? if <1.20 {
+    @SubscribeEvent
+    public void renderWorldLastEvent(RenderWorldLastEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        EntityPlayerSP player = mc.player;
+        if (player == null || mc.world == null) {
+            return;
+        }
+
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(player.dimension);
+        if (dimHosts == null || dimHosts.isEmpty()) {
+            return;
+        }
+
+        double cameraX = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks();
+        double cameraY = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
+        double cameraZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.getPartialTicks();
+
+        for (var host : dimHosts.values()) {
+            if (host.getRenderStack().isEmpty()) {
+                continue;
+            }
+
+            BlockPos pos = host.getRecord().pos();
+            GlStateManager.pushMatrix();
+            GlStateManager.enableRescaleNormal();
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                GL11.GL_SRC_ALPHA,
+                GL11.GL_ONE_MINUS_SRC_ALPHA,
+                GL11.GL_ONE,
+                GL11.GL_ZERO
+            );
+            GlStateManager.disableCull();
+            GlStateManager.depthMask(false);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
+            applyFaceTransform(host.getRecord().attachmentFace());
+            if (mc.getRenderItem().getItemModelWithOverrides(host.getRenderStack(), mc.world, null).isGui3d()) {
+                GlStateManager.scale(1.0F, 1.0F, 0.002F);
+            }
+            RenderHelper.enableGUIStandardItemLighting();
+            mc.getRenderItem().renderItem(host.getRenderStack(), ItemCameraTransforms.TransformType.GUI);
+            RenderHelper.disableStandardItemLighting();
+            GlStateManager.depthMask(true);
+            GlStateManager.enableCull();
+            GlStateManager.disableBlend();
+            GlStateManager.popMatrix();
+        }
+    }
+    //?} else {
+    /*private static void applyFaceTransform(PoseStack poseStack, Direction face) {
+        Direction resolved = face == null ? Direction.UP : face;
+        switch (resolved) {
+            case DOWN -> {
+                poseStack.translate(0.0D, -0.48D, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180.0F));
+            }
+            case NORTH -> {
+                poseStack.translate(0.0D, 0.0D, -0.48D);
+                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
+            }
+            case SOUTH -> {
+                poseStack.translate(0.0D, 0.0D, 0.48D);
+                poseStack.mulPose(com.mojang.math.Axis.XN.rotationDegrees(90.0F));
+            }
+            case WEST -> {
+                poseStack.translate(-0.48D, 0.0D, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.YN.rotationDegrees(90.0F));
+            }
+            case EAST -> {
+                poseStack.translate(0.48D, 0.0D, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90.0F));
+            }
+            default -> poseStack.translate(0.0D, 0.48D, 0.0D);
+        }
+        poseStack.scale(0.6F, 0.6F, 0.6F);
+    }
+    *///?}
+}

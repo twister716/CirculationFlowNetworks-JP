@@ -1,9 +1,11 @@
 package com.circulation.circulation_networks.registry;
 
-import com.circulation.circulation_networks.blocks.BlockPhaseInterrupter;
-import com.circulation.circulation_networks.blocks.nodes.BlockElectromagneticInductionTower;
-import com.circulation.circulation_networks.blocks.nodes.BlockEnergyInductionTower;
+import com.circulation.circulation_networks.blocks.BlockNodePedestal;
+import com.circulation.circulation_networks.blocks.BlockCirculationShielder;
+import com.circulation.circulation_networks.blocks.nodes.BlockChargingNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockHub;
+import com.circulation.circulation_networks.blocks.nodes.BlockPortNode;
+import com.circulation.circulation_networks.blocks.nodes.BlockRelayNode;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -24,16 +26,20 @@ public final class RegistryBlocks {
     private static final List<Block> BLOCKS_TO_REGISTER = new LinkedList<>();
     private static final List<Block> BLOCK_MODELS_TO_REGISTER = new LinkedList<>();
 
-    public static BlockEnergyInductionTower blockEnergyInductionTower;
-    public static BlockElectromagneticInductionTower blockElectromagneticInductionTower;
-    public static BlockPhaseInterrupter blockPhaseInterrupter;
+    public static BlockPortNode blockPortNode;
+    public static BlockChargingNode blockChargingNode;
+    public static BlockRelayNode blockRelayNode;
+    public static BlockCirculationShielder blockCirculationShielder;
     public static BlockHub blockHub;
+    public static BlockNodePedestal blockNodePedestal;
 
     public static void registerBlocks(RegistryEvent.Register<Block> event) {
-        prepareItemBlockRegister(blockEnergyInductionTower = registerBlock(new BlockEnergyInductionTower()));
-        prepareItemBlockRegister(blockElectromagneticInductionTower = registerBlock(new BlockElectromagneticInductionTower()));
-        prepareItemBlockRegister(blockPhaseInterrupter = registerBlock(new BlockPhaseInterrupter()));
+        prepareItemBlockRegister(blockPortNode = registerBlock(new BlockPortNode()));
+        prepareItemBlockRegister(blockChargingNode = registerBlock(new BlockChargingNode()));
+        prepareItemBlockRegister(blockRelayNode = registerBlock(new BlockRelayNode()));
+        prepareItemBlockRegister(blockCirculationShielder = registerBlock(new BlockCirculationShielder()));
         prepareItemBlockRegister(blockHub = registerBlock(new BlockHub()));
+        prepareItemBlockRegister(blockNodePedestal = registerBlock(new BlockNodePedestal()));
 
         BLOCKS_TO_REGISTER.forEach(event.getRegistry()::register);
         BLOCKS_TO_REGISTER.clear();

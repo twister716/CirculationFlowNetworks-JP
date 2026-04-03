@@ -25,12 +25,154 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     protected static final BigInteger BIG_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
     protected static final BigInteger BIG_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     protected static final Deque<EnergyAmount> POOL = new ConcurrentLinkedDeque<>();
-
+    protected byte state = STATE_UNINITIALIZED;
     private long longValue;
     private BigInteger bigValue;
-    protected byte state = STATE_UNINITIALIZED;
 
     protected EnergyAmount() {
+    }
+
+    protected EnergyAmount(long value) {
+        init(value);
+    }
+
+    protected EnergyAmount(BigInteger value) {
+        init(value);
+    }
+
+    public static EnergyAmount obtain(long value) {
+        EnergyAmount amount = POOL.pollFirst();
+        return amount == null ? new EnergyAmount(value) : amount.init(value);
+    }
+
+    public static EnergyAmount obtain(BigInteger value) {
+        EnergyAmount amount = POOL.pollFirst();
+        return amount == null ? new EnergyAmount(value) : amount.init(value);
+    }
+
+    public static EnergyAmount obtain(String value) {
+        String trimmed = normalizeNumericString(value);
+        return isLongValueString(trimmed) ? obtain(parseLongString(trimmed)) : obtain(new BigInteger(trimmed));
+    }
+
+    public static EnergyAmount obtain(EnergyAmount other) {
+        EnergyAmount amount = POOL.pollFirst();
+        return amount == null ? new EnergyAmount().copyFrom(other) : amount.copyFrom(other);
+    }
+
+    private static BigInteger truncateToInteger(BigDecimal value) {
+        return value.toBigInteger();
+    }
+
+    private static void validateFinite(double value) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException("EnergyAmount operand must be finite");
+        }
+    }
+
+    private static String normalizeNumericString(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("EnergyAmount string cannot be null");
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("EnergyAmount string cannot be empty");
+        }
+        return trimmed;
+    }
+
+    private static boolean isLongValueString(String value) {
+        int start = value.charAt(0) == '-' || value.charAt(0) == '+' ? 1 : 0;
+        if (start == value.length()) {
+            throw new NumberFormatException("For input string: \"" + value + "\"");
+        }
+        boolean negative = start > 0 && value.charAt(0) == '-';
+        int firstNonZero = start;
+        while (firstNonZero < value.length()) {
+            char digit = value.charAt(firstNonZero);
+            if (digit == '0') {
+                firstNonZero++;
+                continue;
+            }
+            if (digit < '0' || digit > '9') {
+                throw new NumberFormatException("For input string: \"" + value + "\"");
+            }
+            break;
+        }
+        if (firstNonZero == value.length()) {
+            return true;
+        }
+        int digitCount = value.length() - firstNonZero;
+        for (int i = firstNonZero + 1; i < value.length(); i++) {
+            char digit = value.charAt(i);
+            if (digit < '0' || digit > '9') {
+                throw new NumberFormatException("For input string: \"" + value + "\"");
+            }
+        }
+        if (digitCount < 19) {
+            return true;
+        }
+        if (digitCount > 19) {
+            return false;
+        }
+        return compareWithLongLimit(value, firstNonZero, negative) <= 0;
+    }
+
+    private static long parseLongString(String value) {
+        boolean negative = value.charAt(0) == '-';
+        int start = negative || value.charAt(0) == '+' ? 1 : 0;
+        long result = 0L;
+        for (int i = start; i < value.length(); i++) {
+            result = result * 10L - (value.charAt(i) - '0');
+        }
+        return negative ? result : -result;
+    }
+
+    private static int compareWithLongLimit(String value, int digitStart, boolean negative) {
+        String limit = negative ? "9223372036854775808" : "9223372036854775807";
+        for (int i = 0; i < 19; i++) {
+            int diff = value.charAt(digitStart + i) - limit.charAt(i);
+            if (diff != 0) {
+                return diff;
+            }
+        }
+        return 0;
+    }
+
+    private static long asWholeLong(double value) {
+        if (value < Long.MIN_VALUE || value > Long.MAX_VALUE) {
+            return Long.MIN_VALUE;
+        }
+        return (long) value;
+    }
+
+    private static boolean willMultiplyOverflow(long left, long right) {
+        if (left == 0L || right == 0L) {
+            return false;
+        }
+        if (left > 0L) {
+            if (right > 0L) {
+                return left > Long.MAX_VALUE / right;
+            }
+            return right < Long.MIN_VALUE / left;
+        }
+        if (right > 0L) {
+            return left < Long.MIN_VALUE / right;
+        }
+        return left < Long.MAX_VALUE / right;
+    }
+
+    private static boolean fitsInLong(BigInteger value) {
+        return value.bitLength() <= 63;
+    }
+
+    private static BigInteger toBigInteger(long value) {
+        if (value == 0L) return BigInteger.ZERO;
+        if (value == 1L) return BigInteger.ONE;
+        if (value == Integer.MAX_VALUE) return BIG_INT_MAX;
+        if (value == Long.MAX_VALUE) return BIG_LONG_MAX;
+        if (value == Long.MIN_VALUE) return BIG_LONG_MIN;
+        return BigInteger.valueOf(value);
     }
 
     @Override
@@ -87,34 +229,6 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
             return 0.0D;
         }
         return bigValue.doubleValue();
-    }
-
-    protected EnergyAmount(long value) {
-        init(value);
-    }
-
-    protected EnergyAmount(BigInteger value) {
-        init(value);
-    }
-
-    public static EnergyAmount obtain(long value) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount(value) : amount.init(value);
-    }
-
-    public static EnergyAmount obtain(BigInteger value) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount(value) : amount.init(value);
-    }
-
-    public static EnergyAmount obtain(String value) {
-        String trimmed = normalizeNumericString(value);
-        return isLongValueString(trimmed) ? obtain(parseLongString(trimmed)) : obtain(new BigInteger(trimmed));
-    }
-
-    public static EnergyAmount obtain(EnergyAmount other) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount().copyFrom(other) : amount.copyFrom(other);
     }
 
     public EnergyAmount init(long value) {
@@ -472,121 +586,6 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
             return BigDecimal.ZERO;
         }
         return BigDecimal.valueOf(longValue);
-    }
-
-    private static BigInteger truncateToInteger(BigDecimal value) {
-        return value.toBigInteger();
-    }
-
-    private static void validateFinite(double value) {
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("EnergyAmount operand must be finite");
-        }
-    }
-
-    private static String normalizeNumericString(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("EnergyAmount string cannot be null");
-        }
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("EnergyAmount string cannot be empty");
-        }
-        return trimmed;
-    }
-
-    private static boolean isLongValueString(String value) {
-        int start = value.charAt(0) == '-' || value.charAt(0) == '+' ? 1 : 0;
-        if (start == value.length()) {
-            throw new NumberFormatException("For input string: \"" + value + "\"");
-        }
-        boolean negative = start > 0 && value.charAt(0) == '-';
-        int firstNonZero = start;
-        while (firstNonZero < value.length()) {
-            char digit = value.charAt(firstNonZero);
-            if (digit == '0') {
-                firstNonZero++;
-                continue;
-            }
-            if (digit < '0' || digit > '9') {
-                throw new NumberFormatException("For input string: \"" + value + "\"");
-            }
-            break;
-        }
-        if (firstNonZero == value.length()) {
-            return true;
-        }
-        int digitCount = value.length() - firstNonZero;
-        for (int i = firstNonZero + 1; i < value.length(); i++) {
-            char digit = value.charAt(i);
-            if (digit < '0' || digit > '9') {
-                throw new NumberFormatException("For input string: \"" + value + "\"");
-            }
-        }
-        if (digitCount < 19) {
-            return true;
-        }
-        if (digitCount > 19) {
-            return false;
-        }
-        return compareWithLongLimit(value, firstNonZero, negative) <= 0;
-    }
-
-    private static long parseLongString(String value) {
-        boolean negative = value.charAt(0) == '-';
-        int start = negative || value.charAt(0) == '+' ? 1 : 0;
-        long result = 0L;
-        for (int i = start; i < value.length(); i++) {
-            result = result * 10L - (value.charAt(i) - '0');
-        }
-        return negative ? result : -result;
-    }
-
-    private static int compareWithLongLimit(String value, int digitStart, boolean negative) {
-        String limit = negative ? "9223372036854775808" : "9223372036854775807";
-        for (int i = 0; i < 19; i++) {
-            int diff = value.charAt(digitStart + i) - limit.charAt(i);
-            if (diff != 0) {
-                return diff;
-            }
-        }
-        return 0;
-    }
-
-    private static long asWholeLong(double value) {
-        if (value < Long.MIN_VALUE || value > Long.MAX_VALUE) {
-            return Long.MIN_VALUE;
-        }
-        return (long) value;
-    }
-
-    private static boolean willMultiplyOverflow(long left, long right) {
-        if (left == 0L || right == 0L) {
-            return false;
-        }
-        if (left > 0L) {
-            if (right > 0L) {
-                return left > Long.MAX_VALUE / right;
-            }
-            return right < Long.MIN_VALUE / left;
-        }
-        if (right > 0L) {
-            return left < Long.MIN_VALUE / right;
-        }
-        return left < Long.MAX_VALUE / right;
-    }
-
-    private static boolean fitsInLong(BigInteger value) {
-        return value.bitLength() <= 63;
-    }
-
-    private static BigInteger toBigInteger(long value) {
-        if (value == 0L) return BigInteger.ZERO;
-        if (value == 1L) return BigInteger.ONE;
-        if (value == Integer.MAX_VALUE) return BIG_INT_MAX;
-        if (value == Long.MAX_VALUE) return BIG_LONG_MAX;
-        if (value == Long.MIN_VALUE) return BIG_LONG_MIN;
-        return BigInteger.valueOf(value);
     }
 
 }

@@ -20,11 +20,9 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public class SpoceRenderingHandlerGL32L3 extends SpoceRenderingHandlerGL32L2 {
 
     protected static FloatBuffer buildSphereDataDirect() {

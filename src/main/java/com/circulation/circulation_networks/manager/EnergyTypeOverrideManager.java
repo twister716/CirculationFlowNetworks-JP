@@ -55,6 +55,17 @@ public final class EnergyTypeOverrideManager {
         }
     }
 
+    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
+    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
+    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
+    private static boolean isClientWorld(net.minecraft.world.World world) {
+        return world.isRemote;
+    }
+
+    private static int getDimensionId(net.minecraft.world.World world) {
+        return world.provider.getDimension();
+    }
+
     //~ if >=1.20 '.toLong()' -> '.asLong()' {
     public void setOverride(int dim, BlockPos pos, IEnergyHandler.EnergyType type) {
         overrides.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>()).put(pos.toLong(), type);
@@ -87,6 +98,9 @@ public final class EnergyTypeOverrideManager {
         if (isClientWorld(event.getWorld())) return;
         clearOverride(getDimensionId(event.getWorld()), event.getPos());
     }
+    //~}
+    //~}
+    //~}
 
     //? if <1.20 {
     private void loadFromFile() {
@@ -145,10 +159,7 @@ public final class EnergyTypeOverrideManager {
         }
         nbt.setTag("overrides", dims);
 
-        try {
-            CompressedStreamTools.safeWrite(nbt, saveFile);
-        } catch (IOException ignored) {
-        }
+        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "energy type override save");
 
         m = false;
     }
@@ -217,18 +228,4 @@ public final class EnergyTypeOverrideManager {
         m = false;
     }
     *///?}
-
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
-    }
-
-    private static int getDimensionId(net.minecraft.world.World world) {
-        return world.provider.getDimension();
-    }
-    //~}
-    //~}
-    //~}
 }

@@ -2,12 +2,13 @@ package com.circulation.circulation_networks.api;
 
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.INode;
+import com.circulation.circulation_networks.api.node.NodeType;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.registry.RegistryNodes;
+import com.circulation.circulation_networks.registry.NodeTypes;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -52,6 +53,7 @@ public final class API {
     public static INode getNodeAt(@Nonnull World world, @Nonnull BlockPos pos) {
         return NetworkManager.INSTANCE.getNodeFromPos(world, pos);
     }
+
     /**
      * 返回当前所有处于活跃状态的节点。
      * <p>
@@ -317,13 +319,13 @@ public final class API {
     /**
      * 注册自定义节点类型及其 NBT 反序列化函数。
      * <p>
-     * Registers a custom node class together with its NBT deserialization function.
+     * Registers a custom node type together with its NBT deserialization function.
      *
-     * @param nodeClass 节点的 class / the node class to register
-     * @param function  从 NBT 中反序列化回节点的方法 / function to deserialize a node from NBT
+     * @param nodeType 节点类型 / the node type to register
+     * @param function 从 NBT 中反序列化回节点的方法 / function to deserialize a node from NBT
      */
-    public static void registerNode(@Nonnull Class<? extends INode> nodeClass, @Nonnull NodeDeserializer function) {
-        RegistryNodes.register(nodeClass, function);
+    public static void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function) {
+        NodeTypes.register(nodeType, function);
     }
     //~}
     //~}

@@ -1,10 +1,13 @@
-tile.circulation_networks.energy_induction_tower.name=Energy Induction Tower
-tile.circulation_networks.electromagnetic_induction_tower.name=Electromagnetic Induction Tower
-tile.circulation_networks.wind_turbine.name=Wind Turbine
-tile.circulation_networks.circulation_furnace.name=Circulation Furnace
-tile.circulation_networks.phase_interrupter.name=Phase Interrupter
-tile.circulation_networks.hub.name=Hub
-
+tile.circulation_networks.circulation_shielder.name=Circulation Shielder
+tile.circulation_networks.port_node.name=Circulation Port Node
+tile.circulation_networks.charging_node.name=Circulation Charging Node
+tile.circulation_networks.relay_node.name=Circulation Relay Node
+tile.circulation_networks.hub.name=Circulation Hub
+tile.circulation_networks.hub.tooltip.0=§8§oWith the four seas settled, all eight frontiers are united
+tile.circulation_networks.node_pedestal.name=Node Pedestal
+tile.circulation_networks.port_node.tooltip.0=§7Must be placed on a Node Pedestal
+tile.circulation_networks.charging_node.tooltip.0=§7Must be placed on a Node Pedestal
+tile.circulation_networks.relay_node.tooltip.0=§7Must be placed on a Node Pedestal
 item.circulation_networks.inspection_tool.name=Circulation Wrench
 item.circulation_networks.inspection_tool.current_mode=Current Mode: §6%s
 item.circulation_networks.inspection_tool.current_submode=Sub Mode: §9%s
@@ -24,6 +27,7 @@ item.circulation_networks.inspection_tool.config.set=§aConfigured this block as
 item.circulation_networks.inspection_tool.config.cleared=§aCleared energy configuration for this block
 item.circulation_networks.inspection_tool.config.invalid_target=§cThis block is not a valid energy machine
 item.circulation_networks.inspection_tool.config.node_blocked=§cNode machines cannot be configured this way
+item.circulation_networks.inspection_tool.tooltip.0=§8§oIf a hammer can be a wrench, then an infinite ring can be one too
 item.circulation_networks.inspection_tool.mode.inspection.description=Sneak + Right-click node machine to display node-specific information
 item.circulation_networks.inspection_tool.mode.configuration.description=Sneak + Right-click machine to override network automation machine type detection
 
@@ -32,25 +36,75 @@ item.circulation_networks.hub_channel_plugin.channel=§7Channel: §b%s §7(§b%s
 item.circulation_networks.hub_channel_plugin.no_channel=§7No channel configured
 
 item.circulation_networks.wide_area_charging_plugin.name=Wide Area Charging Plugin
-item.circulation_networks.wide_area_charging_plugin.tooltip.0=§7Extends Hub charging to all permitted players
-item.circulation_networks.wide_area_charging_plugin.tooltip.1=§7in the same dimension
+item.circulation_networks.wide_area_charging_plugin.tooltip.0=§7Allows the network where the Hub is located to charge all permitted players in the same dimension
 
 item.circulation_networks.dimensional_charging_plugin.name=Dimensional Charging Plugin
-item.circulation_networks.dimensional_charging_plugin.tooltip.0=§7Extends Hub charging to all permitted players
-item.circulation_networks.dimensional_charging_plugin.tooltip.1=§7across all dimensions
+item.circulation_networks.dimensional_charging_plugin.tooltip.0=§7Allows the network where the Hub is located to charge all permitted players across all dimensions
 
 message.circulation_networks.hub_conflict=§cCannot place node: hub conflict detected in connected networks!
+message.circulation_networks.pocket_node_occupied=§cThis block already hosts a node or pocket node
+message.circulation_networks.node_location=Node at [%d, %d, %d]
+tooltip.circulation_networks.double_click_locate=§eDouble-click to locate in world
 
-# Phase Interrupter GUI
-gui.phase_interrupter.title=Phase Interrupter Configuration
-gui.phase_interrupter.show_range=Show Range
-gui.phase_interrupter.close=Close
-gui.phase_interrupter.scope=Scope
-gui.phase_interrupter.show_range_status=Show Range
-gui.phase_interrupter.enabled=Enabled
-gui.phase_interrupter.disabled=Disabled
-gui.phase_interrupter.redstone_mode=Redstone Mode
-gui.phase_interrupter.inverse_mode=Inverse Mode
-gui.phase_interrupter.normal_mode=Normal Mode
-gui.phase_interrupter.inverse_desc=Inverse (Receive Signal → Active)
-gui.phase_interrupter.normal_desc=Normal (Receive Signal → Inactive)
+# Circulation Shielder GUI
+gui.circulation_shielder.title=Circulation Shielder Configuration
+gui.circulation_shielder.show_range=Show Range
+gui.circulation_shielder.close=Close
+gui.circulation_shielder.scope=Scope
+gui.circulation_shielder.show_range_status=Show Range
+gui.circulation_shielder.enabled=Enabled
+gui.circulation_shielder.disabled=Disabled
+gui.circulation_shielder.redstone_mode=Redstone Mode
+gui.circulation_shielder.inverse_mode=Inverse Mode
+gui.circulation_shielder.normal_mode=Normal Mode
+gui.circulation_shielder.inverse_desc=Inverse (Receive Signal → Active)
+gui.circulation_shielder.normal_desc=Normal (Receive Signal → Inactive)
+
+# Hub GUI
+gui.hub.tooltip.node_list=Node List
+gui.hub.tooltip.charging_config=Charging Config
+gui.hub.tooltip.plugin_list=Plugin List
+gui.hub.tooltip.channel_list=Channel List
+gui.hub.tooltip.permission_settings=Permission Settings
+gui.hub.tooltip.channel_settings=Channel Settings
+gui.hub.tooltip.energy_display=Energy Display
+gui.hub.tooltip.close_ui=Close UI
+gui.hub.tooltip.all_enable=Enable All
+gui.hub.tooltip.all_disable=Disable All
+gui.hub.tooltip.armor_slot=Armor Slot
+gui.hub.tooltip.main_hand=Main Hand
+gui.hub.tooltip.off_hand=Off Hand
+gui.hub.tooltip.inventory=Inventory
+gui.hub.tooltip.hotbar=Hotbar
+gui.hub.tooltip.accessory_slot=Accessory Slot
+
+# Channel list GUI
+gui.channel_list.tooltip.connected=Currently connected channel
+gui.channel_list.tooltip.switch=Click to switch to this channel
+gui.channel_list.tooltip.filter.public.hide=Hide public channels
+gui.channel_list.tooltip.filter.public.show=Show public channels
+gui.channel_list.tooltip.filter.team.hide=Hide team channels
+gui.channel_list.tooltip.filter.team.show=Show team channels
+gui.channel_list.tooltip.filter.private.hide=Hide private channels
+gui.channel_list.tooltip.filter.private.show=Show private channels
+
+# Permission list GUI
+gui.permission_list.tooltip.collapse=Collapse permission entry
+gui.permission_list.tooltip.expand=Expand permission entry
+gui.permission_list.tooltip.owner_locked=Current owner, cannot transfer
+gui.permission_list.tooltip.owner_unset=Cannot set owner
+gui.permission_list.tooltip.admin_remove=Click to remove explicit admin permission
+gui.permission_list.tooltip.admin_set=Set as admin
+gui.permission_list.tooltip.member_remove=Click to remove explicit member permission
+gui.permission_list.tooltip.member_set=Set as member
+gui.permission_list.tooltip.unset=Not editable
+
+# Channel settings GUI
+gui.channel_settings.default_name=%s network
+gui.channel_settings.default_player_name=player
+gui.channel_settings.action.create=Create
+gui.channel_settings.action.delete=Delete
+gui.channel_settings.tooltip.create=Create channel
+gui.channel_settings.tooltip.delete.owner_only=Only the owner can delete the channel
+gui.channel_settings.tooltip.delete.shift_required=Press Shift 5 times to enable deletion, current %d/%d
+gui.channel_settings.tooltip.delete.ready=Deletion requirements met, click to delete the channel

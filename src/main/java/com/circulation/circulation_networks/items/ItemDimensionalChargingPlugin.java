@@ -1,9 +1,9 @@
 package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
-import com.circulation.circulation_networks.api.node.IHubNode;
+import com.circulation.circulation_networks.network.hub.HubCapabilitys;
+import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 //~ mc_imports
-import net.minecraft.item.ItemStack;
 
 public class ItemDimensionalChargingPlugin extends BaseItem implements IHubPlugin {
 
@@ -19,10 +19,7 @@ public class ItemDimensionalChargingPlugin extends BaseItem implements IHubPlugi
     *///?}
 
     @Override
-    public void onInserted(IHubNode hub, int slot, ItemStack stack) {
-    }
-
-    @Override
-    public void onRemoved(IHubNode hub, int slot, ItemStack stack) {
+    public HubPluginCapability<?> getCapability() {
+        return HubCapabilitys.CHARGE_CAPABILITY;
     }
 }

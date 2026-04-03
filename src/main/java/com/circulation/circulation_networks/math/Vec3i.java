@@ -1,30 +1,12 @@
 package com.circulation.circulation_networks.math;
 
-import java.util.Objects;
+//? if <1.20 {
+import com.github.bsideup.jabel.Desugar;
+import org.jetbrains.annotations.NotNull;
 
-public class Vec3i {
-
-    public final int x;
-    public final int y;
-    public final int z;
-
-    public Vec3i(int x, int y, int z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getZ() {
-        return z;
-    }
+@Desugar
+//?}
+public record Vec3i(int x, int y, int z) {
 
     public double distanceSquared(double x, double y, double z) {
         double dx = this.x - x;
@@ -49,12 +31,7 @@ public class Vec3i {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(x, y, z);
-    }
-
-    @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "Vec3i{" + "x=" + x + ", y=" + y + ", z=" + z + '}';
     }
 }

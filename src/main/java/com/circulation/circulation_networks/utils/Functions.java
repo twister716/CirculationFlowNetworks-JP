@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.utils;
 
 //~ mc_imports
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;

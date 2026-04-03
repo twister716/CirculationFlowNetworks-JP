@@ -9,14 +9,16 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.MinecraftForge;
 //?} else {
 /*import net.neoforged.neoforge.common.NeoForge;
-*///?}
+ *///?}
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.EventBus;
 //?} else if < 1.21 {
 /*import net.minecraftforge.eventbus.api.IEventBus;
-*///?} else {
+ *///?} else {
 /*import net.neoforged.bus.api.IEventBus;
-*///?}
+ *///?}
+
+import javax.annotation.Nullable;
 
 final class NodeEventHooks {
 
@@ -28,7 +30,7 @@ final class NodeEventHooks {
         //?if <1.21 {
         eventBus = MinecraftForge.EVENT_BUS;
         //?} else {
-         /*eventBus = NeoForge.EVENT_BUS;
+        /*eventBus = NeoForge.EVENT_BUS;
          *///?}
     }
 
@@ -42,15 +44,15 @@ final class NodeEventHooks {
 
     //~ if >=1.20 'TileEntity tileEntity' -> 'BlockEntity blockEntity' {
     //~ if >=1.20 'tileEntity)' -> 'blockEntity)' {
-    static boolean postAddNodePre(INode node, TileEntity tileEntity) {
+    static boolean postAddNodePre(INode node, @Nullable TileEntity tileEntity) {
         //? if <1.21 {
         return eventBus.post(new AddNodeEvent.Pre(node, tileEntity));
         //?} else {
         /*return eventBus.post(new AddNodeEvent.Pre(node, tileEntity)).isCanceled();
-        *///?}
+         *///?}
     }
 
-    static void postAddNodePost(INode node, TileEntity tileEntity) {
+    static void postAddNodePost(INode node, @Nullable TileEntity tileEntity) {
         eventBus.post(new AddNodeEvent.Post(node, tileEntity));
     }
     //~}

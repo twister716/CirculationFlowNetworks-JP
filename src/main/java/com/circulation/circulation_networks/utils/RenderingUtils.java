@@ -2,13 +2,21 @@ package com.circulation.circulation_networks.utils;
 
 import net.minecraft.client.Minecraft;
 //? if <1.20 {
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if <1.20 {
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else {
 /*import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -18,22 +26,12 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.player.LocalPlayer;
 *///?}
-//? if <1.20 {
-//?} else if <1.21 {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 import org.lwjgl.opengl.GL11;
 
 @SuppressWarnings("unused")
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public final class RenderingUtils {
 
     private static final int CYLINDER_SIDES = 8;
@@ -79,7 +77,7 @@ public final class RenderingUtils {
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
         //?} else {
         /*RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-        *///?}
+         *///?}
     }
 
     public static void drawFilledBox(double x0, double y0, double z0,
@@ -366,9 +364,9 @@ public final class RenderingUtils {
         tess.draw();
         //?} else if <1.21 {
         /*tess.end();
-        *///?} else {
+         *///?} else {
         /*BufferUploader.drawWithShader(buf.buildOrThrow());
-        *///?}
+         *///?}
     }
 
     public static void drawSphere(float r, float g, float b, float radius, float alpha) {
@@ -403,9 +401,9 @@ public final class RenderingUtils {
             buf.begin(GL11.GL_QUAD_STRIP, DefaultVertexFormats.POSITION_NORMAL);
             //?} else if <1.21 {
             /*buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
-            *///?} else {
+             *///?} else {
             /*BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
-            *///?}
+             *///?}
             for (int j = 0; j <= stacks; j++) {
                 double theta = thetaStep * j;
                 double cosTheta = Math.cos(theta), sinTheta = Math.sin(theta);
@@ -416,9 +414,9 @@ public final class RenderingUtils {
                 buf.pos(x1, y1, z1).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
                 //?} else if <1.21 {
                 /*buf.vertex(x1, y1, z1).color(ri, gi, bi, ai).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
-                *///?} else {
+                 *///?} else {
                 /*buf.addVertex(x1, y1, z1).setColor(ri, gi, bi, ai).setNormal(x1 / radius, y1 / radius, z1 / radius);
-                *///?}
+                 *///?}
                 float x2 = (float) (radius * sinPhi2 * cosTheta);
                 float y2 = (float) (radius * cosPhi2);
                 float z2 = (float) (radius * sinPhi2 * sinTheta);
@@ -426,17 +424,17 @@ public final class RenderingUtils {
                 buf.pos(x2, y2, z2).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
                 //?} else if <1.21 {
                 /*buf.vertex(x2, y2, z2).color(ri, gi, bi, ai).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
-                *///?} else {
+                 *///?} else {
                 /*buf.addVertex(x2, y2, z2).setColor(ri, gi, bi, ai).setNormal(x2 / radius, y2 / radius, z2 / radius);
-                *///?}
+                 *///?}
             }
             //? if <1.20 {
             tess.draw();
             //?} else if <1.21 {
             /*tess.end();
-            *///?} else {
+             *///?} else {
             /*BufferUploader.drawWithShader(buf.buildOrThrow());
-            *///?}
+             *///?}
         }
     }
 

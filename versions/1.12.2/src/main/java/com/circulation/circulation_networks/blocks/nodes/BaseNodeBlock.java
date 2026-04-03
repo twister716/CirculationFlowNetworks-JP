@@ -12,13 +12,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 public abstract class BaseNodeBlock extends BaseBlock {
-    protected Class<? extends BaseNodeTileEntity> nodeTileClass;
+    protected Class<? extends BaseNodeTileEntity<?>> nodeTileClass;
 
     protected BaseNodeBlock(String name) {
         super(name);
     }
 
-    protected final <T extends BaseNodeTileEntity> void setNodeTileClass(Class<T> nodeTileClass) {
+    protected final <T extends BaseNodeTileEntity<?>> void setNodeTileClass(Class<T> nodeTileClass) {
         this.nodeTileClass = nodeTileClass;
         TileEntity.register(Objects.requireNonNull(getRegistryName()).toString(), nodeTileClass);
     }
@@ -33,7 +33,7 @@ public abstract class BaseNodeBlock extends BaseBlock {
     }
 
     @Override
-    public final @Nullable BaseNodeTileEntity createNewTileEntity(@Nullable World world, int meta) {
+    public final @Nullable BaseNodeTileEntity<?> createNewTileEntity(@Nullable World world, int meta) {
         if (nodeTileClass == null) {
             return null;
         } else {

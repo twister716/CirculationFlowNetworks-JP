@@ -9,6 +9,9 @@ public interface IMachineNodeBlockEntity extends INodeBlockEntity {
     @Nonnull
     IMachineNode getNode();
 
+    /**
+     * @return IEnergyHandler必须重写recycle方法，防止被回收进POOL
+     */
     @Nonnull
     IEnergyHandler getEnergyHandler();
 }

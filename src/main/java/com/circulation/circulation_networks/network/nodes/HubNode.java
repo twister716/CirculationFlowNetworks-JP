@@ -1,28 +1,32 @@
 package com.circulation.circulation_networks.network.nodes;
 
-import com.circulation.circulation_networks.api.IHubNodeBlockEntity;
-import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.api.node.IHubNode;
+import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubChannel;
+import com.circulation.circulation_networks.network.hub.HubPluginCapability;
+import com.circulation.circulation_networks.registry.NodeTypes;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 //~ mc_imports
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 //? if <1.20 {
 import net.minecraftforge.common.util.Constants;
 //?} else {
 /*import net.minecraft.nbt.Tag;
-*///?}
+ *///?}
 //? if <1.21 {
 import net.minecraftforge.items.IItemHandler;
 //?} else {
 /*import net.neoforged.neoforge.items.IItemHandler;
-*///?}
+ *///?}
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -41,6 +45,7 @@ public final class HubNode extends Node implements IHubNode {
 
     private final Map<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
     private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
+    private final HubMetadata hubData = new HubMetadata();
     private PermissionMode permissionMode = PermissionMode.PUBLIC;
     @Nullable
     private UUID owner;
@@ -48,12 +53,13 @@ public final class HubNode extends Node implements IHubNode {
     private UUID channelId = EMPTY;
     @NotNull
     private String channelName = "";
+    private IItemHandler plugins = EmptyItemHandler.INSTANCE;
     private boolean syncingChannelState;
 
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     public HubNode(NBTTagCompound tag) {
-    //~}
-        super(tag);
+        //~}
+        super(NodeTypes.HUB, tag);
         this.energyScope = tag.getDouble("energyScope");
         this.energyScopeSq = energyScope * energyScope;
         this.chargingScope = tag.getDouble("chargingScope");
@@ -61,12 +67,16 @@ public final class HubNode extends Node implements IHubNode {
         deserializeHubData(tag);
     }
 
-    public HubNode(INodeBlockEntity blockEntity, double energyScope, double chargingScope, double linkScope) {
-        super(blockEntity, linkScope);
+    public HubNode(NodeContext context, double energyScope, double chargingScope, double linkScope) {
+        super(NodeTypes.HUB, context, linkScope);
         this.energyScope = energyScope;
         this.energyScopeSq = energyScope * energyScope;
         this.chargingScope = chargingScope;
         this.chargingScopeSq = chargingScope * chargingScope;
+    }
+
+    public void bindPlugins(@Nullable IItemHandler plugins) {
+        this.plugins = plugins != null ? plugins : EmptyItemHandler.INSTANCE;
     }
 
     @Override
@@ -104,7 +114,23 @@ public final class HubNode extends Node implements IHubNode {
 
     @Override
     public IItemHandler getPlugins() {
-        return ((IHubNodeBlockEntity) getBlockEntity()).getPlugins();
+        return plugins;
+    }
+
+    @Override
+    public HubMetadata getHubData() {
+        return hubData;
+    }
+
+    public void putPluginDataIfAbsent(HubPluginCapability<?> capability, ItemStack stack) {
+        if (capability == null || stack.isEmpty() || hubData.hasKey(capability)) {
+            return;
+        }
+        hubData.put(capability, stack);
+    }
+
+    public void removePluginData(HubPluginCapability<?> capability) {
+        hubData.remove(capability);
     }
 
     @Override
@@ -217,11 +243,25 @@ public final class HubNode extends Node implements IHubNode {
     public void syncFromChannel(HubChannel channel) {
         syncingChannelState = true;
         try {
+            channelId = channel.getChannelId();
             permissionMode = channel.getPermissionMode();
             owner = channel.getOwner();
             channelName = channel.getName();
             explicitPermissions.clear();
             explicitPermissions.putAll(channel.getExplicitPermissions());
+        } finally {
+            syncingChannelState = false;
+        }
+    }
+
+    public void clearChannelBinding() {
+        syncingChannelState = true;
+        try {
+            channelId = EMPTY;
+            channelName = "";
+            permissionMode = PermissionMode.PUBLIC;
+            owner = null;
+            explicitPermissions.clear();
         } finally {
             syncingChannelState = false;
         }
@@ -471,4 +511,61 @@ public final class HubNode extends Node implements IHubNode {
         channelName = "";
     }
     *///?}
+
+    public final static class HubMetadata {
+
+        private final Reference2ReferenceMap<HubPluginCapability<?>, Object> capacityMap = new Reference2ReferenceOpenHashMap<>();
+
+        public boolean hasKey(HubPluginCapability<?> capability) {
+            return capacityMap.containsKey(capability);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T get(HubPluginCapability<T> capability) {
+            return (T) capacityMap.get(capability);
+        }
+
+        void put(HubPluginCapability<?> capability, ItemStack stack) {
+            capacityMap.put(capability, capability.newPluginData(stack));
+        }
+
+        void remove(HubPluginCapability<?> capability) {
+            capacityMap.remove(capability);
+        }
+    }
+
+    private static final class EmptyItemHandler implements IItemHandler {
+
+        private static final EmptyItemHandler INSTANCE = new EmptyItemHandler();
+
+        @Override
+        public int getSlots() {
+            return 0;
+        }
+
+        @Override
+        public @NotNull ItemStack getStackInSlot(int slot) {
+            return ItemStack.EMPTY;
+        }
+
+        @Override
+        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            return stack;
+        }
+
+        @Override
+        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return ItemStack.EMPTY;
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return 0;
+        }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            return false;
+        }
+    }
 }

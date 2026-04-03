@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -12,19 +13,9 @@ public class SyncData {
     private final int channel;
     private final SyncType syncType;
     private final SyncUpdateCallback updateCallback;
-
-    public int getChannel() { return channel; }
-
     private long numericVersion = 0L;
     private String stringVersion = null;
     private byte[] bytesVersion = null;
-
-    public void init() {
-        numericVersion = 0L;
-        stringVersion = null;
-        bytesVersion = null;
-    }
-
     public SyncData(Object container, Field field, GuiSync annotation, SyncUpdateCallback updateCallback) {
         this.source = container;
         this.field = field;
@@ -53,6 +44,20 @@ public class SyncData {
             return SyncType.ENUM;
         }
         return SyncType.INT;
+    }
+
+    private static byte @Nullable [] copyBytes(byte[] value) {
+        return value == null ? null : Arrays.copyOf(value, value.length);
+    }
+
+    public int getChannel() {
+        return channel;
+    }
+
+    public void init() {
+        numericVersion = 0L;
+        stringVersion = null;
+        bytesVersion = null;
     }
 
     public void tick(SyncSender sender) {
@@ -144,10 +149,6 @@ public class SyncData {
         if (idx >= 0 && idx < constants.length) {
             this.field.set(this.source, constants[idx]);
         }
-    }
-
-    private static byte[] copyBytes(byte[] value) {
-        return value == null ? null : Arrays.copyOf(value, value.length);
     }
 
     enum SyncType {

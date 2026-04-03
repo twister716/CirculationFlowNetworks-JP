@@ -14,6 +14,7 @@ import com.circulation.circulation_networks.CFNConfig;
 import com.github.bsideup.jabel.Desugar;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
@@ -38,17 +39,6 @@ public final class RegistryEnergyHandler {
     private static ReferenceSet<Class<?>> registeredSupplyBlackClasses = new ReferenceOpenHashSet<>();
     private static ReferenceSet<Pair> referenceSet = new ReferenceOpenHashSet<>();
 
-    //? if <1.20 {
-    @Desugar
-        //?}
-    public record Pair(double multiplying, String unit, int p) implements Comparable<Pair> {
-
-        @Override
-        public int compareTo(@Nonnull RegistryEnergyHandler.Pair o) {
-            return Integer.compare(p, o.p);
-        }
-    }
-
     public static Pair getPair(int o) {
         return managerUnit[Math.floorMod(o, managerUnit.length)];
     }
@@ -61,7 +51,6 @@ public final class RegistryEnergyHandler {
         IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ConcurrentLinkedDeque<>());
         referenceSet.add(new Pair(manager.getMultiplying(), manager.getUnit(), manager.getPriority()));
     }
-
 
     /**
      * Registers a tile entity class to be excluded from automatic energy network integration.
@@ -131,14 +120,14 @@ public final class RegistryEnergyHandler {
         return false;
     }
 
-    public static IEnergyHandlerManager getEnergyManager(TileEntity tile) {
+    public static @Nullable IEnergyHandlerManager getEnergyManager(TileEntity tile) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(tile)) return manager;
         }
         return null;
     }
 
-    public static IEnergyHandlerManager getEnergyManager(ItemStack stack) {
+    public static @Nullable IEnergyHandlerManager getEnergyManager(ItemStack stack) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(stack)) return manager;
         }
@@ -211,6 +200,17 @@ public final class RegistryEnergyHandler {
             } catch (ClassNotFoundException e) {
                 prefixes.add(className);
             }
+        }
+    }
+
+    //? if <1.20 {
+    @Desugar
+        //?}
+    public record Pair(double multiplying, String unit, int p) implements Comparable<Pair> {
+
+        @Override
+        public int compareTo(@Nonnull RegistryEnergyHandler.Pair o) {
+            return Integer.compare(p, o.p);
         }
     }
 

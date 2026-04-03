@@ -9,11 +9,14 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.network.CFNNetwork;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
+import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
-import com.circulation.circulation_networks.utils.HubFTBServices;
+import com.circulation.circulation_networks.registry.RegistryItems;
+import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
@@ -25,6 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -61,6 +65,7 @@ public final class CirculationFlowNetworks {
         CFNNetwork.register();
         CFNConfig.register();
         var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        RegistryItems.register(modEventBus);
         modEventBus.addListener(CFNConfig::onConfigLoad);
         modEventBus.addListener(CFNConfig::onConfigReload);
         if (FMLEnvironment.dist.isClient()) {
@@ -70,6 +75,8 @@ public final class CirculationFlowNetworks {
         MinecraftForge.EVENT_BUS.addListener(this::onServerAboutToStart);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
         MinecraftForge.EVENT_BUS.addListener(this::onChunkLoad);
+        MinecraftForge.EVENT_BUS.addListener(this::onChunkUnload);
+        MinecraftForge.EVENT_BUS.addListener(this::onBlockBreak);
         MinecraftForge.EVENT_BUS.addListener(this::onLevelSave);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
@@ -94,7 +101,7 @@ public final class CirculationFlowNetworks {
         };
 
         if (ModList.get().isLoaded("ftbteams")) {
-            HubFTBServices.INSTANCE = new HubFTBServices() {
+            HubTeamServices.INSTANCE = new HubTeamServices() {
                 @Override
                 protected boolean arePlayersInSameTeamInternal(UUID firstPlayerId, UUID secondPlayerId) {
                     var api = FTBTeamsAPI.api();
@@ -112,6 +119,7 @@ public final class CirculationFlowNetworks {
 
     private void onServerStarted(ServerStartedEvent event) {
         NetworkManager.INSTANCE.initGrid();
+        PocketNodeManager.INSTANCE.load();
     }
 
     private void onChunkLoad(ChunkEvent.Load event) {
@@ -124,6 +132,20 @@ public final class CirculationFlowNetworks {
             }
         }
         NetworkManager.INSTANCE.validatePendingNodesInChunk(level, chunk.getPos().x, chunk.getPos().z);
+        PocketNodeManager.INSTANCE.onChunkLoad(level, chunk.getPos().x, chunk.getPos().z);
+    }
+
+    private void onChunkUnload(ChunkEvent.Unload event) {
+        if (!(event.getLevel() instanceof Level level) || level.isClientSide() || !(event.getChunk() instanceof LevelChunk chunk)) {
+            return;
+        }
+        PocketNodeManager.INSTANCE.onChunkUnload(level, chunk.getPos().x, chunk.getPos().z);
+    }
+
+    private void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            PocketNodeManager.INSTANCE.onHostBlockBroken(level, event.getPos());
+        }
     }
 
     private void onLevelSave(LevelEvent.Save event) {
@@ -131,12 +153,15 @@ public final class CirculationFlowNetworks {
             return;
         }
         NetworkManager.INSTANCE.saveGrid();
+        PocketNodeManager.INSTANCE.save();
         HubChannelManager.INSTANCE.save();
     }
 
     private void onServerStopping(ServerStoppingEvent event) {
         NetworkManager.INSTANCE.saveGrid();
+        PocketNodeManager.INSTANCE.save();
         NetworkManager.INSTANCE.onServerStop();
+        PocketNodeManager.INSTANCE.onServerStop();
         EnergyMachineManager.INSTANCE.onServerStop();
         EnergyTypeOverrideManager.onServerStop();
         ChargingManager.INSTANCE.onServerStop();
@@ -148,6 +173,7 @@ public final class CirculationFlowNetworks {
         HubPlatformServices.INSTANCE.markOnlinePlayersDirty();
         if (event.getEntity() instanceof ServerPlayer player) {
             ConfigOverrideRendering.sendFullSync(player);
+            sendToPlayer(new PocketNodeRendering(player), player);
         }
     }
 
@@ -163,6 +189,7 @@ public final class CirculationFlowNetworks {
             NodeNetworkRendering.removePlayer(player);
             ConfigOverrideRendering.sendFullSync(player);
             sendToPlayer(RenderingClear.INSTANCE, player);
+            sendToPlayer(new PocketNodeRendering(player), player);
         }
     }
 

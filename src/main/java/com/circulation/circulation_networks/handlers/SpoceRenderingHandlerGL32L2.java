@@ -4,23 +4,23 @@ import com.circulation.circulation_networks.math.Vec3d;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
 import com.circulation.circulation_networks.utils.ShaderHelper;
 import net.minecraft.client.Minecraft;
-//? if <1.20 {
-import net.minecraft.client.renderer.GlStateManager;
+//~ mc_imports
 import net.minecraft.util.ResourceLocation;
+//? if <1.20 {
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.resources.ResourceLocation;
-*///?}
-//? if <1.20 {
 //?} else if <1.21 {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/*import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 *///?} else {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if <1.20 {
+import net.minecraft.client.renderer.GlStateManager;
+//?} else {
+/*import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 *///?}
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -32,11 +32,9 @@ import org.lwjgl.opengl.GL30;
 
 import java.nio.FloatBuffer;
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
 
     //? if <1.21 {
@@ -120,19 +118,31 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
     @Override
     protected void cleanupGL() {
         if (sphereVBO != 0) {
-            try { GL15.glDeleteBuffers(sphereVBO); } catch (Exception ignored) {}
+            try {
+                GL15.glDeleteBuffers(sphereVBO);
+            } catch (Exception ignored) {
+            }
             sphereVBO = 0;
         }
         if (sphereVAO != 0) {
-            try { GL30.glDeleteVertexArrays(sphereVAO); } catch (Exception ignored) {}
+            try {
+                GL30.glDeleteVertexArrays(sphereVAO);
+            } catch (Exception ignored) {
+            }
             sphereVAO = 0;
         }
         if (buckyVBO != 0) {
-            try { GL15.glDeleteBuffers(buckyVBO); } catch (Exception ignored) {}
+            try {
+                GL15.glDeleteBuffers(buckyVBO);
+            } catch (Exception ignored) {
+            }
             buckyVBO = 0;
         }
         if (buckyVAO != 0) {
-            try { GL30.glDeleteVertexArrays(buckyVAO); } catch (Exception ignored) {}
+            try {
+                GL30.glDeleteVertexArrays(buckyVAO);
+            } catch (Exception ignored) {
+            }
             buckyVAO = 0;
         }
         cleanupShaderResources();
@@ -189,7 +199,7 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
             RenderSystem.applyModelViewMatrix();
             *///?} else {
             /*RenderSystem.getModelViewStack().popMatrix();
-            *///?}
+             *///?}
             return;
         }
 
@@ -212,14 +222,14 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, projBuf);
         //?} else {
         /*GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, projBuf);
-        *///?}
+         *///?}
         projBuf.rewind();
         mvBuf.clear();
         //? if <1.20 {
         GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, mvBuf);
         //?} else {
         /*GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mvBuf);
-        *///?}
+         *///?}
         mvBuf.rewind();
 
         //? if <1.20 {
@@ -259,7 +269,7 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*RenderSystem.getModelViewStack().popMatrix();
-        *///?}
+         *///?}
 
         GL20.glUseProgram(0);
         GL13.glActiveTexture(GL13.GL_TEXTURE2);
@@ -269,7 +279,7 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         GlStateManager.color(1f, 1f, 1f, 1f);
         //?} else {
         /*RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        *///?}
+         *///?}
     }
 
     @Override
@@ -301,7 +311,7 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*RenderSystem.getModelViewStack().popMatrix();
-        *///?}
+         *///?}
     }
 
     private void initShaderResources() {
@@ -355,11 +365,17 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
 
     private void cleanupShaderResources() {
         if (shaderProgram != 0) {
-            try { ShaderHelper.deleteProgram(shaderProgram); } catch (Exception ignored) {}
+            try {
+                ShaderHelper.deleteProgram(shaderProgram);
+            } catch (Exception ignored) {
+            }
             shaderProgram = 0;
         }
         if (depthTextureId != 0) {
-            try { GL11.glDeleteTextures(depthTextureId); } catch (Exception ignored) {}
+            try {
+                GL11.glDeleteTextures(depthTextureId);
+            } catch (Exception ignored) {
+            }
             depthTextureId = 0;
         }
         shaderInitialized = false;

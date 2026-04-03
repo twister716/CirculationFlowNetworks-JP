@@ -2,17 +2,23 @@ package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.INodeBlockEntity;
+import com.circulation.circulation_networks.api.hub.ChannelSnapshotEntry;
+import com.circulation.circulation_networks.api.hub.ChannelSnapshotList;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
+import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.api.hub.PermissionSnapshotEntry;
 import com.circulation.circulation_networks.api.hub.PermissionSnapshotList;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
+import com.circulation.circulation_networks.items.HubChannelPluginData;
+import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubChannel;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 //? if <1.20
 import com.github.bsideup.jabel.Desugar;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -27,21 +33,25 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraftforge.common.util.Constants;
 //?} else {
 /*import net.minecraft.nbt.Tag;
-*///?}
+ *///?}
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.UUID;
 
 import static com.circulation.circulation_networks.network.nodes.HubNode.EMPTY;
 
 public final class HubChannelManager {
+
+    private static final int MAX_CHANNEL_NAME_LENGTH = 32;
 
     public static final HubChannelManager INSTANCE = new HubChannelManager();
 
@@ -53,6 +63,12 @@ public final class HubChannelManager {
 
     private HubChannelManager() {
         hubChannels.defaultReturnValue(EMPTY);
+    }
+
+    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
+    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
+    private static boolean isClientWorld(net.minecraft.world.World world) {
+        return world.isRemote;
     }
 
     public void bindHub(IHubNode hub) {
@@ -106,12 +122,6 @@ public final class HubChannelManager {
         if (grid != null) {
             channel.removeGrid(grid);
         }
-        if (channel.getGrids().isEmpty()) {
-            channels.remove(oldChannelId);
-            markSnapshotsDirty();
-            dirty = true;
-            schedulePersistAsync();
-        }
     }
 
     public void updateChannelFromHub(IHubNode hub) {
@@ -153,19 +163,29 @@ public final class HubChannelManager {
         return Collections.unmodifiableList(new ObjectArrayList<>(channels.values()));
     }
 
-    public PermissionSnapshotList getAccessibleChannelSnapshots(UUID playerId) {
+    public ChannelSnapshotList getAccessibleChannelSnapshots(UUID playerId) {
+        return getAccessibleChannelSnapshots(playerId, null);
+    }
+
+    public ChannelSnapshotList getAccessibleChannelSnapshots(UUID playerId, @Nullable UUID connectedChannelId) {
         ensureLoaded();
-        List<PermissionSnapshotEntry> entries = new ObjectArrayList<>();
+        List<ChannelSnapshotEntry> entries = new ObjectArrayList<>();
         for (HubChannel channel : channels.values()) {
             HubPermissionLevel permissionLevel = channel.getPermissionLevel(playerId);
             if (permissionLevel == HubPermissionLevel.NONE) {
                 continue;
             }
-            entries.add(new PermissionSnapshotEntry(channel.getChannelId(), channel.getName(), permissionLevel));
+            entries.add(new ChannelSnapshotEntry(
+                channel.getChannelId(),
+                channel.getName(),
+                channel.getPermissionMode(),
+                permissionLevel,
+                channel.getChannelId().equals(connectedChannelId)
+            ));
         }
-        entries.sort(Comparator.comparing(PermissionSnapshotEntry::getName, String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(entry -> entry.getId().toString()));
-        return new PermissionSnapshotList(entries);
+        entries.sort(Comparator.comparing(ChannelSnapshotEntry::name, String.CASE_INSENSITIVE_ORDER)
+                               .thenComparing(entry -> entry.id().toString()));
+        return new ChannelSnapshotList(entries);
     }
 
     public String getAccessibleChannelSnapshotsJson(UUID playerId) {
@@ -179,13 +199,167 @@ public final class HubChannelManager {
             return PermissionSnapshotList.EMPTY;
         }
 
+        Map<UUID, String> playerNames = new Object2ObjectOpenHashMap<>();
         List<PermissionSnapshotEntry> entries = new ObjectArrayList<>();
         for (HubPlatformServices.PlayerIdentity player : HubPlatformServices.INSTANCE.getOnlinePlayers()) {
+            playerNames.put(player.id(), player.name());
             entries.add(new PermissionSnapshotEntry(player.id(), player.name(), channel.getPermissionLevel(player.id())));
         }
-        entries.sort(Comparator.comparing(PermissionSnapshotEntry::getName, String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(entry -> entry.getId().toString()));
+
+        if (channel.getOwner() != null && !playerNames.containsKey(channel.getOwner())) {
+            UUID ownerId = channel.getOwner();
+            String ownerName = formatOfflinePlayerName(ownerId);
+            playerNames.put(ownerId, ownerName);
+            entries.add(new PermissionSnapshotEntry(ownerId, ownerName, channel.getPermissionLevel(ownerId)));
+        }
+
+        for (UUID playerId : channel.getExplicitPermissions().keySet()) {
+            if (playerNames.containsKey(playerId)) {
+                continue;
+            }
+            String playerName = formatOfflinePlayerName(playerId);
+            playerNames.put(playerId, playerName);
+            entries.add(new PermissionSnapshotEntry(playerId, playerName, channel.getPermissionLevel(playerId)));
+        }
+
+        entries.sort(Comparator.comparing(PermissionSnapshotEntry::name, String.CASE_INSENSITIVE_ORDER)
+                               .thenComparing(entry -> entry.id().toString()));
         return new PermissionSnapshotList(entries);
+    }
+
+    public boolean bindHubToChannel(IHubNode hub, UUID playerId, UUID channelId) {
+        ensureLoaded();
+        if (hub == null || playerId == null || channelId == null || channelId.equals(EMPTY)) {
+            return false;
+        }
+
+        HubChannel channel = channels.get(channelId);
+        if (channel == null || channel.getPermissionLevel(playerId) == HubPermissionLevel.NONE) {
+            return false;
+        }
+
+        unregister(hub);
+        applyChannelToHub(hub, channel);
+        IGrid grid = hub.getGrid();
+        if (grid != null) {
+            channel.addGrid(grid);
+        }
+        hubChannels.put(hub, channelId);
+        persistChannelPluginData(hub);
+        return true;
+    }
+
+    public boolean createChannel(IHubNode hub, UUID playerId, String rawName, PermissionMode permissionMode) {
+        ensureLoaded();
+        if (hub == null || playerId == null) {
+            return false;
+        }
+
+        String normalizedName = normalizeChannelName(rawName);
+        if (normalizedName.isEmpty()) {
+            return false;
+        }
+
+        unregister(hub);
+
+        HubChannel channel = new HubChannel(
+            UUID.randomUUID(),
+            normalizedName,
+            playerId,
+            permissionMode != null ? permissionMode : PermissionMode.PRIVATE,
+            Collections.emptyMap()
+        );
+        channels.put(channel.getChannelId(), channel);
+        applyChannelToHub(hub, channel);
+        IGrid grid = hub.getGrid();
+        if (grid != null) {
+            channel.addGrid(grid);
+        }
+        hubChannels.put(hub, channel.getChannelId());
+        markSnapshotsDirty();
+        dirty = true;
+        schedulePersistAsync();
+        return true;
+    }
+
+    public boolean updateChannelSettings(IHubNode hub, UUID playerId, String rawName, PermissionMode permissionMode) {
+        ensureLoaded();
+        HubChannel channel = getCurrentChannel(hub);
+        if (channel == null) {
+            return false;
+        }
+
+        HubPermissionLevel playerPermission = channel.getPermissionLevel(playerId);
+        boolean canRename = playerPermission == HubPermissionLevel.OWNER || playerPermission == HubPermissionLevel.ADMIN;
+        boolean canChangeMode = playerPermission == HubPermissionLevel.OWNER;
+        if (!canRename) {
+            return false;
+        }
+
+        String normalizedName = normalizeChannelName(rawName);
+        if (normalizedName.isEmpty()) {
+            return false;
+        }
+
+        channel.setName(normalizedName);
+        if (canChangeMode && permissionMode != null) {
+            channel.setPermissionMode(permissionMode);
+        }
+        syncBoundHubs(channel);
+        markSnapshotsDirty();
+        dirty = true;
+        schedulePersistAsync();
+        return true;
+    }
+
+    public boolean deleteChannel(IHubNode hub, UUID playerId) {
+        ensureLoaded();
+        HubChannel channel = getCurrentChannel(hub);
+        if (channel == null || channel.getPermissionLevel(playerId) != HubPermissionLevel.OWNER) {
+            return false;
+        }
+
+        UUID channelId = channel.getChannelId();
+        List<IHubNode> boundHubs = getBoundHubs(channelId);
+        for (IHubNode boundHub : boundHubs) {
+            clearChannelBinding(boundHub);
+            hubChannels.remove(boundHub);
+        }
+        channels.remove(channelId);
+        markSnapshotsDirty();
+        dirty = true;
+        schedulePersistAsync();
+        return true;
+    }
+
+    public boolean updateExplicitPermission(IHubNode hub, UUID actorId, UUID targetId, @Nullable HubPermissionLevel permissionLevel) {
+        ensureLoaded();
+        if (actorId == null || targetId == null) {
+            return false;
+        }
+
+        HubChannel channel = getCurrentChannel(hub);
+        if (channel == null) {
+            return false;
+        }
+
+        HubPermissionLevel actorPermission = channel.getPermissionLevel(actorId);
+        HubPermissionLevel targetPermission = channel.getPermissionLevel(targetId);
+        if (!canChangePermission(channel, actorId, actorPermission, targetId, targetPermission, permissionLevel)) {
+            return false;
+        }
+
+        if (permissionLevel == null || permissionLevel == HubPermissionLevel.NONE) {
+            channel.removeExplicitPermission(targetId);
+        } else {
+            channel.setExplicitPermission(targetId, permissionLevel);
+        }
+
+        syncBoundHubs(channel);
+        markSnapshotsDirty();
+        dirty = true;
+        schedulePersistAsync();
+        return true;
     }
 
     public String getOnlinePlayerSnapshotsJson(UUID channelId) {
@@ -268,9 +442,11 @@ public final class HubChannelManager {
     private void syncHubFromChannel(IHubNode hub, HubChannel channel) {
         if (hub instanceof HubNode hubNode) {
             hubNode.syncFromChannel(channel);
+            persistChannelPluginData(hubNode);
             return;
         }
 
+        hub.setChannelId(channel.getChannelId());
         hub.setPermissionMode(channel.getPermissionMode());
         hub.setOwner(channel.getOwner());
         hub.setChannelName(channel.getName());
@@ -279,6 +455,119 @@ public final class HubChannelManager {
         }
         for (var entry : channel.getExplicitPermissions().entrySet()) {
             hub.setExplicitPermission(entry.getKey(), entry.getValue());
+        }
+        persistChannelPluginData(hub);
+    }
+
+    private void clearChannelBinding(IHubNode hub) {
+        if (hub instanceof HubNode hubNode) {
+            hubNode.clearChannelBinding();
+            persistChannelPluginData(hubNode);
+            return;
+        }
+
+        for (UUID playerId : new ObjectArrayList<>(hub.getExplicitPermissions().keySet())) {
+            hub.removeExplicitPermission(playerId);
+        }
+        hub.setOwner(null);
+        hub.setPermissionMode(PermissionMode.PUBLIC);
+        hub.setChannelName("");
+        hub.setChannelId(EMPTY);
+        persistChannelPluginData(hub);
+    }
+
+    private void applyChannelToHub(IHubNode hub, HubChannel channel) {
+        syncHubFromChannel(hub, channel);
+    }
+
+    private void syncBoundHubs(HubChannel channel) {
+        for (IHubNode boundHub : getBoundHubs(channel.getChannelId())) {
+            applyChannelToHub(boundHub, channel);
+        }
+    }
+
+    private List<IHubNode> getBoundHubs(UUID channelId) {
+        List<IHubNode> boundHubs = new ArrayList<>();
+        for (var entry : hubChannels.reference2ObjectEntrySet()) {
+            if (channelId.equals(entry.getValue())) {
+                boundHubs.add(entry.getKey());
+            }
+        }
+        return boundHubs;
+    }
+
+    @Nullable
+    private HubChannel getCurrentChannel(IHubNode hub) {
+        if (hub == null) {
+            return null;
+        }
+        UUID channelId = hub.getChannelId();
+        return channelId == null || channelId.equals(EMPTY) ? null : channels.get(channelId);
+    }
+
+    private static String normalizeChannelName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+
+        String trimmed = rawName.trim();
+        if (trimmed.length() <= MAX_CHANNEL_NAME_LENGTH) {
+            return trimmed;
+        }
+        return trimmed.substring(0, MAX_CHANNEL_NAME_LENGTH);
+    }
+
+    private static String formatOfflinePlayerName(UUID playerId) {
+        String raw = playerId != null ? playerId.toString() : "unknown";
+        return "#" + raw.substring(0, Math.min(8, raw.length())).toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean canChangePermission(HubChannel channel,
+                                               UUID actorId,
+                                               HubPermissionLevel actorPermission,
+                                               UUID targetId,
+                                               HubPermissionLevel targetPermission,
+                                               @Nullable HubPermissionLevel requestedPermission) {
+        if (actorId.equals(targetId)) {
+            return false;
+        }
+        if (channel.getOwner() != null && channel.getOwner().equals(targetId)) {
+            return false;
+        }
+        if (requestedPermission == HubPermissionLevel.OWNER) {
+            return false;
+        }
+
+        return switch (actorPermission) {
+            case OWNER -> true;
+            case ADMIN -> targetPermission != HubPermissionLevel.ADMIN
+                && targetPermission != HubPermissionLevel.OWNER
+                && requestedPermission != HubPermissionLevel.ADMIN;
+            default -> false;
+        };
+    }
+
+    private static void persistChannelPluginData(IHubNode hub) {
+        if (hub == null || !hub.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) {
+            return;
+        }
+
+        var plugins = hub.getPlugins();
+        if (plugins == null) {
+            return;
+        }
+
+        HubChannelPluginData.ChannelInfo channelInfo = HubChannelPluginData.getChannelInfo(hub);
+        for (int slot = 0; slot < plugins.getSlots(); slot++) {
+            var stack = plugins.getStackInSlot(slot);
+            if (stack.isEmpty() || !(stack.getItem() instanceof IHubPlugin plugin)) {
+                continue;
+            }
+            if (plugin.getCapability() != HubCapabilitys.CHANNEL_CAPABILITY) {
+                continue;
+            }
+            HubCapabilitys.CHANNEL_CAPABILITY.saveData(channelInfo, stack);
+            break;
         }
     }
 
@@ -380,36 +669,6 @@ public final class HubChannelManager {
         writeSnapshot(saveFile, snapshot);
         dirty = false;
     }
-
-    private void writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        NBTTagList channelList = new NBTTagList();
-        for (ChannelDataSnapshot channel : snapshot) {
-            NBTTagCompound channelNbt = new NBTTagCompound();
-            channelNbt.setString("channelId", channel.channelId.toString());
-            channelNbt.setString("name", channel.name);
-            channelNbt.setInteger("permissionMode", channel.permissionMode.getId());
-            if (channel.owner != null) {
-                channelNbt.setString("ownerUUID", channel.owner.toString());
-            }
-
-            NBTTagList permissionList = new NBTTagList();
-            for (var entry : channel.explicitPermissions.entrySet()) {
-                NBTTagCompound permissionNbt = new NBTTagCompound();
-                permissionNbt.setString("playerUUID", entry.getKey().toString());
-                permissionNbt.setInteger("permission", entry.getValue().getId());
-                permissionList.appendTag(permissionNbt);
-            }
-            channelNbt.setTag("permissions", permissionList);
-            channelList.appendTag(channelNbt);
-        }
-        nbt.setTag("channels", channelList);
-
-        try {
-            NetworkManager.writeCompressedNbt(nbt, saveFile);
-        } catch (IOException ignored) {
-        }
-    }
     //?} else {
     /*private void loadFromFile() {
         File saveFile = new File(NetworkManager.getSaveFile(), "HubChannels.dat");
@@ -507,16 +766,39 @@ public final class HubChannelManager {
     }
     *///?}
 
+    //? if <1.20 {
+    private void writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
+        NBTTagCompound nbt = new NBTTagCompound();
+        NBTTagList channelList = new NBTTagList();
+        for (ChannelDataSnapshot channel : snapshot) {
+            NBTTagCompound channelNbt = new NBTTagCompound();
+            channelNbt.setString("channelId", channel.channelId.toString());
+            channelNbt.setString("name", channel.name);
+            channelNbt.setInteger("permissionMode", channel.permissionMode.getId());
+            if (channel.owner != null) {
+                channelNbt.setString("ownerUUID", channel.owner.toString());
+            }
+
+            NBTTagList permissionList = new NBTTagList();
+            for (var entry : channel.explicitPermissions.entrySet()) {
+                NBTTagCompound permissionNbt = new NBTTagCompound();
+                permissionNbt.setString("playerUUID", entry.getKey().toString());
+                permissionNbt.setInteger("permission", entry.getValue().getId());
+                permissionList.appendTag(permissionNbt);
+            }
+            channelNbt.setTag("permissions", permissionList);
+            channelList.appendTag(channelNbt);
+        }
+        nbt.setTag("channels", channelList);
+
+        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "hub channel save");
+    }
+    //?}
+
     //? if <1.20
     @Desugar
     private record ChannelDataSnapshot(UUID channelId, String name, PermissionMode permissionMode, @Nullable UUID owner,
                                        Map<UUID, HubPermissionLevel> explicitPermissions) {
-    }
-
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
     }
     //~}
     //~}

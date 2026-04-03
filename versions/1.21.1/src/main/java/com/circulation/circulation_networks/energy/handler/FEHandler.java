@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.energy.handler;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.EnergyAmounts;
 import com.circulation.circulation_networks.api.IEnergyHandler;
+import com.circulation.circulation_networks.network.nodes.HubNode;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -20,20 +21,20 @@ public final class FEHandler implements IEnergyHandler {
     private EnergyType energyType;
 
     public FEHandler(BlockEntity blockEntity) {
-        init(blockEntity);
+        init(blockEntity, null);
     }
 
     public FEHandler(ItemStack stack) {
-        init(stack);
+        init(stack, null);
     }
 
     @Override
-    public IEnergyHandler init(BlockEntity blockEntity) {
+    public IEnergyHandler init(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         var level = blockEntity.getLevel();
         if (level == null) return this;
         var pos = blockEntity.getBlockPos();
         for (Direction direction : Direction.values()) {
-            if (this.getType() == EnergyType.STORAGE) break;
+            if (this.getType(hubMetadata) == EnergyType.STORAGE) break;
             var ies = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction);
             if (ies == null) continue;
             if (ies.canExtract() && this.send == null) {
@@ -47,7 +48,7 @@ public final class FEHandler implements IEnergyHandler {
     }
 
     @Override
-    public IEnergyHandler init(ItemStack itemStack) {
+    public IEnergyHandler init(ItemStack itemStack, @Nullable HubNode.HubMetadata hubMetadata) {
         var ies = itemStack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (ies == null) return this;
         if (ies.canReceive()) {
@@ -57,16 +58,16 @@ public final class FEHandler implements IEnergyHandler {
     }
 
     @Override
-    public void clear() {
+    public void clear(@Nullable HubNode.HubMetadata hubMetadata) {
         send = null;
         receive = null;
         energyType = null;
     }
 
     @Override
-    public EnergyAmount extractEnergy(EnergyAmount maxExtract) {
+    public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
-        EnergyAmount extractable = canExtractValue();
+        EnergyAmount extractable = canExtractValue(hubMetadata);
         try {
             int e = (int) Math.min(maxExtract.asLongClamped(), extractable.asLongClamped());
             return EnergyAmount.obtain(send.extractEnergy(e, false));
@@ -76,9 +77,9 @@ public final class FEHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyAmount receiveEnergy(EnergyAmount maxReceive) {
+    public EnergyAmount receiveEnergy(EnergyAmount maxReceive, @Nullable HubNode.HubMetadata hubMetadata) {
         if (receive == null) return EnergyAmounts.ZERO;
-        EnergyAmount receivable = canReceiveValue();
+        EnergyAmount receivable = canReceiveValue(hubMetadata);
         try {
             int e = (int) Math.min(maxReceive.asLongClamped(), receivable.asLongClamped());
             return EnergyAmount.obtain(receive.receiveEnergy(e, false));
@@ -88,17 +89,17 @@ public final class FEHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyAmount canExtractValue() {
+    public EnergyAmount canExtractValue(@Nullable HubNode.HubMetadata hubMetadata) {
         return send == null ? EnergyAmounts.ZERO : EnergyAmount.obtain(send.extractEnergy(Integer.MAX_VALUE, true));
     }
 
     @Override
-    public EnergyAmount canReceiveValue() {
+    public EnergyAmount canReceiveValue(@Nullable HubNode.HubMetadata hubMetadata) {
         return receive == null ? EnergyAmounts.ZERO : EnergyAmount.obtain(receive.receiveEnergy(Integer.MAX_VALUE, true));
     }
 
     @Override
-    public EnergyType getType() {
+    public EnergyType getType(@Nullable HubNode.HubMetadata hubMetadata) {
         if (energyType == null) {
             boolean receive = this.receive != null;
             if (send != null) {
@@ -112,12 +113,12 @@ public final class FEHandler implements IEnergyHandler {
     }
 
     @Override
-    public boolean canExtract(IEnergyHandler receiveHandler) {
+    public boolean canExtract(IEnergyHandler receiveHandler, @Nullable HubNode.HubMetadata hubMetadata) {
         return send != null;
     }
 
     @Override
-    public boolean canReceive(IEnergyHandler sendHandler) {
+    public boolean canReceive(IEnergyHandler sendHandler, @Nullable HubNode.HubMetadata hubMetadata) {
         return receive != null;
     }
 }

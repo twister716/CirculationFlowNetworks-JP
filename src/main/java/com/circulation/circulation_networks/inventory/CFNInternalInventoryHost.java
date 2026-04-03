@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.inventory;
 
 //~ mc_imports
+
 import net.minecraft.item.ItemStack;
 
 public interface CFNInternalInventoryHost {

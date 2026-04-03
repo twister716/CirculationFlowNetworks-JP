@@ -6,22 +6,23 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 //~ mc_imports
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 //? if <1.20 {
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
+
 import static com.circulation.circulation_networks.CirculationFlowNetworks.CREATIVE_TAB;
 //?} else if <1.21 {
 /*import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
@@ -38,8 +39,12 @@ public abstract class BaseItem extends Item {
 
     //? if <1.20 {
     protected BaseItem(String name) {
-        this.setRegistryName(new ResourceLocation(CirculationFlowNetworks.MOD_ID, name));
-        this.setTranslationKey(CirculationFlowNetworks.MOD_ID + "." + name);
+        this(CirculationFlowNetworks.MOD_ID, name);
+    }
+
+    protected BaseItem(String modid, String name) {
+        this.setRegistryName(new ResourceLocation(modid, name));
+        this.setTranslationKey(modid + "." + name);
         this.setCreativeTab(CREATIVE_TAB);
     }
     //?} else {

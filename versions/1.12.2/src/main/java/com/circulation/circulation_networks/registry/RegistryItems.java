@@ -33,6 +33,7 @@ public final class RegistryItems {
         wideAreaChargingPlugin = registryItem(new ItemWideAreaChargingPlugin());
         dimensionalChargingPlugin = registryItem(new ItemDimensionalChargingPlugin());
         CFNItems.inspectionTool = inspectionTool;
+        CFNItems.hubChannelPlugin = hubChannelPlugin;
         CFNItems.wideAreaChargingPlugin = wideAreaChargingPlugin;
         CFNItems.dimensionalChargingPlugin = dimensionalChargingPlugin;
 

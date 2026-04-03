@@ -1,12 +1,11 @@
 {
   "block": {
     "circulation_networks": {
-      "energy_induction_tower": "能量感应塔",
-      "electromagnetic_induction_tower": "电磁感应塔",
-      "wind_turbine": "风力涡轮机",
-      "circulation_furnace": "环流熔炉",
-      "phase_interrupter": "相位干涉器",
-      "hub": "中枢"
+      "port_node": "环流端口节点",
+      "charging_node": "环流充能节点",
+      "relay_node": "环流中继节点",
+      "circulation_shielder": "环流屏蔽仪",
+      "hub": "环流中枢"
     }
   },
   "item": {
@@ -47,9 +46,33 @@
         "invalid_target": "§c此方块不是有效的能量机器，无法配置",
         "node_blocked": "§c节点机器无法通过此方式配置"
       },
+      "tooltip": {
+        "0": "§8§o既然锤子可以是扳手，那么一个无限的环也可以是扳手"
+      },
       "mode_description": {
         "inspection": "潜行 + 右键节点机器以显示节点的特定信息",
         "configuration": "潜行 + 右键机器以覆盖网络自动化的机器类型检测"
+      }
+    }
+  },
+  "hub": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§8§o四海已定，八荒已统"
+      }
+    }
+  },
+  "wide_area_charging_plugin": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§7允许中枢所在网络在同维度向所有具有权限的玩家充能"
+      }
+    }
+  },
+  "dimensional_charging_plugin": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§7允许中枢所在网络在所有维度向所有具有权限的玩家充能"
       }
     }
   },
@@ -61,12 +84,13 @@
   },
   "message": {
     "circulation_networks": {
-      "hub_conflict": "§c无法放置节点：连接的网络中检测到中枢冲突！"
+      "hub_conflict": "§c无法放置节点：连接的网络中检测到中枢冲突！",
+      "pocket_node_occupied": "§c该方块已经承载了节点或口袋节点"
     }
   },
   "gui": {
-    "phase_interrupter": {
-      "title": "相位干涉器配置",
+    "circulation_shielder": {
+      "title": "环流屏蔽仪配置",
       "show_range": "显示范围",
       "close": "关闭",
       "scope": "范围",

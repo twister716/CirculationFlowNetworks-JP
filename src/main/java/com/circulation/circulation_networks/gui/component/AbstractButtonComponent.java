@@ -5,7 +5,8 @@ import com.circulation.circulation_networks.gui.component.base.Component;
 
 public abstract class AbstractButtonComponent extends Component {
 
-    public static final Runnable EMPTY = () -> {};
+    public static final Runnable EMPTY = () -> {
+    };
 
     protected boolean pressed = false;
     private Runnable run;

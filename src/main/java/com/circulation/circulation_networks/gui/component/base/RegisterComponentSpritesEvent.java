@@ -30,11 +30,9 @@ import java.util.List;
  * <p>All atlas sprites, including full-screen GUI backgrounds, must be located at
  * {@code assets/circulation_networks/textures/gui/component/<name>.png}.
  */
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public final class RegisterComponentSpritesEvent extends Event {
 
     private final List<String> sprites = new ObjectArrayList<>();
@@ -47,7 +45,9 @@ public final class RegisterComponentSpritesEvent extends Event {
         sprites.add(name);
     }
 
-    /** Returns an unmodifiable view of all registered sprite names. */
+    /**
+     * Returns an unmodifiable view of all registered sprite names.
+     */
     public List<String> getSprites() {
         return Collections.unmodifiableList(sprites);
     }

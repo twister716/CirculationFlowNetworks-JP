@@ -13,16 +13,50 @@ public class MachineNodeBlockEntityManager {
     private final ReferenceSet<ServerTickMachine> serverTe = new ReferenceLinkedOpenHashSet<>();
     private final ReferenceSet<ClientTickMachine> clientTe = new ReferenceLinkedOpenHashSet<>();
 
+    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
+    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
+    private static boolean isClientWorld(net.minecraft.world.World world) {
+        return world.isRemote;
+    }
+
     public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
         if (isClientWorld(event.getWorld())) {
-            if (event.getBlockEntity() instanceof ClientTickMachine te) clientTe.add(te);
-        } else if (event.getBlockEntity() instanceof ServerTickMachine te) serverTe.add(te);
+            if (event.getBlockEntity() instanceof ClientTickMachine te) registerClientMachine(te);
+        } else if (event.getBlockEntity() instanceof ServerTickMachine te) {
+            registerServerMachine(te);
+        }
     }
 
     public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
         if (isClientWorld(event.getWorld())) {
-            if (event.getBlockEntity() instanceof ClientTickMachine te) clientTe.remove(te);
-        } else if (event.getBlockEntity() instanceof ServerTickMachine te) serverTe.remove(te);
+            if (event.getBlockEntity() instanceof ClientTickMachine te) unregisterClientMachine(te);
+        } else if (event.getBlockEntity() instanceof ServerTickMachine te) {
+            unregisterServerMachine(te);
+        }
+    }
+
+    public void registerClientMachine(ClientTickMachine machine) {
+        if (machine != null) {
+            clientTe.add(machine);
+        }
+    }
+
+    public void unregisterClientMachine(ClientTickMachine machine) {
+        if (machine != null) {
+            clientTe.remove(machine);
+        }
+    }
+
+    public void registerServerMachine(ServerTickMachine machine) {
+        if (machine != null) {
+            serverTe.add(machine);
+        }
+    }
+
+    public void unregisterServerMachine(ServerTickMachine machine) {
+        if (machine != null) {
+            serverTe.remove(machine);
+        }
     }
 
     public void onClientTick() {
@@ -40,12 +74,6 @@ public class MachineNodeBlockEntityManager {
     public void clear() {
         serverTe.clear();
         clientTe.clear();
-    }
-
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
     }
     //~}
     //~}

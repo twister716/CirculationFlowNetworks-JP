@@ -1,8 +1,10 @@
 package com.circulation.circulation_networks.utils;
 
 //? if <1.20 {
+
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+
 public interface Packet<T extends Packet<T>> extends IMessageHandler<T, IMessage>, IMessage {
 }
 //?} else if <1.21 {

@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.inventory;
 
 //~ mc_imports
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -58,26 +59,40 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         this(host, size, 64, ignoreItemStackLimit);
     }
 
+    private static ItemStack copyStackWithSize(ItemStack stack, int size) {
+        //? if <1.21 {
+        return ItemHandlerHelper.copyStackWithSize(stack, size);
+        //?} else {
+        /*return stack.copyWithCount(size);
+         *///?}
+    }
+
+    private static boolean canItemStacksStack(ItemStack left, ItemStack right) {
+        //? if <1.21 {
+        return ItemHandlerHelper.canItemStacksStack(left, right);
+        //?} else {
+        /*return ItemStack.isSameItemSameComponents(left, right);
+         *///?}
+    }
+
+    private static boolean sameStackType(ItemStack left, ItemStack right) {
+        //? if <1.20 {
+        return ItemStack.areItemsEqual(left, right) && ItemStack.areItemStackTagsEqual(left, right);
+        //?} else if <1.21 {
+        /*return ItemStack.isSameItemSameTags(left, right);
+         *///?} else {
+        /*return ItemStack.isSameItemSameComponents(left, right);
+         *///?}
+    }
+
     public CFNInternalInventory setInputFilter(@Nullable CFNInternalInventoryInputFilter filter) {
         this.inFilter = filter;
-        return  this;
+        return this;
     }
 
     public CFNInternalInventory setOutputFilter(@Nullable CFNInternalInventoryOutputFilter filter) {
         this.outFilter = filter;
-        return  this;
-    }
-
-    public interface CFNInternalInventoryInputFilter {
-
-        boolean allowInsert(CFNInternalInventory inventory, int slot, ItemStack stack);
-
-    }
-
-    public interface CFNInternalInventoryOutputFilter {
-
-        boolean allowExtract(CFNInternalInventory inventory, int slot, int amount);
-
+        return this;
     }
 
     public void setHost(@Nullable CFNInternalInventoryHost host) {
@@ -263,23 +278,6 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     public void readFromNBT(final NBTTagCompound data) {
         deserializeNBT(data);
     }
-
-    @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagList itemList = new NBTTagList();
-        for (int i = 0; i < stacks.size(); i++) {
-            ItemStack stack = stacks.get(i);
-            if (!stack.isEmpty()) {
-                NBTTagCompound itemTag = stack.serializeNBT();
-                itemTag.setInteger("Slot", i);
-                itemList.appendTag(itemTag);
-            }
-        }
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setTag("Items", itemList);
-        nbt.setInteger("Size", stacks.size());
-        return nbt;
-    }
     //?} else if <1.21 {
     /*public void writeToNBT(final CompoundTag data, final String name) {
         data.put(name, serializeNBT());
@@ -312,6 +310,25 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
     *///?}
 
+    //? if <1.20 {
+    @Override
+    public NBTTagCompound serializeNBT() {
+        NBTTagList itemList = new NBTTagList();
+        for (int i = 0; i < stacks.size(); i++) {
+            ItemStack stack = stacks.get(i);
+            if (!stack.isEmpty()) {
+                NBTTagCompound itemTag = stack.serializeNBT();
+                itemTag.setInteger("Slot", i);
+                itemList.appendTag(itemTag);
+            }
+        }
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setTag("Items", itemList);
+        nbt.setInteger("Size", stacks.size());
+        return nbt;
+    }
+    //?}
+
     @Override
     public @NotNull Iterator<ItemStack> iterator() {
         return Collections.unmodifiableList(stacks).iterator();
@@ -321,29 +338,15 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         return ignoreItemStackLimit ? getSlotLimit(slot) : Math.min(getSlotLimit(slot), stack.getMaxStackSize());
     }
 
-    private static ItemStack copyStackWithSize(ItemStack stack, int size) {
-        //? if <1.21 {
-        return ItemHandlerHelper.copyStackWithSize(stack, size);
-        //?} else {
-        /*return stack.copyWithCount(size);
-        *///?}
+    public interface CFNInternalInventoryInputFilter {
+
+        boolean allowInsert(CFNInternalInventory inventory, int slot, ItemStack stack);
+
     }
 
-    private static boolean canItemStacksStack(ItemStack left, ItemStack right) {
-        //? if <1.21 {
-        return ItemHandlerHelper.canItemStacksStack(left, right);
-        //?} else {
-        /*return ItemStack.isSameItemSameComponents(left, right);
-        *///?}
-    }
+    public interface CFNInternalInventoryOutputFilter {
 
-    private static boolean sameStackType(ItemStack left, ItemStack right) {
-        //? if <1.20 {
-        return ItemStack.areItemsEqual(left, right) && ItemStack.areItemStackTagsEqual(left, right);
-        //?} else if <1.21 {
-        /*return ItemStack.isSameItemSameTags(left, right);
-        *///?} else {
-        /*return ItemStack.isSameItemSameComponents(left, right);
-        *///?}
+        boolean allowExtract(CFNInternalInventory inventory, int slot, int amount);
+
     }
 }

@@ -1,8 +1,12 @@
 package com.circulation.circulation_networks;
 
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
+import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
+import com.circulation.circulation_networks.handlers.NodeHighlightRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
+import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
+import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL32L3;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
@@ -25,8 +29,12 @@ final class CirculationFlowNetworksClient {
         SpoceRenderingHandler.INSTANCE = createSpoceHandler();
         MinecraftForge.EVENT_BUS.register(SpoceRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(NodeNetworkRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(EnergyWarningRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ConfigOverrideRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PocketNodeRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(NodeHighlightRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
 
         CI18n.setI18nInternal(new CI18n() {
@@ -84,7 +92,11 @@ final class CirculationFlowNetworksClient {
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         MachineNodeBlockEntityManager.INSTANCE.clear();
         NodeNetworkRenderingHandler.INSTANCE.clearLinks();
+        EnergyWarningRenderingHandler.INSTANCE.clear();
         ConfigOverrideRenderingHandler.INSTANCE.clear();
+        PocketNodeRenderingHandler.INSTANCE.clear();
+        NodeHighlightRenderingHandler.INSTANCE.clear();
+        CirculationShielderRenderingHandler.INSTANCE.clear();
         if (SpoceRenderingHandler.INSTANCE != null) {
             SpoceRenderingHandler.INSTANCE.clear();
         }

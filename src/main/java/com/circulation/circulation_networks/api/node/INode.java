@@ -5,7 +5,6 @@ import com.circulation.circulation_networks.math.Vec3d;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 //~ mc_imports
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -21,15 +20,17 @@ public interface INode {
     Vec3d getVec3d();
 
     //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 'TileEntity ' -> 'BlockEntity ' {
     //~ if >=1.20 'NBTTagCompound ' -> 'CompoundTag ' {
     @Nonnull
     World getWorld();
 
-    TileEntity getBlockEntity();
+    @Nonnull
+    NodeType<?> getNodeType();
+
+    @Nonnull
+    String getVisualId();
 
     NBTTagCompound serialize();
-    //~}
     //~}
     //~}
 

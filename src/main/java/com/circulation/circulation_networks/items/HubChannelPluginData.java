@@ -3,8 +3,11 @@ package com.circulation.circulation_networks.items;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.utils.Functions;
 //~ mc_imports
+//? if <1.20
+import com.github.bsideup.jabel.Desugar;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import org.jetbrains.annotations.Nullable;
 //? if >=1.21 {
 /*import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.CustomData;
@@ -31,7 +34,22 @@ public final class HubChannelPluginData {
         putString(tag, CHANNEL_NAME_KEY, channelName);
         //? if >=1.21 {
         /*Functions.saveTagCompound(stack, tag);
-        *///?}
+         *///?}
+    }
+
+    public static void setChannelInfo(ItemStack stack, ChannelInfo channelInfo) {
+        if (channelInfo == null) {
+            return;
+        }
+        setChannelInfo(stack, channelInfo.channelId(), channelInfo.channelName());
+    }
+
+    public static ChannelInfo getChannelInfo(ItemStack stack) {
+        return new ChannelInfo(getChannelId(stack), getChannelName(stack));
+    }
+
+    public static ChannelInfo getChannelInfo(IHubNode hub) {
+        return new ChannelInfo(hub.getChannelId(), hub.getChannelName());
     }
 
     public static UUID getChannelId(ItemStack stack) {
@@ -61,12 +79,21 @@ public final class HubChannelPluginData {
         hub.setChannelName(getChannelName(stack));
     }
 
+    public static void applyToHub(IHubNode hub, ChannelInfo channelInfo) {
+        if (channelInfo == null) {
+            clearHub(hub);
+            return;
+        }
+        hub.setChannelId(channelInfo.channelId());
+        hub.setChannelName(channelInfo.channelName());
+    }
+
     public static void clearHub(IHubNode hub) {
         hub.setChannelId(EMPTY);
         hub.setChannelName("");
     }
 
-    public static UUID parseChannelId(String rawChannelId) {
+    public static @Nullable UUID parseChannelId(String rawChannelId) {
         if (rawChannelId == null || rawChannelId.isEmpty()) {
             return null;
         }
@@ -79,6 +106,10 @@ public final class HubChannelPluginData {
 
     public static boolean isComplete(UUID channelId, String channelName) {
         return channelId != null && channelName != null && !channelName.isEmpty();
+    }
+
+    public static boolean isComplete(ChannelInfo channelInfo) {
+        return channelInfo != null && isComplete(channelInfo.channelId(), channelInfo.channelName());
     }
 
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
@@ -107,6 +138,16 @@ public final class HubChannelPluginData {
     private static void putString(NBTTagCompound tag, String key, String value) {
         tag.setString(key, value);
     }
+
+    //? if <1.20
+    @Desugar
+    public record ChannelInfo(UUID channelId, String channelName) {
+
+            public ChannelInfo(UUID channelId, String channelName) {
+                this.channelId = channelId != null ? channelId : EMPTY;
+                this.channelName = channelName != null ? channelName : "";
+            }
+        }
     //~}
     //~}
     //~}

@@ -6,22 +6,25 @@ import net.minecraft.tileentity.TileEntity;
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 //?} else if <1.21 {
-/*import net.minecraftforge.eventbus.api.Cancelable;
-*///?}
+/*import net.minecraftforge.fml.common.eventhandler.Cancelable;
+ *///?}
 
-// Shared node-add event whose attached world object is treated as a block entity.
+import javax.annotation.Nullable;
+
+// Shared node-add event whose attached world object may come from a block entity or a virtual host.
 public class AddNodeEvent extends NodeEvent {
 
     //~ if >=1.20 ' TileEntity ' -> ' BlockEntity ' {
     //~ if >=1.20 '(TileEntity ' -> '(BlockEntity ' {
+    @Nullable
     private final TileEntity blockEntity;
 
-    public AddNodeEvent(INode node, TileEntity blockEntity) {
+    public AddNodeEvent(INode node, @Nullable TileEntity blockEntity) {
         super(node);
         this.blockEntity = blockEntity;
     }
 
-    public TileEntity getBlockEntity() {
+    public @Nullable TileEntity getBlockEntity() {
         return blockEntity;
     }
     //~}
@@ -31,7 +34,7 @@ public class AddNodeEvent extends NodeEvent {
     @Cancelable
     public static class Pre extends AddNodeEvent {
 
-        public Pre(INode node, TileEntity blockEntity) {
+        public Pre(INode node, @Nullable TileEntity blockEntity) {
             super(node, blockEntity);
         }
 
@@ -74,7 +77,7 @@ public class AddNodeEvent extends NodeEvent {
     public static class Post extends AddNodeEvent {
 
         //~ if >=1.20 ' TileEntity ' -> ' BlockEntity ' {
-        public Post(INode node, TileEntity blockEntity) {
+        public Post(INode node, @Nullable TileEntity blockEntity) {
             super(node, blockEntity);
         }
         //~}

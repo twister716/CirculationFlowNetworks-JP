@@ -10,6 +10,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.component.CustomData;
 *///?}
 
+//? if <1.20
+import com.github.bsideup.jabel.Desugar;
+
 public final class InspectionToolState {
 
     private static final String FUNCTION_KEY = "function";
@@ -52,7 +55,7 @@ public final class InspectionToolState {
         putInt(nbt, MODE_KEY, 0);
         //? if >=1.21 {
         /*Functions.saveTagCompound(stack, nbt);
-        *///?}
+         *///?}
         return new ToggleResult(previousFunction, currentFunction);
     }
 
@@ -95,22 +98,10 @@ public final class InspectionToolState {
     }
     *///?}
 
-    public static final class ToggleResult {
 
-        private final ToolFunction previousFunction;
-        private final ToolFunction currentFunction;
+    //? if <1.20
+    @Desugar
+    public record ToggleResult(ToolFunction previousFunction, ToolFunction currentFunction) {
 
-        public ToggleResult(ToolFunction previousFunction, ToolFunction currentFunction) {
-            this.previousFunction = previousFunction;
-            this.currentFunction = currentFunction;
-        }
-
-        public ToolFunction previousFunction() {
-            return previousFunction;
-        }
-
-        public ToolFunction currentFunction() {
-            return currentFunction;
-        }
     }
 }

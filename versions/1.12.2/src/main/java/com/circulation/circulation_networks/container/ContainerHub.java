@@ -1,11 +1,13 @@
 package com.circulation.circulation_networks.container;
 
+import com.circulation.circulation_networks.api.hub.ChannelSnapshotList;
 import com.circulation.circulation_networks.api.hub.NodeSnapshotList;
 import com.circulation.circulation_networks.api.hub.PermissionSnapshotList;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
-import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
+import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.utils.GuiSync;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import net.minecraft.entity.player.EntityPlayer;
@@ -19,12 +21,15 @@ import static com.circulation.circulation_networks.network.nodes.HubNode.EMPTY;
 public class ContainerHub extends CFNBaseContainer {
 
     private static final long ENERGY_REFRESH_INTERVAL = 10L;
+    private static final byte CHANNEL_CAPABILITY_FLAG = 0x1;
+    private static final byte[] EMPTY_CHANNEL_SNAPSHOT = ChannelSnapshotList.EMPTY.toBytes();
     private static final byte[] EMPTY_PERMISSION_SNAPSHOT = PermissionSnapshotList.EMPTY.toBytes();
     private static final byte[] EMPTY_NODE_SNAPSHOT = NodeSnapshotList.EMPTY.toBytes();
 
     public final ComponentSlotLayout playerInvLayout;
     public final ComponentSlotLayout[] slots = new ComponentSlotLayout[5];
-    public final TileEntityHub te;
+    public final IHubNode node;
+    private final UUID playerId;
     @GuiSync(0)
     public String input;
     @GuiSync(1)
@@ -42,7 +47,9 @@ public class ContainerHub extends CFNBaseContainer {
     public byte[] onlinePlayersSnapshot;
     @GuiSync(7)
     public byte[] nodesSnapshot;
-    public PermissionSnapshotList availableChannels;
+    @GuiSync(8)
+    public byte channelStateFlags;
+    public ChannelSnapshotList availableChannels;
     public PermissionSnapshotList onlinePlayers;
     public NodeSnapshotList nodes;
     public ChargingPreference chargingMode = ChargingPreference.defaultAll();
@@ -52,29 +59,31 @@ public class ContainerHub extends CFNBaseContainer {
     private long nodeSnapshotVersion = Long.MIN_VALUE;
     private UUID nodeGridId;
 
-    public ContainerHub(EntityPlayer player, TileEntityHub te) {
+    public ContainerHub(EntityPlayer player, IHubNode node) {
         super(player);
-        this.te = te;
+        this.node = node;
+        this.playerId = player.getUniqueID();
 
         playerInvLayout = ComponentSlotLayout.playerInventory(player.inventory).build(this);
         for (int i = 0; i < 5; i++) {
-            slots[i] = new ComponentSlotLayout().addSlot(te.getPlugins(), i, 0, 0).build(this);
+            slots[i] = new ComponentSlotLayout().addSlot(node.getPlugins(), i, 0, 0).build(this);
         }
-        if (te.getWorld().isRemote) {
-            input = "0";
-            output = "0";
-            chargingMode  = ChargingPreference.defaultAll();
-            availableChannels = PermissionSnapshotList.EMPTY;
-            onlinePlayers = PermissionSnapshotList.EMPTY;
-            nodes = NodeSnapshotList.EMPTY;
-            onlinePlayersSnapshot = EMPTY_PERMISSION_SNAPSHOT.clone();
-            availableChannelsSnapshot = EMPTY_PERMISSION_SNAPSHOT.clone();
-            nodesSnapshot = EMPTY_NODE_SNAPSHOT.clone();
-        } else {
-            var energy = EnergyMachineManager.INSTANCE.getInteraction().get(te.getNode().getGrid());
+
+        input = "0";
+        output = "0";
+        chargingMode = node.getChargingPreference(playerId);
+        syncChannelState();
+        availableChannels = ChannelSnapshotList.EMPTY;
+        onlinePlayers = PermissionSnapshotList.EMPTY;
+        nodes = NodeSnapshotList.fromGrid(node.getGrid());
+        availableChannelsSnapshot = EMPTY_CHANNEL_SNAPSHOT.clone();
+        onlinePlayersSnapshot = EMPTY_PERMISSION_SNAPSHOT.clone();
+        nodesSnapshot = nodes.toBytes();
+
+        if (!node.getWorld().isRemote) {
+            var energy = EnergyMachineManager.INSTANCE.getInteraction().get(node.getGrid());
             input = energy.getInput().toString();
             output = energy.getOutput().toString();
-            chargingMode = te.getNode().getChargingPreference(player.getUniqueID());
             syncChannelState();
             refreshSnapshots(true);
         }
@@ -82,19 +91,19 @@ public class ContainerHub extends CFNBaseContainer {
 
     @Override
     public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
-        return playerIn.getDistanceSq(te.getPos().getX() + 0.5D, te.getPos().getY() + 0.5D, te.getPos().getZ() + 0.5D) <= 128;
+        return playerIn.getDistanceSq(node.getPos().getX() + 0.5D, node.getPos().getY() + 0.5D, node.getPos().getZ() + 0.5D) <= 128;
     }
 
     @Override
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
-        if (te.getWorld().isRemote) return;
+        if (node.getWorld().isRemote) return;
         boolean channelChanged = syncChannelState();
-        chargingMode = te.getNode().getChargingPreference(player.getUniqueID());
+        chargingMode = node.getChargingPreference(playerId);
         chargingModeByte = chargingMode.toByte();
         refreshSnapshots(channelChanged);
-        if (te.getWorld().getTotalWorldTime() % ENERGY_REFRESH_INTERVAL != 0) return;
-        var energy = EnergyMachineManager.INSTANCE.getInteraction().get(te.getNode().getGrid());
+        if (node.getWorld().getTotalWorldTime() % ENERGY_REFRESH_INTERVAL != 0) return;
+        var energy = EnergyMachineManager.INSTANCE.getInteraction().get(node.getGrid());
         input = energy.getInput().toString();
         output = energy.getOutput().toString();
     }
@@ -102,7 +111,7 @@ public class ContainerHub extends CFNBaseContainer {
     private void refreshSnapshots(boolean force) {
         long channelSnapshotVersion = HubChannelManager.INSTANCE.getSnapshotVersion();
         if (force || availableChannelsVersion != channelSnapshotVersion) {
-            availableChannels = HubChannelManager.INSTANCE.getAccessibleChannelSnapshots(player.getUniqueID());
+            availableChannels = HubChannelManager.INSTANCE.getAccessibleChannelSnapshots(playerId, channelId);
             availableChannelsSnapshot = availableChannels.toBytes();
             availableChannelsVersion = channelSnapshotVersion;
         }
@@ -124,7 +133,7 @@ public class ContainerHub extends CFNBaseContainer {
             }
         }
 
-        var grid = te.getNode().getGrid();
+        var grid = node.getGrid();
         UUID currentGridId = grid != null ? grid.getId() : null;
         long currentNodeSnapshotVersion = grid != null ? grid.getSnapshotVersion() : 0L;
         if (force || nodeSnapshotVersion != currentNodeSnapshotVersion || !Objects.equals(nodeGridId, currentGridId)) {
@@ -136,14 +145,25 @@ public class ContainerHub extends CFNBaseContainer {
     }
 
     private boolean syncChannelState() {
-        UUID currentChannelId = te.getNode().getChannelId();
-        if (Objects.equals(channelId, currentChannelId)) {
-            return false;
-        }
+        UUID currentChannelId = node.getChannelId();
+        String currentChannelName = node.getChannelName();
+        byte currentChannelStateFlags = getChannelStateFlags(currentChannelId);
+        boolean changed = !Objects.equals(channelId, currentChannelId)
+            || !Objects.equals(channelName, currentChannelName)
+            || channelStateFlags != currentChannelStateFlags;
         channelId = currentChannelId;
         channelIdString = channelId.toString();
-        channelName = te.getNode().getChannelName();
-        return true;
+        channelName = currentChannelName;
+        channelStateFlags = currentChannelStateFlags;
+        return changed;
+    }
+
+    private byte getChannelStateFlags(UUID currentChannelId) {
+        byte flags = 0;
+        if (node.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) {
+            flags |= CHANNEL_CAPABILITY_FLAG;
+        }
+        return flags;
     }
 
     @Override
@@ -153,7 +173,7 @@ public class ContainerHub extends CFNBaseContainer {
         } else if ("chargingModeByte".equals(field)) {
             chargingMode.setPrefs((byte) newValue);
         } else if ("availableChannelsSnapshot".equals(field)) {
-            availableChannels = PermissionSnapshotList.fromBytes((byte[]) newValue);
+            availableChannels = ChannelSnapshotList.fromBytes((byte[]) newValue);
         } else if ("onlinePlayersSnapshot".equals(field)) {
             onlinePlayers = PermissionSnapshotList.fromBytes((byte[]) newValue);
         } else if ("nodesSnapshot".equals(field)) {
@@ -163,5 +183,17 @@ public class ContainerHub extends CFNBaseContainer {
 
     public boolean hasChannel() {
         return channelId != null && !channelId.equals(EMPTY);
+    }
+
+    public boolean hasChannelCapability() {
+        return (channelStateFlags & CHANNEL_CAPABILITY_FLAG) != 0;
+    }
+
+    public boolean canOpenChannelList() {
+        return hasChannelCapability();
+    }
+
+    public boolean canOpenChannelDetails() {
+        return hasChannelCapability() && hasChannel();
     }
 }

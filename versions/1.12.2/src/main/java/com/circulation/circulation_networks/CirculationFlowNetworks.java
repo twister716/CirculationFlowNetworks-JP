@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.proxy.CommonProxy;
 import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.creativetab.CreativeTabs;
@@ -89,12 +90,17 @@ public class CirculationFlowNetworks {
     @Mod.EventHandler
     public void serverStarted(FMLServerStartedEvent event) {
         NetworkManager.INSTANCE.initGrid();
+        proxy.revalidateLoadedNodeBlockEntities();
+        PocketNodeManager.INSTANCE.load();
     }
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
         server = null;
+        NetworkManager.INSTANCE.saveGrid();
+        PocketNodeManager.INSTANCE.save();
         NetworkManager.INSTANCE.onServerStop();
+        PocketNodeManager.INSTANCE.onServerStop();
         EnergyMachineManager.INSTANCE.onServerStop();
         EnergyTypeOverrideManager.onServerStop();
         ChargingManager.INSTANCE.onServerStop();

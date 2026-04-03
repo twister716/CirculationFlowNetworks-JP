@@ -32,9 +32,13 @@ import static com.circulation.circulation_networks.CirculationFlowNetworks.MOD_I
 public abstract class BaseBlock extends Block implements ITileEntityProvider {
 
     protected BaseBlock(String name) {
+        this(MOD_ID, name);
+    }
+
+    protected BaseBlock(String modid, String name) {
         super(Material.IRON);
-        this.setRegistryName(new ResourceLocation(MOD_ID, name));
-        this.setTranslationKey(MOD_ID + "." + name);
+        this.setRegistryName(new ResourceLocation(modid, name));
+        this.setTranslationKey(modid + "." + name);
         this.setCreativeTab(CREATIVE_TAB);
     }
 

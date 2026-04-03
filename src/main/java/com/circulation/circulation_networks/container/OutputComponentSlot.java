@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.container;
 
 //~ mc_imports
+
 import net.minecraft.item.ItemStack;
 //? if <1.20 {
 import net.minecraft.inventory.IInventory;
@@ -9,7 +10,7 @@ import net.minecraft.inventory.IInventory;
 import net.minecraftforge.items.IItemHandler;
 //?} else {
 /*import net.neoforged.neoforge.items.IItemHandler;
-*///?}
+ *///?}
 import org.jetbrains.annotations.NotNull;
 
 public class OutputComponentSlot extends ComponentSlot {
@@ -25,9 +26,9 @@ public class OutputComponentSlot extends ComponentSlot {
     }
 
     @Override
-    //~ if >=1.20 'isItemValid(' -> 'mayPlace(' {
+        //~ if >=1.20 'isItemValid(' -> 'mayPlace(' {
     public boolean isItemValid(@NotNull ItemStack stack) {
-    //~}
+        //~}
         return false;
     }
 }

@@ -7,40 +7,37 @@ import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.util.math.BlockPos;
 //? if <1.20 {
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-*///?}
-//? if <1.20 {
 //?} else if <1.21 {
-/*import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 *///?} else {
-/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
+/*import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
-
 //? if <1.20 {
-@SideOnly(Side.CLIENT)
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 //?} else {
-/*@OnlyIn(Dist.CLIENT)
+/*import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.player.LocalPlayer;
+//~ neo_imports
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 *///?}
+
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
+@SideOnly(Side.CLIENT)
+//~}
 public final class ConfigOverrideRenderingHandler {
 
     public static final ConfigOverrideRenderingHandler INSTANCE = new ConfigOverrideRenderingHandler();
@@ -63,9 +60,9 @@ public final class ConfigOverrideRenderingHandler {
     }
 
     @SubscribeEvent
-    //? if <1.20 {
+        //? if <1.20 {
     public void renderWorldLastEvent(RenderWorldLastEvent event) {
-    //?} else {
+        //?} else {
     /*public void renderWorldLastEvent(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
     *///?}
@@ -83,7 +80,7 @@ public final class ConfigOverrideRenderingHandler {
         var stack = p.getHeldItemMainhand();
         //?} else {
         /*var stack = p.getMainHandItem();
-        *///?}
+         *///?}
         if (!(stack.getItem() == CFNItems.inspectionTool
             && InspectionToolState.getFunction(stack) == ToolFunction.CONFIGURATION))
             return;
@@ -124,7 +121,7 @@ public final class ConfigOverrideRenderingHandler {
             BlockPos pos = BlockPos.fromLong(entry.getLongKey());
             //?} else {
             /*BlockPos pos = BlockPos.of(entry.getLongKey());
-            *///?}
+             *///?}
             IEnergyHandler.EnergyType type = entry.getValue();
 
             if (!RenderingUtils.isWithinRenderDistance(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -134,10 +131,26 @@ public final class ConfigOverrideRenderingHandler {
 
             float r, g, b;
             switch (type) {
-                case SEND -> { r = 1.0f; g = 0.2f; b = 0.2f; }
-                case RECEIVE -> { r = 0.2f; g = 1.0f; b = 0.2f; }
-                case STORAGE -> { r = 0.2f; g = 0.4f; b = 1.0f; }
-                default -> { r = 1.0f; g = 1.0f; b = 1.0f; }
+                case SEND -> {
+                    r = 1.0f;
+                    g = 0.2f;
+                    b = 0.2f;
+                }
+                case RECEIVE -> {
+                    r = 0.2f;
+                    g = 1.0f;
+                    b = 0.2f;
+                }
+                case STORAGE -> {
+                    r = 0.2f;
+                    g = 0.4f;
+                    b = 1.0f;
+                }
+                default -> {
+                    r = 1.0f;
+                    g = 1.0f;
+                    b = 1.0f;
+                }
             }
 
             double x0 = pos.getX() + INSET;
@@ -159,6 +172,6 @@ public final class ConfigOverrideRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*RenderSystem.getModelViewStack().popMatrix();
-        *///?}
+         *///?}
     }
 }

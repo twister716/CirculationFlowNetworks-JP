@@ -3,7 +3,8 @@ package com.circulation.circulation_networks.network;
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.registry.RegistryNodes;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
+import com.circulation.circulation_networks.registry.NodeTypes;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
@@ -15,7 +16,7 @@ import net.minecraft.nbt.NBTTagLong;
 import net.minecraftforge.common.util.Constants;
 //?} else {
 /*import net.minecraft.nbt.Tag;
-*///?}
+ *///?}
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -32,34 +33,6 @@ public final class Grid implements IGrid {
         this.id = id;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public ReferenceSet<INode> getNodes() {
-        return nodes;
-    }
-
-    @Nullable
-    public IHubNode getHubNode() {
-        return hubNode;
-    }
-
-    public void setHubNode(@Nullable IHubNode hubNode) {
-        this.hubNode = hubNode;
-        markSnapshotDirty();
-    }
-
-    @Override
-    public long getSnapshotVersion() {
-        return snapshotVersion;
-    }
-
-    @Override
-    public void markSnapshotDirty() {
-        snapshotVersion++;
-    }
-
     //? if <1.20 {
     public static Grid deserialize(NBTTagCompound nbt) {
         var grid = new Grid(nbt.getUniqueId("id"));
@@ -68,7 +41,7 @@ public final class Grid implements IGrid {
         var posMap = new Long2ReferenceOpenHashMap<INode>();
         for (var nbtBase : list) {
             var nodeNbt = (NBTTagCompound) nbtBase;
-            var node = RegistryNodes.deserialize(nodeNbt);
+            var node = NodeTypes.deserialize(nodeNbt);
             if (node != null) {
                 node.setGrid(grid);
                 node.setActive(true);
@@ -102,7 +75,7 @@ public final class Grid implements IGrid {
         var posMap = new Long2ReferenceOpenHashMap<INode>();
         for (var nbtBase : list) {
             var nodeNbt = (CompoundTag) nbtBase;
-            var node = RegistryNodes.deserialize(nodeNbt);
+            var node = NodeTypes.deserialize(nodeNbt);
             if (node != null) {
                 node.setGrid(grid);
                 node.setActive(true);
@@ -130,9 +103,43 @@ public final class Grid implements IGrid {
     }
     *///?}
 
+    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
+    private static int getDimensionId(INode node) {
+        return node.getWorld().provider.getDimension();
+    }
+    //~}
+
+    private static boolean shouldSerializeNode(INode node) {
+        return node != null
+            && !PocketNodeManager.INSTANCE.isActivePocketNode(node.getWorld(), node.getPos(), node.getNodeType());
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public ReferenceSet<INode> getNodes() {
+        return nodes;
+    }
+
+    @Nullable
+    public IHubNode getHubNode() {
+        return hubNode;
+    }
+
+    public void setHubNode(@Nullable IHubNode hubNode) {
+        this.hubNode = hubNode;
+        markSnapshotDirty();
+    }
+
     @Override
-    public int hashCode() {
-        return id.hashCode();
+    public long getSnapshotVersion() {
+        return snapshotVersion;
+    }
+
+    @Override
+    public void markSnapshotDirty() {
+        snapshotVersion++;
     }
 
     //? if <1.20 {
@@ -147,7 +154,9 @@ public final class Grid implements IGrid {
                 break;
             }
             for (var node : nodes) {
-                list.appendTag(node.serialize());
+                if (shouldSerializeNode(node)) {
+                    list.appendTag(node.serialize());
+                }
             }
         }
         nbt.setTag("nodes", list);
@@ -172,12 +181,6 @@ public final class Grid implements IGrid {
         return nbt;
     }
     *///?}
-
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
-    private static int getDimensionId(INode node) {
-        return node.getWorld().provider.getDimension();
-    }
-    //~}
 
     @Override
     public boolean equals(Object obj) {

@@ -4,11 +4,13 @@ import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
+import com.circulation.circulation_networks.network.hub.HubPluginCapability;
+import com.circulation.circulation_networks.network.nodes.HubNode;
 //? if <1.21 {
 import net.minecraftforge.items.IItemHandler;
 //?} else {
 /*import net.neoforged.neoforge.items.IItemHandler;
-*///?}
+ *///?}
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,13 +28,21 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public interface IHubNode extends IEnergySupplyNode, IChargingNode {
 
-    int PLUGIN_SLOTS = 5;
-
     PermissionMode getPermissionMode();
 
     void setPermissionMode(PermissionMode mode);
 
     IItemHandler getPlugins();
+
+    HubNode.HubMetadata getHubData();
+
+    default boolean hasPluginCapability(HubPluginCapability<?> capability) {
+        return getHubData().hasKey(capability);
+    }
+
+    default <T> T getPluginCapabilityData(HubPluginCapability<T> capability) {
+        return getHubData().get(capability);
+    }
 
     @Nonnull
     UUID getChannelId();

@@ -2,21 +2,19 @@ package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import net.minecraft.client.Minecraft;
-//? if <1.20 {
+//~ mc_imports
 import net.minecraft.util.ResourceLocation;
+//? if <1.20 {
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else {
-/*import net.minecraft.resources.ResourceLocation;
-*///?}
-//? if <1.20 {
 //?} else if <1.21 {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/*import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 *///?} else {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -25,11 +23,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public final class ShaderHelper {
 
     private ShaderHelper() {
@@ -89,12 +85,12 @@ public final class ShaderHelper {
         return shader;
     }
 
-    private static String readResource(ResourceLocation loc) {
+    private static @Nullable String readResource(ResourceLocation loc) {
         //? if <1.20 {
         try (InputStream is = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
-        //?} else {
-        /*try (InputStream is = Minecraft.getInstance().getResourceManager().getResourceOrThrow(loc).open();
-        *///?}
+             //?} else {
+            /*try (InputStream is = Minecraft.getInstance().getResourceManager().getResourceOrThrow(loc).open();
+             *///?}
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;

@@ -11,43 +11,39 @@ import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 //? if <1.20 {
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+*///?} else {
+/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if <1.20 {
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.client.event.MouseEvent;
 import org.lwjgl.input.Mouse;
 //?} else {
 /*import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-*///?}
-//? if <1.20 {
-//?} else if <1.21 {
-/*import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} else {
-/*import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+//~ neo_imports
+import net.minecraftforge.client.event.InputEvent;
 *///?}
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
- *///?}
+//~}
 public class ItemToolHandler {
     public static final ItemToolHandler INSTANCE = new ItemToolHandler();
 
-    //? if <1.20 {
+    //~ if >=1.20 'Minecraft.getMinecraft()' -> 'Minecraft.getInstance()' {
     private final Minecraft mc = Minecraft.getMinecraft();
-    //?} else {
-    /*private final Minecraft mc = Minecraft.getInstance();
-     *///?}
+    //~}
 
     @SubscribeEvent
         //? if <1.20 {

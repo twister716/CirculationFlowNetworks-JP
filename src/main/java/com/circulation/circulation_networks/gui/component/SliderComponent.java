@@ -20,12 +20,16 @@ public class SliderComponent extends Component {
     private static final int TRACK_BOTTOM_SRC_Y = 10;
     private static final int TRACK_BOTTOM_HEIGHT = 6;
     private static final int MIN = 0;
+    private static final int NORMALIZED_SCALE = 1000;
+    private static final double NORMALIZED_MIN = 0.0d;
+    private static final double NORMALIZED_MAX = 1.0d;
 
     private static final String TRACK_SPRITE = "slider";
 
     private final SliderParent sliderParent;
     private final SliderButtonComponent button;
 
+    private final boolean normalizedMode;
     private final int max;
     private int value;
     private int step = 1;
@@ -37,12 +41,24 @@ public class SliderComponent extends Component {
                            int max,
                            int initialValue,
                            CFNBaseGui<?> gui) {
+        this(parent, x, y, trackHeight, max, initialValue, gui, false);
+    }
+
+    private SliderComponent(SliderParent parent,
+                            int x,
+                            int y,
+                            int trackHeight,
+                            int max,
+                            int initialValue,
+                            CFNBaseGui<?> gui,
+                            boolean normalizedMode) {
         super(x, y, TRACK_WIDTH, normalizeHeight(trackHeight), gui);
         if (max < 0) {
             throw new IllegalArgumentException("max must be greater than or equal to 0");
         }
 
         this.sliderParent = parent;
+        this.normalizedMode = normalizedMode;
         this.max = max;
         this.button = new SliderButtonComponent(0, TOP_EXCLUSION, gui);
 
@@ -53,8 +69,48 @@ public class SliderComponent extends Component {
         setValueInternal(initialValue, false);
     }
 
+    public static SliderComponent normalized(SliderParent parent,
+                                             int x,
+                                             int y,
+                                             int trackHeight,
+                                             double initialValue,
+                                             CFNBaseGui<?> gui) {
+        return new SliderComponent(
+            parent,
+            x,
+            y,
+            trackHeight,
+            NORMALIZED_SCALE,
+            normalizedToRaw(initialValue),
+            gui,
+            true
+        );
+    }
+
+    private static int normalizedToRaw(double value) {
+        double clamped = Math.max(NORMALIZED_MIN, Math.min(NORMALIZED_MAX, value));
+        return (int) Math.round(clamped * NORMALIZED_SCALE);
+    }
+
+    private static double rawToNormalized(int value) {
+        int clamped = clamp(value, MIN, NORMALIZED_SCALE);
+        return clamped / (double) NORMALIZED_SCALE;
+    }
+
+    private static int normalizeHeight(int height) {
+        return Math.max(MIN_HEIGHT, height);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public int getValue() {
         return value;
+    }
+
+    public void setValue(int value) {
+        setValueInternal(value, false);
     }
 
     public int getMax() {
@@ -66,12 +122,40 @@ public class SliderComponent extends Component {
     }
 
     public SliderComponent setStep(int step) {
+        return setScrollStep(step);
+    }
+
+    public int getScrollStep() {
+        return step;
+    }
+
+    public SliderComponent setScrollStep(int step) {
         this.step = Math.max(1, step);
         return this;
     }
 
-    public void setValue(int value) {
-        setValueInternal(value, false);
+    public boolean isNormalizedMode() {
+        return normalizedMode;
+    }
+
+    public SliderComponent setNormalizedStep(double step) {
+        return setNormalizedScrollStep(step);
+    }
+
+    public SliderComponent setNormalizedScrollStep(double step) {
+        ensureNormalizedMode();
+        this.step = Math.max(1, normalizedToRaw(step));
+        return this;
+    }
+
+    public double getNormalizedValue() {
+        ensureNormalizedMode();
+        return rawToNormalized(value);
+    }
+
+    public void setNormalizedValue(double value) {
+        ensureNormalizedMode();
+        setValueInternal(normalizedToRaw(value), false);
     }
 
     public boolean scroll(int delta) {
@@ -88,7 +172,7 @@ public class SliderComponent extends Component {
     public Component setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         button.setEnabled(enabled && max > MIN);
-        return null;
+        return this;
     }
 
     @Override
@@ -128,6 +212,11 @@ public class SliderComponent extends Component {
         AtlasRenderHelper.drawSubRegion(atlas, region,
             0, TRACK_BOTTOM_SRC_Y, TRACK_WIDTH, TRACK_BOTTOM_HEIGHT,
             ax, ay + height - TRACK_BOTTOM_HEIGHT, TRACK_WIDTH, TRACK_BOTTOM_HEIGHT);
+    }
+
+    @Override
+    protected boolean onMouseScrolled(int mouseX, int mouseY, int delta) {
+        return scroll(delta);
     }
 
     void onButtonDragged(boolean released) {
@@ -228,11 +317,9 @@ public class SliderComponent extends Component {
         return clamp(value, MIN, max);
     }
 
-    private static int normalizeHeight(int height) {
-        return Math.max(MIN_HEIGHT, height);
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+    private void ensureNormalizedMode() {
+        if (!normalizedMode) {
+            throw new IllegalStateException("Slider is not configured for normalized values");
+        }
     }
 }

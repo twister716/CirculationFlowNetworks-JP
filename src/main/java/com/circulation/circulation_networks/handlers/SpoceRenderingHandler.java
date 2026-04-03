@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.handlers;
 
+import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.items.InspectionToolModeModel.InspectionMode;
 import com.circulation.circulation_networks.items.InspectionToolModeModel.ToolFunction;
 import com.circulation.circulation_networks.items.InspectionToolState;
@@ -9,14 +10,27 @@ import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 //? if <1.20 {
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+*///?} else {
+/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if <1.20 {
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -25,13 +39,9 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else {
-/*import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
+/*import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,28 +57,21 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 *///?}
 //? if <1.20 {
 //?} else if <1.21 {
-/*import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+/*//~ neo_imports
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 *///?} else {
 /*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 import org.lwjgl.opengl.GL11;
 
 import java.util.Arrays;
 import java.util.List;
 
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+//~}
 public class SpoceRenderingHandler {
 
     protected static final float[] EMPTY_VERTS = new float[0];
@@ -77,11 +80,8 @@ public class SpoceRenderingHandler {
     public static SpoceRenderingHandler INSTANCE;
     private final float[] buildBuf = new float[BUILD_BUF_SIZE];
     private final double[] angleScratch = new double[9];
-    //? if <1.20 {
-    protected TileEntity te;
-    //?} else {
-    /*protected BlockEntity te;
-    *///?}
+    protected BlockPos targetPos;
+    protected int targetDimensionId;
     protected float linkScope;
     protected float energyScope;
     protected float chargingScope;
@@ -174,7 +174,7 @@ public class SpoceRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*modelViewStack.popMatrix();
-        *///?}
+         *///?}
     }
 
     protected void drawSphere(float r, float g, float b, float radius, float alpha) {
@@ -227,10 +227,26 @@ public class SpoceRenderingHandler {
 
     //? if <1.20 {
     public void setStaus(TileEntity te, double linkScope, double energyScope, double chargingScope) {
-    //?} else {
+        if (te == null || te.getWorld() == null) {
+            clear();
+            return;
+        }
+        setStaus(te.getWorld().provider.getDimension(), te.getPos(), linkScope, energyScope, chargingScope);
+        //?} else {
     /*public void setStaus(BlockEntity te, double linkScope, double energyScope, double chargingScope) {
+        if (te == null || te.getLevel() == null) {
+            clear();
+            return;
+        }
+        setStaus(te.getLevel().dimension().location().hashCode(), te.getBlockPos(), linkScope, energyScope, chargingScope);
     *///?}
-        this.te = te;
+    }
+
+    public void setStaus(int dimensionId, BlockPos pos, double linkScope, double energyScope, double chargingScope) {
+        this.targetDimensionId = dimensionId;
+        //~ if >=1.20 '.toImmutable()' -> '.immutable()' {
+        this.targetPos = pos == null ? null : pos.toImmutable();
+        //~}
         this.linkScope = (float) linkScope;
         this.energyScope = (float) energyScope;
         this.chargingScope = (float) chargingScope;
@@ -252,13 +268,37 @@ public class SpoceRenderingHandler {
         return animProgress < 1.0f;
     }
 
-    @SubscribeEvent
-    //? if <1.21 {
-    public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || te == null) return;
+    //? if <1.20 {
+    private boolean isTargetStillPresent(World world) {
+        if (world == null || targetPos == null) {
+            return false;
+        }
+        if (PocketNodeRenderingHandler.INSTANCE.hasNode(targetDimensionId, targetPos)) {
+            return true;
+        }
+        TileEntity blockEntity = world.getTileEntity(targetPos);
+        return blockEntity instanceof INodeBlockEntity && !blockEntity.isInvalid();
+    }
     //?} else {
+    /*private boolean isTargetStillPresent(Level world) {
+        if (world == null || targetPos == null) {
+            return false;
+        }
+        if (PocketNodeRenderingHandler.INSTANCE.hasNode(targetDimensionId, targetPos)) {
+            return true;
+        }
+        BlockEntity blockEntity = world.getBlockEntity(targetPos);
+        return blockEntity instanceof INodeBlockEntity && !blockEntity.isRemoved();
+    }
+    *///?}
+
+    @SubscribeEvent
+        //? if <1.21 {
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START || targetPos == null) return;
+        //?} else {
     /*public void onClientTick(ClientTickEvent.Pre event) {
-        if (te == null) return;
+        if (targetPos == null) return;
     *///?}
 
         lastAnimProgress = animProgress;
@@ -277,9 +317,9 @@ public class SpoceRenderingHandler {
 
     //? if <1.20 {
     protected void drawIntersectionImmediate(World world, float radius, float r, float g, float b) {
-    //?} else {
-    /*protected void drawIntersectionImmediate(Level world, float radius, float r, float g, float b) {
-    *///?}
+        //?} else {
+        /*protected void drawIntersectionImmediate(Level world, float radius, float r, float g, float b) {
+         *///?}
         if (radius <= 0.1f) return;
         float[] verts = buildIntersectionGeometry(world, radius);
         drawCachedIntersection(verts, r, g, b);
@@ -292,7 +332,7 @@ public class SpoceRenderingHandler {
         double inner = Math.max(0.0, radius - 1.0);
         double outerSq = (radius + 1.0) * (radius + 1.0);
         double innerSq = inner * inner;
-        BlockPos center = te.getPos();
+        BlockPos center = targetPos;
 
         double cx = center.getX() + 0.5;
         double cy = center.getY() + 0.5;
@@ -485,7 +525,7 @@ public class SpoceRenderingHandler {
         double inner = Math.max(0.0, radius - 1.0);
         double outerSq = (radius + 1.0) * (radius + 1.0);
         double innerSq = inner * inner;
-        BlockPos center = te.getBlockPos();
+        BlockPos center = targetPos;
 
         double cx = center.getX() + 0.5;
         double cy = center.getY() + 0.5;
@@ -675,7 +715,8 @@ public class SpoceRenderingHandler {
     public void clear() {
         cleanupGL();
         glInitialized = false;
-        te = null;
+        targetPos = null;
+        targetDimensionId = 0;
         linkScope = energyScope = chargingScope = 0;
         animProgress = lastAnimProgress = 0;
         rs = null;
@@ -684,18 +725,22 @@ public class SpoceRenderingHandler {
     }
 
     @SubscribeEvent
-    //? if <1.20 {
+        //? if <1.20 {
     public void onRenderWorldLast(RenderWorldLastEvent event) {
-        if (te == null) return;
-        if (te.isInvalid() || rs == null) {
+        if (targetPos == null) return;
+        if (rs == null) {
             clear();
             return;
         }
 
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP p = mc.player;
-        BlockPos pos = te.getPos();
-        if (p.dimension != te.getWorld().provider.getDimension() || pos.distanceSq(p.posX, p.posY, p.posZ) > 2500) {
+        BlockPos pos = targetPos;
+        if (p == null || mc.world == null || p.dimension != targetDimensionId || pos.distanceSq(p.posX, p.posY, p.posZ) > 2500) {
+            clear();
+            return;
+        }
+        if (!isTargetStillPresent(mc.world)) {
             clear();
             return;
         }
@@ -728,19 +773,23 @@ public class SpoceRenderingHandler {
         GlStateManager.disableLighting();
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
-    //?} else if <1.21 {
+        //?} else if <1.21 {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-        if (te == null) return;
-        if (te.isRemoved() || rs == null) {
+        if (targetPos == null) return;
+        if (rs == null) {
             clear();
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
-        BlockPos pos = te.getBlockPos();
-        if (!mc.level.dimension().equals(te.getLevel().dimension()) || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+        BlockPos pos = targetPos;
+        if (p == null || mc.level == null || mc.level.dimension().location().hashCode() != targetDimensionId || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+            clear();
+            return;
+        }
+        if (!isTargetStillPresent(mc.level)) {
             clear();
             return;
         }
@@ -776,16 +825,20 @@ public class SpoceRenderingHandler {
     *///?} else {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-        if (te == null) return;
-        if (te.isRemoved() || rs == null) {
+        if (targetPos == null) return;
+        if (rs == null) {
             clear();
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
-        BlockPos pos = te.getBlockPos();
-        if (!mc.level.dimension().equals(te.getLevel().dimension()) || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+        BlockPos pos = targetPos;
+        if (p == null || mc.level == null || mc.level.dimension().location().hashCode() != targetDimensionId || pos.distToCenterSqr(p.getX(), p.getY(), p.getZ()) > 2500) {
+            clear();
+            return;
+        }
+        if (!isTargetStillPresent(mc.level)) {
             clear();
             return;
         }
@@ -830,7 +883,7 @@ public class SpoceRenderingHandler {
         float time = world.getTotalWorldTime() + partial;
         //?} else {
         /*float time = world.getGameTime() + partial;
-        *///?}
+         *///?}
         float rotation = time * 0.8f;
 
         if (linkScope > 0) {
@@ -845,14 +898,14 @@ public class SpoceRenderingHandler {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             //?} else {
             /*RenderSystem.defaultBlendFunc();
-            *///?}
+             *///?}
             draw(rotation * rs[0], 0, 0.4f, 0.8f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
                 //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
                 //?} else {
                 /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
-                *///?}
+                 *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {
@@ -877,14 +930,14 @@ public class SpoceRenderingHandler {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             //?} else {
             /*RenderSystem.defaultBlendFunc();
-            *///?}
+             *///?}
             draw(rotation * rs[1], 0.4f, 0.2f, 0.8f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
                 //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
                 //?} else {
                 /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
-                *///?}
+                 *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {
@@ -909,14 +962,14 @@ public class SpoceRenderingHandler {
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             //?} else {
             /*RenderSystem.defaultBlendFunc();
-            *///?}
+             *///?}
             draw(rotation * rs[2], 0, 0.5f, 0.1f, radius, wr, wg, wb);
             if (!usesShaderIntersection()) {
                 //? if <1.20 {
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
                 //?} else {
                 /*RenderSystem.blendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE);
-                *///?}
+                 *///?}
                 if (animating) {
                     drawIntersectionImmediate(world, radius, bright(wr), bright(wg), bright(wb));
                 } else {

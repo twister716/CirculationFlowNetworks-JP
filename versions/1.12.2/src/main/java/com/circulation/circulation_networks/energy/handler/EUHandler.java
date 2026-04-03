@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.energy.handler;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.EnergyAmounts;
 import com.circulation.circulation_networks.api.IEnergyHandler;
+import com.circulation.circulation_networks.network.nodes.HubNode;
 import ic2.api.energy.EnergyNet;
 import ic2.api.energy.tile.IEnergySink;
 import ic2.api.energy.tile.IEnergySource;
@@ -31,15 +32,15 @@ public final class EUHandler implements IEnergyHandler {
     private IEnergySink receive;
 
     public EUHandler(TileEntity tileEntity) {
-        init(tileEntity);
+        init(tileEntity, null);
     }
 
     public EUHandler(ItemStack stack) {
-        init(stack);
+        init(stack, null);
     }
 
     @Override
-    public IEnergyHandler init(TileEntity tileEntity) {
+    public IEnergyHandler init(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         isItem = false;
         IEnergyTile tile = EnergyNet.instance.getSubTile(tileEntity.getWorld(), tileEntity.getPos());
         boolean o = tile instanceof IEnergySource;
@@ -60,7 +61,7 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public IEnergyHandler init(ItemStack itemStack) {
+    public IEnergyHandler init(ItemStack itemStack, @Nullable HubNode.HubMetadata hubMetadata) {
         isItem = true;
         this.itemStack = itemStack;
         energyType = EnergyType.RECEIVE;
@@ -68,7 +69,7 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public void clear() {
+    public void clear(@Nullable HubNode.HubMetadata hubMetadata) {
         this.energyType = EnergyType.INVALID;
         this.send = null;
         this.receive = null;
@@ -77,11 +78,11 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyAmount receiveEnergy(EnergyAmount maxReceive) {
+    public EnergyAmount receiveEnergy(EnergyAmount maxReceive, @Nullable HubNode.HubMetadata hubMetadata) {
         if (isItem) {
             return EnergyAmount.obtain((long) ElectricItem.manager.charge(itemStack, maxReceive.asLongClamped(), Integer.MAX_VALUE, false, false));
         } else {
-            EnergyAmount receivable = canReceiveValue();
+            EnergyAmount receivable = canReceiveValue(hubMetadata);
             long i;
             try {
                 i = Math.min(receivable.asLongClamped(), maxReceive.asLongClamped()) >> 2;
@@ -94,8 +95,8 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyAmount extractEnergy(EnergyAmount maxExtract) {
-        EnergyAmount extractable = canExtractValue();
+    public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
+        EnergyAmount extractable = canExtractValue(hubMetadata);
         long o;
         try {
             o = Math.min(extractable.asLongClamped(), maxExtract.asLongClamped()) >> 2;
@@ -107,14 +108,14 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyAmount canExtractValue() {
+    public EnergyAmount canExtractValue(@Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
         if (send.getOfferedEnergy() > max) return EnergyAmount.obtain(maxFE);
         return EnergyAmount.obtain(((long) send.getOfferedEnergy()) << 2);
     }
 
     @Override
-    public EnergyAmount canReceiveValue() {
+    public EnergyAmount canReceiveValue(@Nullable HubNode.HubMetadata hubMetadata) {
         if (isItem) {
             return EnergyAmount.obtain((long) ElectricItem.manager.charge(itemStack, Double.MAX_VALUE, Integer.MAX_VALUE, false, true));
         } else {
@@ -125,12 +126,12 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public boolean canExtract(IEnergyHandler receiveHandler) {
+    public boolean canExtract(IEnergyHandler receiveHandler, @Nullable HubNode.HubMetadata hubMetadata) {
         return send != null && send.getOfferedEnergy() > 0;
     }
 
     @Override
-    public boolean canReceive(IEnergyHandler sendHandler) {
+    public boolean canReceive(IEnergyHandler sendHandler, @Nullable HubNode.HubMetadata hubMetadata) {
         if (isItem) {
             return ElectricItem.manager.getMaxCharge(itemStack) > 0;
         } else {
@@ -139,7 +140,7 @@ public final class EUHandler implements IEnergyHandler {
     }
 
     @Override
-    public EnergyType getType() {
+    public EnergyType getType(@Nullable HubNode.HubMetadata hubMetadata) {
         return energyType;
     }
 }

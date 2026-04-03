@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.api.node;
 
 //~ mc_imports
+
 import net.minecraft.util.math.BlockPos;
 
 /**

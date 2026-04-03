@@ -1,18 +1,19 @@
 package com.circulation.circulation_networks.container;
 
 //~ mc_imports
+
 import net.minecraft.item.ItemStack;
 //? if <1.20 {
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 //?} else {
 /*import net.minecraft.world.entity.player.Player;
-*///?}
+ *///?}
 //? if <1.21 {
 import net.minecraftforge.items.IItemHandler;
 //?} else {
 /*import net.neoforged.neoforge.items.IItemHandler;
-*///?}
+ *///?}
 import org.jetbrains.annotations.NotNull;
 
 public class FilterComponentSlot extends ComponentSlot {

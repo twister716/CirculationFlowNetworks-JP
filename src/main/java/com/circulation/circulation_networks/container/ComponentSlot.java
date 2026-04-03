@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.container;
 
 //? if <1.20 {
+
 import net.minecraft.inventory.IInventory;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
@@ -44,9 +45,9 @@ public class ComponentSlot extends SlotItemHandler {
     }
 
     @Override
-    //~ if >=1.20 'isEnabled()' -> 'isActive()' {
+        //~ if >=1.20 'isEnabled()' -> 'isActive()' {
     public boolean isEnabled() {
-    //~}
+        //~}
         return visible;
     }
 }

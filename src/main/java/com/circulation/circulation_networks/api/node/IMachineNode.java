@@ -9,8 +9,4 @@ public interface IMachineNode extends IEnergySupplyNode {
 
     IEnergyHandler.EnergyType getType();
 
-    long getMaxEnergy();
-
-    void setMaxEnergy(long maxEnergy);
-
 }

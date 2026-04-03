@@ -61,7 +61,7 @@ public final class ComponentTreeUtils {
         if (children.isEmpty()) {
             return component;
         }
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             Component child = children.get(i);
             if (!child.isVisible() || !child.contains(mouseX, mouseY)) continue;
             return findTopComponentAt(child, mouseX, mouseY);

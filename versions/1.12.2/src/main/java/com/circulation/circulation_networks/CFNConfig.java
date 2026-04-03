@@ -40,14 +40,48 @@ public final class CFNConfig {
 
     public static class Node {
 
-        @Config.Name("EnergyInductionTower")
-        public final EnergyInductionTowerConfig energyInductionTower = new EnergyInductionTowerConfig();
+        @Config.Name("PortNode")
+        public final PortNodeConfig portNode = new PortNodeConfig();
 
-        @Config.Name("ElectromagneticInductionTower")
-        public final ElectromagneticInductionTowerConfig electromagneticInductionTower = new ElectromagneticInductionTowerConfig();
+        @Config.Name("ChargingNode")
+        public final ChargingNodeConfig chargingNode = new ChargingNodeConfig();
+
+        @Config.Name("RelayNode")
+        public final RelayNodeConfig relayNode = new RelayNodeConfig();
 
         @Config.Name("Hub")
         public final HubConfig hub = new HubConfig();
+
+        public static class PortNodeConfig {
+            @Config.Comment({"环流端口节点的能量范围", "Energy range of Circulation Port Node"})
+            @Config.Name("energyScope")
+            @Config.RangeDouble(min = 0.1, max = 32)
+            public double energyScope = 8;
+
+            @Config.Comment({"环流端口节点的链接范围", "Link range of Circulation Port Node"})
+            @Config.Name("linkScope")
+            @Config.RangeDouble(min = 0.1, max = 32)
+            public double linkScope = 12;
+        }
+
+        public static class ChargingNodeConfig {
+            @Config.Comment({"环流充能节点的充能范围", "Charging range of Circulation Charging Node"})
+            @Config.Name("chargingScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double chargingScope = 5;
+
+            @Config.Comment({"环流充能节点的链接范围", "Link range of Circulation Charging Node"})
+            @Config.Name("linkScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double linkScope = 8;
+        }
+
+        public static class RelayNodeConfig {
+            @Config.Comment({"环流中继节点的链接范围", "Link range of Circulation Relay Node"})
+            @Config.Name("linkScope")
+            @Config.RangeDouble(min = 1, max = 32)
+            public double linkScope = 20;
+        }
 
         public static class HubConfig {
             @Config.Comment({"中枢的能量范围", "Energy range of Hub"})
@@ -64,30 +98,6 @@ public final class CFNConfig {
             @Config.Name("linkScope")
             @Config.RangeDouble(min = 1, max = 32)
             public double linkScope = 16;
-        }
-
-        public static class EnergyInductionTowerConfig {
-            @Config.Comment({"能量感应塔的能量范围", "Energy range of Energy Induction Tower "})
-            @Config.Name("energyScope")
-            @Config.RangeDouble(min = 0.1, max = 32)
-            public double energyScope = 8;
-
-            @Config.Comment({"能量感应塔的链接范围", "Link range of Energy Induction Tower"})
-            @Config.Name("linkScope")
-            @Config.RangeDouble(min = 0.1, max = 32)
-            public double linkScope = 12;
-        }
-
-        public static class ElectromagneticInductionTowerConfig {
-            @Config.Comment({"电磁感应塔的充能范围", "Charging range of Electromagnetic Induction Tower"})
-            @Config.Name("chargingScope")
-            @Config.RangeDouble(min = 1, max = 32)
-            public double chargingScope = 5;
-
-            @Config.Comment({"电磁感应塔的链接范围", "Link range of Electromagnetic Induction Tower "})
-            @Config.Name("linkScope")
-            @Config.RangeDouble(min = 1, max = 32)
-            public double linkScope = 8;
         }
     }
 

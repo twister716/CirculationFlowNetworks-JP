@@ -25,6 +25,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
+import java.io.IOException;
 *///?}
 import org.jetbrains.annotations.NotNull;
 
@@ -84,17 +85,17 @@ public abstract class CFNBaseContainer extends Container {
     }
 
     @Override
-    //~ if >=1.20 'transferStackInSlot' -> 'quickMoveStack' {
-    //~ if >=1.20 'EntityPlayer' -> 'Player' {
-    //~ if >=1.20 'inventorySlots' -> 'slots' {
-    //~ if >=1.20 '.getHasStack()' -> '.hasItem()' {
+        //~ if >=1.20 'transferStackInSlot' -> 'quickMoveStack' {
+        //~ if >=1.20 'EntityPlayer' -> 'Player' {
+        //~ if >=1.20 'inventorySlots' -> 'slots' {
+        //~ if >=1.20 '.getHasStack()' -> '.hasItem()' {
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer playerIn, int index) {
         Slot slot = inventorySlots.get(index);
         if (slot == null || !slot.getHasStack()) return ItemStack.EMPTY;
-    //~}
-    //~}
-    //~}
-    //~}
+        //~}
+        //~}
+        //~}
+        //~}
 
         //~ if >=1.20 '.getStack()' -> '.getItem()' {
         ItemStack stack = slot.getStack();
@@ -183,11 +184,11 @@ public abstract class CFNBaseContainer extends Container {
     *///?}
 
     @Override
-    //~ if >=1.20 'canInteractWith' -> 'stillValid' {
-    //~ if >=1.20 'EntityPlayer' -> 'Player' {
+        //~ if >=1.20 'canInteractWith' -> 'stillValid' {
+        //~ if >=1.20 'EntityPlayer' -> 'Player' {
     public boolean canInteractWith(@NotNull EntityPlayer playerIn) {
-    //~}
-    //~}
+        //~}
+        //~}
         return true;
     }
 
@@ -355,7 +356,7 @@ public abstract class CFNBaseContainer extends Container {
 
     //~ if >=1.20 'updateProgressBar(' -> 'cfnUpdateProgressBar(' {
     public final void updateProgressBar(int idx, int value) {
-    //~}
+        //~}
         guiSyncManager.updateField(idx, (long) value);
     }
 

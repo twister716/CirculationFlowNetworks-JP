@@ -3,25 +3,26 @@ package com.circulation.circulation_networks.gui.component.base;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
-//? if <1.20 {
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import com.github.bsideup.jabel.Desugar;
+//~ mc_imports
 import net.minecraft.util.ResourceLocation;
+//? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else if <1.21 {
-/*import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 *///?} else {
-/*import net.minecraft.resources.ResourceLocation;
-import net.neoforged.bus.api.SubscribeEvent;
+/*import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
+//? if <1.20 {
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import com.github.bsideup.jabel.Desugar;
+//?}
 //? if <1.21 {
 import net.minecraftforge.common.MinecraftForge;
 //?} else {
@@ -64,11 +65,9 @@ import java.util.zip.CRC32;
  *       base-name (without extension).</li>
  * </ol>
  */
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
-//?} else {
-/*@OnlyIn(Dist.CLIENT)
- *///?}
+//~}
 public final class ComponentAtlas extends ComponentAtlasRegistry {
 
     public static final ComponentAtlas INSTANCE = new ComponentAtlas();

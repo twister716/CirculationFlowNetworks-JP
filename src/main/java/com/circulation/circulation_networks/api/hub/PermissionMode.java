@@ -2,7 +2,7 @@ package com.circulation.circulation_networks.api.hub;
 
 public enum PermissionMode {
     PUBLIC,
-    FTB,
+    TEAM,
     PRIVATE;
 
     public static PermissionMode fromId(int id) {

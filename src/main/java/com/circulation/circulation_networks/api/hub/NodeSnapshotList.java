@@ -2,17 +2,21 @@ package com.circulation.circulation_networks.api.hub;
 
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.node.INode;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
+import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//~ mc_imports
-import net.minecraft.tileentity.TileEntity;
 //? if <1.20 {
 import net.minecraft.block.Block;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 //?} else {
 /*import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 *///?}
 
 import javax.annotation.Nullable;
@@ -28,8 +32,8 @@ import java.util.List;
 
 public final class NodeSnapshotList {
 
-    private static final Gson GSON = new GsonBuilder().create();
     public static final NodeSnapshotList EMPTY = new NodeSnapshotList(Collections.emptyList());
+    private static final Gson GSON = new GsonBuilder().create();
     public static final String EMPTY_JSON = EMPTY.toJson();
 
     private final List<NodeSnapshotEntry> entries;
@@ -40,51 +44,6 @@ public final class NodeSnapshotList {
         this.entries = entries.isEmpty()
             ? Collections.emptyList()
             : Collections.unmodifiableList(new ObjectArrayList<>(entries));
-    }
-
-    public List<NodeSnapshotEntry> getEntries() {
-        return entries;
-    }
-
-    public String toJson() {
-        if (json == null) {
-            json = GSON.toJson(this);
-        }
-        return json;
-    }
-
-    public byte[] toBytes() {
-        if (bytes == null) {
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-                 DataOutputStream data = new DataOutputStream(output)) {
-                writeVarInt(data, entries.size());
-                int previousX = 0;
-                int previousY = 0;
-                int previousZ = 0;
-                boolean first = true;
-                for (NodeSnapshotEntry entry : entries) {
-                    writeVarInt(data, resolveBlockIntId(entry.getBlockId()));
-                    if (first) {
-                        writeZigZagInt(data, entry.getX());
-                        writeZigZagInt(data, entry.getY());
-                        writeZigZagInt(data, entry.getZ());
-                        first = false;
-                    } else {
-                        writeZigZagInt(data, entry.getX() - previousX);
-                        writeZigZagInt(data, entry.getY() - previousY);
-                        writeZigZagInt(data, entry.getZ() - previousZ);
-                    }
-                    writeNullableString(data, entry.getCustomName());
-                    previousX = entry.getX();
-                    previousY = entry.getY();
-                    previousZ = entry.getZ();
-                }
-                bytes = output.toByteArray();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to encode node snapshot", e);
-            }
-        }
-        return bytes.clone();
     }
 
     public static NodeSnapshotList fromJson(String json) {
@@ -110,7 +69,7 @@ public final class NodeSnapshotList {
             int previousZ = 0;
             boolean first = true;
             for (int i = 0; i < size; i++) {
-                String blockId = resolveBlockId(readVarInt(data));
+                String itemId = resolveItemId(readVarInt(data));
                 int x;
                 int y;
                 int z;
@@ -125,7 +84,7 @@ public final class NodeSnapshotList {
                     z = previousZ + readZigZagInt(data);
                 }
                 String customName = readNullableString(data);
-                entries.add(new NodeSnapshotEntry(blockId, x, y, z, customName));
+                entries.add(new NodeSnapshotEntry(itemId, x, y, z, customName));
                 previousX = x;
                 previousY = y;
                 previousZ = z;
@@ -143,65 +102,101 @@ public final class NodeSnapshotList {
 
         List<NodeSnapshotEntry> entries = new ObjectArrayList<>(grid.getNodes().size());
         for (INode node : grid.getNodes()) {
-            String blockId = resolveBlockId(node);
+            String itemId = resolveItemId(node);
             var pos = node.getPos();
-            entries.add(new NodeSnapshotEntry(blockId, pos.getX(), pos.getY(), pos.getZ(), node.getCustomName()));
+            entries.add(new NodeSnapshotEntry(itemId, pos.getX(), pos.getY(), pos.getZ(), node.getCustomName()));
         }
-        entries.sort(Comparator.comparingInt(NodeSnapshotEntry::getX)
-            .thenComparingInt(NodeSnapshotEntry::getY)
-            .thenComparingInt(NodeSnapshotEntry::getZ)
-            .thenComparing(NodeSnapshotEntry::getBlockId));
+        entries.sort(Comparator.comparingInt(NodeSnapshotEntry::x)
+                               .thenComparingInt(NodeSnapshotEntry::y)
+                               .thenComparingInt(NodeSnapshotEntry::z)
+                               .thenComparing(NodeSnapshotEntry::itemId));
         return entries.isEmpty() ? EMPTY : new NodeSnapshotList(entries);
     }
 
-    private static String resolveBlockId(INode node) {
-        //? if <1.20 {
-        TileEntity blockEntity = node.getBlockEntity();
-        if (blockEntity == null) {
+    private static String resolveItemId(INode node) {
+        ItemStack displayStack = ItemStack.EMPTY;
+        if (PocketNodeManager.INSTANCE.isActivePocketNode(node.getWorld(), node.getPos(), node.getNodeType())) {
+            displayStack = PocketNodeItems.createStack(node.getNodeType());
+        }
+        if (displayStack.isEmpty()) {
+            displayStack = resolveVisualItemStack(node.getVisualId());
+        }
+        if (displayStack.isEmpty()) {
             return "";
         }
-        ResourceLocation registryName = blockEntity.getWorld().getBlockState(blockEntity.getPos()).getBlock().getRegistryName();
+        //? if <1.20 {
+        ResourceLocation registryName = displayStack.getItem().getRegistryName();
         return registryName != null ? registryName.toString() : "";
         //?} else {
-        /*BlockEntity blockEntity = node.getBlockEntity();
-        if (blockEntity == null) {
-            return "";
-        }
-        return BuiltInRegistries.BLOCK.getKey(blockEntity.getBlockState().getBlock()).toString();
+        /*ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(displayStack.getItem());
+        return registryName.toString();
         *///?}
     }
 
-    private static int resolveBlockIntId(String blockId) {
-        //? if <1.20 {
-        if (blockId == null || blockId.isEmpty()) {
-            return 0;
+    private static ItemStack resolveVisualItemStack(String visualId) {
+        if (visualId == null || visualId.isEmpty()) {
+            return ItemStack.EMPTY;
         }
-        Block block = Block.REGISTRY.getObject(new ResourceLocation(blockId));
-        return block != null ? Block.getIdFromBlock(block) : 0;
-        //?} else if <1.21 {
-        /*if (blockId == null || blockId.isEmpty()) {
-            return 0;
-        }
-        return BuiltInRegistries.BLOCK.getId(BuiltInRegistries.BLOCK.get(new ResourceLocation(blockId)));
-        *///?} else {
-        /*if (blockId == null || blockId.isEmpty()) {
-            return 0;
-        }
-        return BuiltInRegistries.BLOCK.getId(BuiltInRegistries.BLOCK.get(ResourceLocation.parse(blockId)));
+        //? if <1.21 {
+        ResourceLocation location = new ResourceLocation(visualId);
+        //?} else {
+        /*ResourceLocation location = ResourceLocation.parse(visualId);
         *///?}
-    }
-
-    private static String resolveBlockId(int blockId) {
         //? if <1.20 {
-        Block block = Block.getBlockById(blockId);
+        Item item = Item.REGISTRY.getObject(location);
+        if (item != null) {
+            return new ItemStack(item);
+        }
+        Block block = Block.REGISTRY.getObject(location);
         if (block == null) {
+            return ItemStack.EMPTY;
+        }
+        Item blockItem = Item.getItemFromBlock(block);
+        return blockItem != null ? new ItemStack(blockItem) : ItemStack.EMPTY;
+        //?} else if <1.21 {
+        /*Item item = BuiltInRegistries.ITEM.get(location);
+        if (item != null && item != net.minecraft.world.item.Items.AIR) {
+            return new ItemStack(item);
+        }
+        var block = BuiltInRegistries.BLOCK.get(location);
+        Item blockItem = Item.byBlock(block);
+        return blockItem != net.minecraft.world.item.Items.AIR ? new ItemStack(blockItem) : ItemStack.EMPTY;
+        *///?} else {
+        /*Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(visualId));
+        if (item != null && item != net.minecraft.world.item.Items.AIR) {
+            return new ItemStack(item);
+        }
+        var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(visualId));
+        Item blockItem = Item.byBlock(block);
+        return blockItem != net.minecraft.world.item.Items.AIR ? new ItemStack(blockItem) : ItemStack.EMPTY;
+        *///?}
+    }
+
+    private static int resolveItemIntId(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return 0;
+        }
+        //? if <1.20 {
+        Item item = Item.REGISTRY.getObject(new ResourceLocation(itemId));
+        return item != null ? Item.getIdFromItem(item) : 0;
+        //?} else if <1.21 {
+        /*return BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(new ResourceLocation(itemId)));
+         *///?} else {
+        /*return BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId)));
+         *///?}
+    }
+
+    private static String resolveItemId(int itemId) {
+        //? if <1.20 {
+        Item item = Item.getItemById(itemId);
+        if (item == null) {
             return "";
         }
-        ResourceLocation registryName = block.getRegistryName();
+        ResourceLocation registryName = item.getRegistryName();
         return registryName != null ? registryName.toString() : "";
         //?} else {
-        /*return BuiltInRegistries.BLOCK.byId(blockId).builtInRegistryHolder().key().location().toString();
-        *///?}
+        /*return BuiltInRegistries.ITEM.byId(itemId).builtInRegistryHolder().key().location().toString();
+         *///?}
     }
 
     private static void writeNullableString(DataOutputStream data, @Nullable String value) throws IOException {
@@ -258,5 +253,50 @@ public final class NodeSnapshotList {
                 throw new IOException("VarInt is too big");
             }
         }
+    }
+
+    public List<NodeSnapshotEntry> getEntries() {
+        return entries;
+    }
+
+    public String toJson() {
+        if (json == null) {
+            json = GSON.toJson(this);
+        }
+        return json;
+    }
+
+    public byte[] toBytes() {
+        if (bytes == null) {
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+                 DataOutputStream data = new DataOutputStream(output)) {
+                writeVarInt(data, entries.size());
+                int previousX = 0;
+                int previousY = 0;
+                int previousZ = 0;
+                boolean first = true;
+                for (NodeSnapshotEntry entry : entries) {
+                    writeVarInt(data, resolveItemIntId(entry.itemId()));
+                    if (first) {
+                        writeZigZagInt(data, entry.x());
+                        writeZigZagInt(data, entry.y());
+                        writeZigZagInt(data, entry.z());
+                        first = false;
+                    } else {
+                        writeZigZagInt(data, entry.x() - previousX);
+                        writeZigZagInt(data, entry.y() - previousY);
+                        writeZigZagInt(data, entry.z() - previousZ);
+                    }
+                    writeNullableString(data, entry.customName());
+                    previousX = entry.x();
+                    previousY = entry.y();
+                    previousZ = entry.z();
+                }
+                bytes = output.toByteArray();
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to encode node snapshot", e);
+            }
+        }
+        return bytes.clone();
     }
 }

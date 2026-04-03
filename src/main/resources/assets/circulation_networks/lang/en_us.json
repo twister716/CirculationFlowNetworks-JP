@@ -1,12 +1,11 @@
 {
   "block": {
     "circulation_networks": {
-      "energy_induction_tower": "Energy Induction Tower",
-      "electromagnetic_induction_tower": "Electromagnetic Induction Tower",
-      "wind_turbine": "Wind Turbine",
-      "circulation_furnace": "Circulation Furnace",
-      "phase_interrupter": "Phase Interrupter",
-      "hub": "Hub"
+      "port_node": "Circulation Port Node",
+      "charging_node": "Circulation Charging Node",
+      "relay_node": "Circulation Relay Node",
+      "circulation_shielder": "Circulation Shielder",
+      "hub": "Circulation Hub"
     }
   },
   "item": {
@@ -47,9 +46,33 @@
         "invalid_target": "§cThis block is not a valid energy machine",
         "node_blocked": "§cNode machines cannot be configured this way"
       },
+      "tooltip": {
+        "0": "§8§oIf a hammer can be a wrench, then an infinite ring can be one too"
+      },
       "mode_description": {
         "inspection": "Sneak + Right-click node machine to display node-specific information",
         "configuration": "Sneak + Right-click machine to override network automation machine type detection"
+      }
+    }
+  },
+  "hub": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§8§oWith the four seas settled, all eight frontiers are united"
+      }
+    }
+  },
+  "wide_area_charging_plugin": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§7Allows the network where the Hub is located to charge all permitted players in the same dimension"
+      }
+    }
+  },
+  "dimensional_charging_plugin": {
+    "circulation_networks": {
+      "tooltip": {
+        "0": "§7Allows the network where the Hub is located to charge all permitted players across all dimensions"
       }
     }
   },
@@ -61,12 +84,13 @@
   },
   "message": {
     "circulation_networks": {
-      "hub_conflict": "§cCannot place node: hub conflict detected in connected networks!"
+      "hub_conflict": "§cCannot place node: hub conflict detected in connected networks!",
+      "pocket_node_occupied": "§cThis block already hosts a node or pocket node"
     }
   },
   "gui": {
-    "phase_interrupter": {
-      "title": "Phase Interrupter Configuration",
+    "circulation_shielder": {
+      "title": "Circulation Shielder Configuration",
       "show_range": "Show Range",
       "close": "Close",
       "scope": "Scope",
@@ -76,8 +100,8 @@
       "redstone_mode": "Redstone Mode",
       "inverse_mode": "Inverse Mode",
       "normal_mode": "Normal Mode",
-      "inverse_desc": "Inverse (Receive Signal → Active)",
-      "normal_desc": "Normal (Receive Signal → Inactive)"
+      "inverse_desc": "Inverse (Receive Signal § Active)",
+      "normal_desc": "Normal (Receive Signal § Inactive)"
     }
   }
 }

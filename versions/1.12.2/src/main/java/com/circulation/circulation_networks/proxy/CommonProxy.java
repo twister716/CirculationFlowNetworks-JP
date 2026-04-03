@@ -1,7 +1,6 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-import com.circulation.circulation_networks.energy.manager.CEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.EUHandlerManager;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
@@ -12,20 +11,30 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
+import com.circulation.circulation_networks.packets.BindHubChannel;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
 import com.circulation.circulation_networks.packets.ContainerValueConfig;
+import com.circulation.circulation_networks.packets.CreateHubChannel;
+import com.circulation.circulation_networks.packets.DeleteHubChannel;
+import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
-import com.circulation.circulation_networks.packets.PhaseInterrupterSyncPacket;
+import com.circulation.circulation_networks.packets.CirculationShielderSyncPacket;
+import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.packets.SpoceRendering;
+import com.circulation.circulation_networks.packets.UpdateHubChannelPermission;
+import com.circulation.circulation_networks.packets.UpdateHubChannelSettings;
+import com.circulation.circulation_networks.packets.UpdateNodeCustomName;
 import com.circulation.circulation_networks.packets.UpdateItemModeMessage;
 import com.circulation.circulation_networks.packets.UpdatePlayerChargingMode;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
-import com.circulation.circulation_networks.utils.HubFTBServices;
+import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
+import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
 import com.feed_the_beast.ftblib.lib.data.ForgePlayer;
@@ -35,10 +44,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.Item;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Loader;
@@ -71,10 +83,9 @@ public class CommonProxy implements IGuiHandler {
         HubPlatformServices.INSTANCE = new MyHubPlatformServices();
 
         if (Loader.isModLoaded("ftblib")) {
-            HubFTBServices.INSTANCE = new MyHubFTBServices();
+            HubTeamServices.INSTANCE = new MyHubTeamServices();
         }
 
-        RegistryEnergyHandler.registerEnergyHandler(new CEHandlerManager());
         RegistryEnergyHandler.registerEnergyHandler(new FEHandlerManager());
         if (Loader.isModLoaded("mekanism"))
             RegistryEnergyHandler.registerEnergyHandler(new MEKHandlerManager());
@@ -94,17 +105,25 @@ public class CommonProxy implements IGuiHandler {
 
     public void preInit(FMLPreInitializationEvent event) {
         NetworkRegistry.INSTANCE.registerGuiHandler(CirculationFlowNetworks.instance, this);
-        registerMessage(PhaseInterrupterSyncPacket.class, Side.SERVER);
+        registerMessage(CirculationShielderSyncPacket.class, Side.SERVER);
         registerMessage(UpdateItemModeMessage.class, Side.SERVER);
         registerMessage(ContainerProgressBar.class, Side.SERVER);
         registerMessage(UpdatePlayerChargingMode.class, Side.SERVER);
+        registerMessage(UpdateNodeCustomName.class, Side.SERVER);
+        registerMessage(BindHubChannel.class, Side.SERVER);
+        registerMessage(CreateHubChannel.class, Side.SERVER);
+        registerMessage(UpdateHubChannelSettings.class, Side.SERVER);
+        registerMessage(DeleteHubChannel.class, Side.SERVER);
+        registerMessage(UpdateHubChannelPermission.class, Side.SERVER);
 
         registerMessage(SpoceRendering.class, Side.CLIENT);
         registerMessage(NodeNetworkRendering.class, Side.CLIENT);
+        registerMessage(EnergyWarningRendering.class, Side.CLIENT);
         registerMessage(ConfigOverrideRendering.class, Side.CLIENT);
         registerMessage(ContainerProgressBar.class, Side.CLIENT);
         registerMessage(ContainerValueConfig.class, Side.CLIENT);
         registerMessage(RenderingClear.INSTANCE, Side.CLIENT);
+        registerMessage(PocketNodeRendering.class, Side.CLIENT);
     }
 
     @SubscribeEvent
@@ -130,6 +149,7 @@ public class CommonProxy implements IGuiHandler {
     public void onWorldSave(WorldEvent.Save event) {
         if (!event.getWorld().isRemote && event.getWorld().provider.getDimension() == 0) {
             NetworkManager.INSTANCE.saveGrid();
+            PocketNodeManager.INSTANCE.save();
             EnergyTypeOverrideManager.save();
             HubChannelManager.INSTANCE.save();
         }
@@ -156,6 +176,31 @@ public class CommonProxy implements IGuiHandler {
             return;
         }
         NetworkManager.INSTANCE.validatePendingNodesInChunk(event.getWorld(), event.getChunk().x, event.getChunk().z);
+        PocketNodeManager.INSTANCE.onChunkLoad(event.getWorld(), event.getChunk().x, event.getChunk().z);
+    }
+
+    public void revalidateLoadedNodeBlockEntities() {
+        for (Integer dimId : DimensionManager.getIDs()) {
+            World world = DimensionManager.getWorld(dimId);
+            if (world == null || world.isRemote) {
+                continue;
+            }
+            List<TileEntity> loadedTileEntities = new ArrayList<>(world.loadedTileEntityList);
+            for (TileEntity blockEntity : loadedTileEntities) {
+                if (!(blockEntity instanceof BaseNodeTileEntity<?> nodeBlockEntity)) {
+                    continue;
+                }
+                nodeBlockEntity.syncNodeAfterNetworkInit();
+                BlockEntityLifecycleDispatcher.onValidate(new BlockEntityLifeCycleEvent.Validate(world, blockEntity.getPos(), blockEntity));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (!event.getWorld().isRemote) {
+            PocketNodeManager.INSTANCE.onHostBlockBroken(event.getWorld(), event.getPos());
+        }
     }
 
     @SubscribeEvent
@@ -179,6 +224,7 @@ public class CommonProxy implements IGuiHandler {
         HubPlatformServices.INSTANCE.markOnlinePlayersDirty();
         if (event.player instanceof EntityPlayerMP player) {
             NET_CHANNEL.sendTo(new ConfigOverrideRendering(player.dimension), player);
+            NET_CHANNEL.sendTo(new PocketNodeRendering(player), player);
         }
     }
 
@@ -217,7 +263,7 @@ public class CommonProxy implements IGuiHandler {
         }
     }
 
-    private static class MyHubFTBServices extends HubFTBServices {
+    private static class MyHubTeamServices extends HubTeamServices {
         @Override
         protected boolean arePlayersInSameTeamInternal(UUID firstPlayerId, UUID secondPlayerId) {
             if (!Universe.loaded()) {

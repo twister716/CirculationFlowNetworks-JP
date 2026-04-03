@@ -16,7 +16,14 @@ import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
-//?}
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+*///?}
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,20 +35,23 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"unused", "unchecked"})
 public class Component extends Rectangle {
-
-    private final List<Component> children = new ObjectArrayList<>();
-    private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
     private static final String[] EMPTY = new String[0];
+    //? if >=1.20 {
+    /*@Nullable
+    private static GuiGraphics currentGuiGraphics;
+    *///?}
     @Nonnull
     protected final CFNBaseGui<?> gui;
+    private final List<Component> children = new ObjectArrayList<>();
+    private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
     protected boolean visible = true;
     protected boolean enabled = true;
     protected int zIndex = 0;
     protected boolean update;
+    protected List<LocalizedComponent> tooltips = new ObjectArrayList<>();
     @Nullable
     private Component parent;
     private boolean hovered = false;
-
     private String[] spriteLayers = EMPTY;
 
     public Component(int x, int y, int width, int height, @Nonnull CFNBaseGui<?> gui) {
@@ -50,12 +60,32 @@ public class Component extends Rectangle {
         update = true;
     }
 
+    protected static void renderAtlasSprite(String spriteName,
+                                            int screenX, int screenY,
+                                            int renderW, int renderH) {
+        ComponentAtlas atlas = ComponentAtlas.INSTANCE;
+        AtlasRegion region = atlas.getRegion(spriteName);
+        if (region == null) return;
+        AtlasRenderHelper.drawRegion(atlas, region, screenX, screenY, renderW, renderH);
+    }
+
     public List<Component> getChildren() {
         return children;
     }
 
     public boolean isVisible() {
         return parent != null ? parent.isVisible() && visible : visible;
+    }
+
+    public Component setVisible(boolean visible) {
+        boolean wasVisible = isVisible();
+        this.visible = visible;
+        invalidateSubtree();
+        syncSlotTreePositions();
+        if (!wasVisible && isVisible()) {
+            promoteDraggableTarget();
+        }
+        return this;
     }
 
     public boolean isEnabled() {
@@ -71,17 +101,16 @@ public class Component extends Rectangle {
         return zIndex;
     }
 
-    public boolean isHovered() {
-        return hovered;
+    public Component setZIndex(int zIndex) {
+        this.zIndex = zIndex;
+        if (parent != null) {
+            parent.children.sort(Comparator.comparingInt(c -> c.zIndex));
+        }
+        return this;
     }
 
-    protected static void renderAtlasSprite(String spriteName,
-                                            int screenX, int screenY,
-                                            int renderW, int renderH) {
-        ComponentAtlas atlas = ComponentAtlas.INSTANCE;
-        AtlasRegion region = atlas.getRegion(spriteName);
-        if (region == null) return;
-        AtlasRenderHelper.drawRegion(atlas, region, screenX, screenY, renderW, renderH);
+    public boolean isHovered() {
+        return hovered;
     }
 
     public Component setX(int x) {
@@ -235,6 +264,17 @@ public class Component extends Rectangle {
         }
     }
 
+    //? if >=1.20 {
+    /*public static void setCurrentGuiGraphics(@Nullable GuiGraphics guiGraphics) {
+        currentGuiGraphics = guiGraphics;
+    }
+
+    @Nullable
+    protected final GuiGraphics getCurrentGuiGraphics() {
+        return currentGuiGraphics;
+    }
+    *///?}
+
     protected void render(int mouseX, int mouseY, float partialTicks) {
 
     }
@@ -251,8 +291,12 @@ public class Component extends Rectangle {
 
         restoreGuiRenderState();
         GlStateManager.pushMatrix();
-        GlStateManager.translate((float) gui.getGuiLeft(), (float) gui.getGuiTop(), 0.0F);
+        GlStateManager.translate((float) gui.getGuiLeft(), (float) gui.getGuiTop(), 100.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableDepth();
+        GlStateManager.enableCull();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableLighting();
         GlStateManager.enableRescaleNormal();
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
@@ -269,7 +313,7 @@ public class Component extends Rectangle {
                 ItemStack stack = slot.getStack();
 
                 float prevZLevel = renderItem.zLevel;
-                renderItem.zLevel = prevZLevel;
+                renderItem.zLevel = 100.0F;
                 if (!stack.isEmpty()) {
                     renderItem.renderItemAndEffectIntoGUI(mc.player, stack, sx, sy);
                     renderItem.renderItemOverlayIntoGUI(mc.fontRenderer, stack, sx, sy, null);
@@ -289,12 +333,15 @@ public class Component extends Rectangle {
                     );
                     GlStateManager.colorMask(true, true, true, false);
                     Gui.drawRect(sx, sy, sx + 16, sy + 16, -2130706433);
-                    GlStateManager.colorMask(true, true, true, true);
                     GlStateManager.enableBlend();
                     GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
                 }
 
                 restoreGuiRenderState();
+                GlStateManager.enableDepth();
+                GlStateManager.enableCull();
+                GlStateManager.depthMask(true);
+                GlStateManager.enableLighting();
                 GlStateManager.enableRescaleNormal();
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
                 GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
@@ -307,6 +354,30 @@ public class Component extends Rectangle {
     }
     //?} else {
     /*protected void renderBoundLayouts(int mouseX, int mouseY) {
+        if (boundLayouts.isEmpty()) return;
+
+        GuiGraphics guiGraphics = getCurrentGuiGraphics();
+        if (guiGraphics == null) return;
+
+        int localMouseX = mouseX - gui.getGuiLeft();
+        int localMouseY = mouseY - gui.getGuiTop();
+        boolean topComponent = gui.isTopComponent(this, mouseX, mouseY);
+
+        for (ComponentSlotLayout layout : boundLayouts) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
+                if (!slot.isActive()) continue;
+                if (!topComponent || !isMouseOverSlot(localMouseX, localMouseY, slot.x, slot.y)) continue;
+
+                gui.setHoveredSlot(slot);
+                int screenX = gui.getGuiLeft() + slot.x;
+                int screenY = gui.getGuiTop() + slot.y;
+                guiGraphics.fill(screenX, screenY, screenX + 16, screenY + 16, -2130706433);
+            }
+        }
+
+        restoreGuiRenderState();
     }
     *///?}
 
@@ -343,8 +414,6 @@ public class Component extends Rectangle {
         }
     }
 
-    protected List<LocalizedComponent> tooltips = new ObjectArrayList<>();
-
     @Nonnull
     protected List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
         List<LocalizedComponent> slotTooltip = collectSlotTooltip(mouseX, mouseY);
@@ -354,8 +423,8 @@ public class Component extends Rectangle {
         return tooltips;
     }
 
-    @Nonnull
     //? if <1.20 {
+    @Nonnull
     protected List<LocalizedComponent> collectSlotTooltip(int mouseX, int mouseY) {
         if (boundLayouts.isEmpty()) return Collections.emptyList();
 
@@ -397,6 +466,35 @@ public class Component extends Rectangle {
     }
     //?} else {
     /*protected List<LocalizedComponent> collectSlotTooltip(int mouseX, int mouseY) {
+        if (boundLayouts.isEmpty()) return Collections.emptyList();
+
+        int localMouseX = mouseX - gui.getGuiLeft();
+        int localMouseY = mouseY - gui.getGuiTop();
+
+        for (ComponentSlotLayout layout : boundLayouts) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
+                if (!slot.isActive()) continue;
+                if (!isMouseOverSlot(localMouseX, localMouseY, slot.x, slot.y)) continue;
+
+                ItemStack stack = slot.getItem();
+                if (stack.isEmpty()) {
+                    return Collections.emptyList();
+                }
+
+                List<String> lines = gui.getContainerItemTooltipLines(stack);
+                if (lines.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                List<LocalizedComponent> tips = new ObjectArrayList<>(lines.size());
+                for (String line : lines) {
+                    tips.add(() -> line);
+                }
+                return tips;
+            }
+        }
+
         return Collections.emptyList();
     }
     *///?}
@@ -423,6 +521,22 @@ public class Component extends Rectangle {
     }
     //?} else {
     /*protected final boolean hasBoundSlotAt(int mouseX, int mouseY) {
+        if (boundLayouts.isEmpty()) return false;
+
+        int localMouseX = mouseX - gui.getGuiLeft();
+        int localMouseY = mouseY - gui.getGuiTop();
+
+        for (ComponentSlotLayout layout : boundLayouts) {
+            List<? extends Slot> slots = layout.getSlots();
+            if (slots.isEmpty()) continue;
+            for (Slot slot : slots) {
+                if (!slot.isActive()) continue;
+                if (isMouseOverSlot(localMouseX, localMouseY, slot.x, slot.y)) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
     *///?}
@@ -435,7 +549,7 @@ public class Component extends Rectangle {
             return false;
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             Component child = children.get(i);
             if (!child.isVisible()) continue;
             if (child.hasAnyBoundSlotAt(mouseX, mouseY)) {
@@ -468,7 +582,7 @@ public class Component extends Rectangle {
             return getTooltip(mouseX, mouseY);
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             Component child = children.get(i);
             if (!child.isVisible() || !child.contains(mouseX, mouseY)) continue;
             return child.collectTooltip(mouseX, mouseY);
@@ -502,7 +616,7 @@ public class Component extends Rectangle {
             return handled;
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             Component child = children.get(i);
             if (child.dispatchMouseClicked(mouseX, mouseY, button)) {
                 bringChildToFront(child);
@@ -524,7 +638,7 @@ public class Component extends Rectangle {
             return onMouseReleased(mouseX, mouseY, button);
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             if (children.get(i).dispatchMouseReleased(mouseX, mouseY, button)) return true;
         }
 
@@ -537,7 +651,7 @@ public class Component extends Rectangle {
             return onMouseScrolled(mouseX, mouseY, delta);
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             if (children.get(i).dispatchMouseScrolled(mouseX, mouseY, delta)) return true;
         }
 
@@ -550,7 +664,7 @@ public class Component extends Rectangle {
             return onKeyTyped(typedChar, keyCode);
         }
 
-        for (int i = children.size(); i-- > 0;) {
+        for (int i = children.size(); i-- > 0; ) {
             if (children.get(i).dispatchKeyTyped(typedChar, keyCode)) return true;
         }
 
@@ -589,17 +703,6 @@ public class Component extends Rectangle {
         for (Component child : children) {
             child.update();
         }
-    }
-
-    public Component setVisible(boolean visible) {
-        boolean wasVisible = isVisible();
-        this.visible = visible;
-        invalidateSubtree();
-        syncSlotTreePositions();
-        if (!wasVisible && isVisible()) {
-            promoteDraggableTarget();
-        }
-        return this;
     }
 
     public Component bindLayout(ComponentSlotLayout... layout) {
@@ -679,20 +782,17 @@ public class Component extends Rectangle {
     }
     //?} else {
     /*protected final void restoreGuiRenderState() {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.enableDepthTest();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
     }
     *///?}
 
     public void setSize(int width, int height) {
         this.width = width;
         this.height = height;
-    }
-
-    public Component setZIndex(int zIndex) {
-        this.zIndex = zIndex;
-        if (parent != null) {
-            parent.children.sort(Comparator.comparingInt(c -> c.zIndex));
-        }
-        return this;
     }
 
     @Nullable

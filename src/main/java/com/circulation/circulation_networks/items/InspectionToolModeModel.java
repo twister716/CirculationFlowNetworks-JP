@@ -36,12 +36,12 @@ public final class InspectionToolModeModel {
             this.subModeCount = subModeCount;
         }
 
-        public int getSubModeCount() {
-            return subModeCount;
-        }
-
         public static ToolFunction fromID(int id) {
             return values()[Math.floorMod(id, values().length)];
+        }
+
+        public int getSubModeCount() {
+            return subModeCount;
         }
 
         public String getLangKey() {
@@ -90,12 +90,12 @@ public final class InspectionToolModeModel {
             this.energyType = energyType;
         }
 
-        public IEnergyHandler.EnergyType getEnergyType() {
-            return energyType;
-        }
-
         public static ConfigurationMode fromID(int id) {
             return values()[Math.floorMod(id, values().length)];
+        }
+
+        public IEnergyHandler.EnergyType getEnergyType() {
+            return energyType;
         }
 
         public String getLangKey() {

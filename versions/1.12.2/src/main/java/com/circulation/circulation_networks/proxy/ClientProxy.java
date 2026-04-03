@@ -3,9 +3,12 @@ package com.circulation.circulation_networks.proxy;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
+import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
+import com.circulation.circulation_networks.handlers.NodeHighlightRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
-import com.circulation.circulation_networks.handlers.PhaseInterrupterRenderingHandler;
+import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
+import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL32L2;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL32L3;
@@ -109,9 +112,12 @@ public final class ClientProxy extends CommonProxy {
         super.postInit();
         MinecraftForge.EVENT_BUS.register(SpoceRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(NodeNetworkRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(EnergyWarningRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ConfigOverrideRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(PocketNodeRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(NodeHighlightRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(PhaseInterrupterRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
     }
 
     @SubscribeEvent
@@ -145,7 +151,10 @@ public final class ClientProxy extends CommonProxy {
     public void onClientStop(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         MachineNodeBlockEntityManager.INSTANCE.clear();
         NodeNetworkRenderingHandler.INSTANCE.clearLinks();
+        EnergyWarningRenderingHandler.INSTANCE.clear();
         ConfigOverrideRenderingHandler.INSTANCE.clear();
+        PocketNodeRenderingHandler.INSTANCE.clear();
+        NodeHighlightRenderingHandler.INSTANCE.clear();
         SpoceRenderingHandler.INSTANCE.clear();
     }
 

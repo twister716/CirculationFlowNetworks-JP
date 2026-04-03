@@ -4,7 +4,7 @@ import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.IHubChannel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
-import com.circulation.circulation_networks.utils.HubFTBServices;
+import com.circulation.circulation_networks.utils.HubTeamServices;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
@@ -104,9 +104,9 @@ public class HubChannel implements IHubChannel {
 
         return switch (permissionMode) {
             case PUBLIC -> HubPermissionLevel.MEMBER;
-            case FTB -> owner != null
-                && HubFTBServices.isLoaded()
-                && HubFTBServices.arePlayersInSameTeam(owner, playerId)
+            case TEAM -> owner != null
+                && HubTeamServices.isLoaded()
+                && HubTeamServices.arePlayersInSameTeam(owner, playerId)
                 ? HubPermissionLevel.MEMBER
                 : HubPermissionLevel.NONE;
             default -> HubPermissionLevel.NONE;

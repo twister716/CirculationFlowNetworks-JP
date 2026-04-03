@@ -9,11 +9,14 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.network.CFNNetwork;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
+import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
-import com.circulation.circulation_networks.utils.HubFTBServices;
+import com.circulation.circulation_networks.registry.RegistryItems;
+import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
@@ -30,6 +33,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -61,6 +65,7 @@ public final class CirculationFlowNetworks {
 
     public CirculationFlowNetworks(IEventBus modEventBus, ModContainer modContainer) {
         CFNConfig.register(modContainer);
+        RegistryItems.register(modEventBus);
         modEventBus.addListener(CFNConfig::onConfigLoad);
         modEventBus.addListener(CFNConfig::onConfigReload);
         modEventBus.addListener(this::onRegisterPayloadHandlers);
@@ -71,6 +76,8 @@ public final class CirculationFlowNetworks {
         NeoForge.EVENT_BUS.addListener(this::onServerAboutToStart);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onChunkLoad);
+        NeoForge.EVENT_BUS.addListener(this::onChunkUnload);
+        NeoForge.EVENT_BUS.addListener(this::onBlockBreak);
         NeoForge.EVENT_BUS.addListener(this::onLevelSave);
         NeoForge.EVENT_BUS.addListener(this::onServerStopping);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
@@ -95,7 +102,7 @@ public final class CirculationFlowNetworks {
         };
 
         if (ModList.get().isLoaded("ftbteams")) {
-            HubFTBServices.INSTANCE = new HubFTBServices() {
+            HubTeamServices.INSTANCE = new HubTeamServices() {
                 @Override
                 protected boolean arePlayersInSameTeamInternal(UUID firstPlayerId, UUID secondPlayerId) {
                     var api = FTBTeamsAPI.api();
@@ -117,6 +124,7 @@ public final class CirculationFlowNetworks {
 
     private void onServerStarted(ServerStartedEvent event) {
         NetworkManager.INSTANCE.initGrid();
+        PocketNodeManager.INSTANCE.load();
     }
 
     private void onChunkLoad(ChunkEvent.Load event) {
@@ -129,6 +137,20 @@ public final class CirculationFlowNetworks {
             }
         }
         NetworkManager.INSTANCE.validatePendingNodesInChunk(level, chunk.getPos().x, chunk.getPos().z);
+        PocketNodeManager.INSTANCE.onChunkLoad(level, chunk.getPos().x, chunk.getPos().z);
+    }
+
+    private void onChunkUnload(ChunkEvent.Unload event) {
+        if (!(event.getLevel() instanceof Level level) || level.isClientSide() || !(event.getChunk() instanceof LevelChunk chunk)) {
+            return;
+        }
+        PocketNodeManager.INSTANCE.onChunkUnload(level, chunk.getPos().x, chunk.getPos().z);
+    }
+
+    private void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            PocketNodeManager.INSTANCE.onHostBlockBroken(level, event.getPos());
+        }
     }
 
     private void onLevelSave(LevelEvent.Save event) {
@@ -136,12 +158,15 @@ public final class CirculationFlowNetworks {
             return;
         }
         NetworkManager.INSTANCE.saveGrid();
+        PocketNodeManager.INSTANCE.save();
         HubChannelManager.INSTANCE.save();
     }
 
     private void onServerStopping(ServerStoppingEvent event) {
         NetworkManager.INSTANCE.saveGrid();
+        PocketNodeManager.INSTANCE.save();
         NetworkManager.INSTANCE.onServerStop();
+        PocketNodeManager.INSTANCE.onServerStop();
         EnergyMachineManager.INSTANCE.onServerStop();
         EnergyTypeOverrideManager.onServerStop();
         ChargingManager.INSTANCE.onServerStop();
@@ -153,6 +178,7 @@ public final class CirculationFlowNetworks {
         HubPlatformServices.INSTANCE.markOnlinePlayersDirty();
         if (event.getEntity() instanceof ServerPlayer player) {
             ConfigOverrideRendering.sendFullSync(player);
+            sendToPlayer(new PocketNodeRendering(player), player);
         }
     }
 
@@ -168,6 +194,7 @@ public final class CirculationFlowNetworks {
             NodeNetworkRendering.removePlayer(player);
             ConfigOverrideRendering.sendFullSync(player);
             sendToPlayer(RenderingClear.INSTANCE, player);
+            sendToPlayer(new PocketNodeRendering(player), player);
         }
     }
 

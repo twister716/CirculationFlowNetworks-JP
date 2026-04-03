@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.GlStateManager;
 //?} else {
 /*import com.mojang.blaze3d.systems.RenderSystem;
-*///?}
+ *///?}
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -28,6 +28,37 @@ public final class ComponentScreenController {
         Arrays.fill(phaseComponents, EMPTY);
     }
 
+    private static Component[] reverseCopy(Component[] source) {
+        int length = source.length;
+        if (length == 0) {
+            return EMPTY;
+        }
+
+        Component[] reversed = new Component[length];
+        for (int i = 0; i < length; i++) {
+            reversed[i] = source[length - 1 - i];
+        }
+        return reversed;
+    }
+
+    private static boolean moveToEnd(Component[] source, Component component) {
+        int index = -1;
+        for (int i = 0; i < source.length; i++) {
+            if (source[i] == component) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index < 0 || index == source.length - 1) {
+            return false;
+        }
+
+        System.arraycopy(source, index + 1, source, index, source.length - index - 1);
+        source[source.length - 1] = component;
+        return true;
+    }
+
     public void initializeComponents(Map<RenderPhase, List<Component>> phaseMap) {
         dragTarget = null;
         List<Component> all = new ObjectArrayList<>();
@@ -46,19 +77,6 @@ public final class ComponentScreenController {
         all.sort(Comparator.comparingInt(Component::getZIndex));
         allComponents = all.toArray(new Component[0]);
         allComponentsTopFirst = reverseCopy(allComponents);
-    }
-
-    private static Component[] reverseCopy(Component[] source) {
-        int length = source.length;
-        if (length == 0) {
-            return EMPTY;
-        }
-
-        Component[] reversed = new Component[length];
-        for (int i = 0; i < length; i++) {
-            reversed[i] = source[length - 1 - i];
-        }
-        return reversed;
     }
 
     public void handleActiveDrag(int mouseX, int mouseY) {
@@ -113,24 +131,6 @@ public final class ComponentScreenController {
         }
     }
 
-    private static boolean moveToEnd(Component[] source, Component component) {
-        int index = -1;
-        for (int i = 0; i < source.length; i++) {
-            if (source[i] == component) {
-                index = i;
-                break;
-            }
-        }
-
-        if (index < 0 || index == source.length - 1) {
-            return false;
-        }
-
-        System.arraycopy(source, index + 1, source, index, source.length - index - 1);
-        source[source.length - 1] = component;
-        return true;
-    }
-
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
         for (Component component : allComponents) {
             component.dispatchGlobalMouseClicked(mouseX, mouseY, mouseButton);
@@ -178,7 +178,9 @@ public final class ComponentScreenController {
             if (!component.isVisible() || !component.contains(mouseX, mouseY)) {
                 continue;
             }
-            return component.dispatchMouseScrolled(mouseX, mouseY, delta);
+            if (component.dispatchMouseScrolled(mouseX, mouseY, delta)) {
+                return true;
+            }
         }
         return false;
     }

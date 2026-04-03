@@ -2,41 +2,18 @@ package com.circulation.circulation_networks.api.hub;
 
 import javax.annotation.Nullable;
 
-public final class NodeSnapshotEntry {
+//? if <1.20 {
+import com.github.bsideup.jabel.Desugar;
 
-    private final String blockId;
-    private final int x;
-    private final int y;
-    private final int z;
-    @Nullable
-    private final String customName;
+@Desugar
+//?}
+public record NodeSnapshotEntry(String itemId, int x, int y, int z, String customName) {
 
-    public NodeSnapshotEntry(String blockId, int x, int y, int z, @Nullable String customName) {
-        this.blockId = blockId;
+    public NodeSnapshotEntry(String itemId, int x, int y, int z, @Nullable String customName) {
+        this.itemId = itemId;
         this.x = x;
         this.y = y;
         this.z = z;
-        this.customName = customName;
-    }
-
-    public String getBlockId() {
-        return blockId;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getZ() {
-        return z;
-    }
-
-    @Nullable
-    public String getCustomName() {
-        return customName;
+        this.customName = customName == null ? "" : customName;
     }
 }

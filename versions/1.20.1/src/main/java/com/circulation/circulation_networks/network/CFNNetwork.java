@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
 import com.circulation.circulation_networks.packets.ContainerValueConfig;
+import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.packets.SpoceRendering;
@@ -43,6 +44,7 @@ public final class CFNNetwork {
 
         registerMessage(SpoceRendering.class, NetworkDirection.PLAY_TO_CLIENT);
         registerMessage(NodeNetworkRendering.class, NetworkDirection.PLAY_TO_CLIENT);
+        registerMessage(EnergyWarningRendering.class, NetworkDirection.PLAY_TO_CLIENT);
         registerMessage(ConfigOverrideRendering.class, NetworkDirection.PLAY_TO_CLIENT);
         registerMessage(ContainerProgressBar.class, NetworkDirection.PLAY_TO_CLIENT);
         registerMessage(ContainerValueConfig.class, NetworkDirection.PLAY_TO_CLIENT);

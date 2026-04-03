@@ -1,7 +1,8 @@
 package com.circulation.circulation_networks.network.nodes.machine_node;
 
-import com.circulation.circulation_networks.api.IMachineNodeBlockEntity;
 import com.circulation.circulation_networks.api.node.IMachineNode;
+import com.circulation.circulation_networks.api.node.NodeContext;
+import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.network.nodes.Node;
 //~ mc_imports
 import net.minecraft.nbt.NBTTagCompound;
@@ -14,14 +15,15 @@ public abstract class MachineNode extends Node implements IMachineNode {
 
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     //~ if >=1.20 '.set' -> '.put' {
-    public MachineNode(NBTTagCompound compound) {
-        super(compound);
+    public MachineNode(NodeType<?> nodeType, NBTTagCompound compound) {
+        super(nodeType, compound);
         this.energyScope = compound.getDouble("energyScope");
         this.energyScopeSq = energyScope * energyScope;
+        this.maxEnergy = compound.getLong("maxEnergy");
     }
 
-    public MachineNode(IMachineNodeBlockEntity blockEntity, double energyScope, double linkScope) {
-        super(blockEntity, linkScope);
+    public MachineNode(NodeType<?> nodeType, NodeContext context, double energyScope, double linkScope) {
+        super(nodeType, context, linkScope);
         this.energyScope = energyScope;
         this.energyScopeSq = energyScope * energyScope;
     }
@@ -34,14 +36,6 @@ public abstract class MachineNode extends Node implements IMachineNode {
     @Override
     public double getEnergyScopeSq() {
         return energyScopeSq;
-    }
-
-    public long getMaxEnergy() {
-        return maxEnergy;
-    }
-
-    public void setMaxEnergy(long maxEnergy) {
-        this.maxEnergy = maxEnergy;
     }
 
     @Override

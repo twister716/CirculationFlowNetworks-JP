@@ -16,8 +16,8 @@ import java.util.UUID;
 
 public final class PermissionSnapshotList {
 
-    private static final Gson GSON = new GsonBuilder().create();
     public static final PermissionSnapshotList EMPTY = new PermissionSnapshotList(Collections.emptyList());
+    private static final Gson GSON = new GsonBuilder().create();
     public static final String EMPTY_JSON = EMPTY.toJson();
 
     private final List<PermissionSnapshotEntry> entries;
@@ -28,37 +28,6 @@ public final class PermissionSnapshotList {
         this.entries = entries.isEmpty()
             ? Collections.emptyList()
             : Collections.unmodifiableList(new ObjectArrayList<>(entries));
-    }
-
-    public List<PermissionSnapshotEntry> getEntries() {
-        return entries;
-    }
-
-    public String toJson() {
-        if (json == null) {
-            json = GSON.toJson(this);
-        }
-        return json;
-    }
-
-    public byte[] toBytes() {
-        if (bytes == null) {
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-                 DataOutputStream data = new DataOutputStream(output)) {
-                writeVarInt(data, entries.size());
-                for (PermissionSnapshotEntry entry : entries) {
-                    UUID id = entry.getId();
-                    data.writeLong(id.getMostSignificantBits());
-                    data.writeLong(id.getLeastSignificantBits());
-                    data.writeByte(entry.getPermission().getId());
-                    writeString(data, entry.getName());
-                }
-                bytes = output.toByteArray();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to encode permission snapshot", e);
-            }
-        }
-        return bytes.clone();
     }
 
     public static PermissionSnapshotList fromJson(String json) {
@@ -133,5 +102,36 @@ public final class PermissionSnapshotList {
                 throw new IOException("VarInt is too big");
             }
         }
+    }
+
+    public List<PermissionSnapshotEntry> getEntries() {
+        return entries;
+    }
+
+    public String toJson() {
+        if (json == null) {
+            json = GSON.toJson(this);
+        }
+        return json;
+    }
+
+    public byte[] toBytes() {
+        if (bytes == null) {
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+                 DataOutputStream data = new DataOutputStream(output)) {
+                writeVarInt(data, entries.size());
+                for (PermissionSnapshotEntry entry : entries) {
+                    UUID id = entry.id();
+                    data.writeLong(id.getMostSignificantBits());
+                    data.writeLong(id.getLeastSignificantBits());
+                    data.writeByte(entry.permission().getId());
+                    writeString(data, entry.name());
+                }
+                bytes = output.toByteArray();
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to encode permission snapshot", e);
+            }
+        }
+        return bytes.clone();
     }
 }

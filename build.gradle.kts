@@ -31,6 +31,8 @@ val currentPlatform = (findProperty("platform") ?: "rfg").toString()
 val isLegacyRfg = currentPlatform == "rfg"
 val sharedResourcesDir = rootProject.file("src/main/resources")
 val localResourcesDir = file("src/main/resources")
+val mainResourceRoots = listOf(localResourcesDir, sharedResourcesDir)
+    .distinctBy { it.absolutePath }
 val activeResourcesDir = if (localResourcesDir.exists()) localResourcesDir else sharedResourcesDir
 val generatedComponentAtlasDir = layout.buildDirectory.dir("generated/sources/componentAtlas/main/java")
 val rootDependenciesFile = rootProject.file("dependencies.gradle")
@@ -375,6 +377,7 @@ if (currentPlatform == "legacyforge" && propertyBool("use_mixins") && hasMixinSo
 
 the<JavaPluginExtension>().sourceSets.named("main") {
     java.srcDir(generatedComponentAtlasDir)
+    resources.setSrcDirs(mainResourceRoots)
 }
 
 // Remove auto-created test source set — no tests in this project.
@@ -564,6 +567,8 @@ if (isLegacyRfg && propertyBool("use_access_transformer")) {
 }
 
 tasks.named<ProcessResources>("processResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     inputs.property("mod_id", propertyString("mod_id"))
     inputs.property("mod_name", propertyString("mod_name"))
     inputs.property("mod_version", propertyString("mod_version"))

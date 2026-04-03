@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import org.jetbrains.annotations.Nullable;
 
 public final class SpoceRendering implements Packet<SpoceRendering> {
 
@@ -41,11 +42,14 @@ public final class SpoceRendering implements Packet<SpoceRendering> {
     }
 
     @Override
-    public IMessage onMessage(SpoceRendering message, MessageContext ctx) {
-        var te = Minecraft.getMinecraft().world.getTileEntity(message.pos);
-        if (te != null) {
-            SpoceRenderingHandler.INSTANCE.setStaus(te, message.l, message.e, message.c);
-        }
+    public @Nullable IMessage onMessage(SpoceRendering message, MessageContext ctx) {
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.world == null || message.pos == null) {
+                return;
+            }
+            SpoceRenderingHandler.INSTANCE.setStaus(mc.world.provider.getDimension(), message.pos, message.l, message.e, message.c);
+        });
         return null;
     }
 

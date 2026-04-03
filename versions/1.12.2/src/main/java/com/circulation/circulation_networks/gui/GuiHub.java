@@ -3,12 +3,16 @@ package com.circulation.circulation_networks.gui;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
-import com.circulation.circulation_networks.container.ComponentSlotLayout;
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.gui.component.BackgroundComponent;
 import com.circulation.circulation_networks.gui.component.ButtonComponent;
+import com.circulation.circulation_networks.gui.component.ChannelListPanelComponent;
+import com.circulation.circulation_networks.gui.component.ChannelSettingsDialogComponent;
 import com.circulation.circulation_networks.gui.component.CloseButtonComponent;
 import com.circulation.circulation_networks.gui.component.InventoryComponent;
+import com.circulation.circulation_networks.gui.component.NodeListPanelComponent;
+import com.circulation.circulation_networks.gui.component.PermissionListPanelComponent;
 import com.circulation.circulation_networks.gui.component.SlotComponent;
 import com.circulation.circulation_networks.gui.component.TextComponent;
 import com.circulation.circulation_networks.gui.component.TriStateButtonComponent;
@@ -16,10 +20,9 @@ import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.gui.component.base.DraggableComponent;
 import com.circulation.circulation_networks.gui.component.base.RenderPhase;
 import com.circulation.circulation_networks.packets.UpdatePlayerChargingMode;
-import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.registry.RegistryItems;
-import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
+import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
+import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextFormatting;
@@ -43,15 +46,26 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
     private ButtonComponent node, playerPowerSupply, upgradePlugin, channel, permission, settings;
     private Component nodeUI, playerPowerSupplyUI, upgradePluginUI, channelUI, permissionUI, settingsUI;
 
-    public GuiHub(EntityPlayer player, TileEntityHub te) {
-        super(new ContainerHub(player, te));
+    public GuiHub(EntityPlayer player, IHubNode node) {
+        super(new ContainerHub(player, node));
         this.xSize = 178;
         this.ySize = 233;
     }
 
-    private static Runnable setC(ChargingDefinition c) {
-        var u = new UpdatePlayerChargingMode(c);
-        return () -> CirculationFlowNetworks.sendToServer(u);
+    private Runnable setC(ChargingDefinition c) {
+        return () -> {
+            container.chargingMode.setPreference(c, !container.chargingMode.getPreference(c));
+            CirculationFlowNetworks.sendToServer(new UpdatePlayerChargingMode(c));
+        };
+    }
+
+    private Runnable setAllCharging(boolean enabled) {
+        byte mode = enabled ? (byte) 1 : (byte) 2;
+        byte prefs = enabled ? (byte) 0b00111111 : (byte) 0;
+        return () -> {
+            container.chargingMode.setPrefs(prefs);
+            CirculationFlowNetworks.sendToServer(new UpdatePlayerChargingMode(mode));
+        };
     }
 
     @Override
@@ -65,57 +79,49 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
                 node = new ButtonComponent(7, 7, 19, 19, this, "node", () -> {
                     nodeUI.setVisible(true);
                     node.setEnabled(false);
-                }).addTooltip(TextFormatting.BOLD + "节点列表"),
+                }).addTooltip(boldTooltip("gui.hub.tooltip.node_list")),
                 playerPowerSupply = new ButtonComponent(7, 29, 19, 19, this, "player_power_supply", () -> {
                     playerPowerSupplyUI.setVisible(true);
                     playerPowerSupply.setEnabled(false);
-                }).addTooltip(TextFormatting.BOLD + "充能配置"),
+                }).addTooltip(boldTooltip("gui.hub.tooltip.charging_config")),
                 upgradePlugin = new ButtonComponent(7, 51, 19, 19, this, "upgrade_plugin", () -> {
                     upgradePluginUI.setVisible(true);
                     upgradePlugin.setEnabled(false);
-                }).addTooltip(TextFormatting.BOLD + "插件列表")
+                }).addTooltip(boldTooltip("gui.hub.tooltip.plugin_list"))
             )
         );
         bg.add(new Component(179, 0, 33, 80, this)
             .setSpriteLayers("hub_1_3_button")
             .addChild(
-                channel = new ButtonComponent(7, 7, 19, 19, this, "channel", () -> {
-                    channelUI.setVisible(true);
-                    channel.setEnabled(false);
-                }) {
+                channel = new ButtonComponent(7, 7, 19, 19, this, "channel", () -> openRightPanel(channelUI, channel, permissionUI, permission, settingsUI, settings)) {
                     @Override
                     public boolean isEnabled() {
-                        return super.isEnabled() && check();
+                        return super.isEnabled() && container.canOpenChannelList();
                     }
-
-                    private boolean check() {
-                        var s = GuiHub.this.container.slots;
-                        for (ComponentSlotLayout slot : s) {
-                            var slotSlot = slot.getSlots().get(0);
-                            if (slotSlot.getStack().getItem() == RegistryItems.hubChannelPlugin) {
-                                return true;
-                            }
-                        }
-                        return false;
+                }.addTooltip(boldTooltip("gui.hub.tooltip.channel_list")),
+                permission = new ButtonComponent(7, 29, 19, 19, this, "permission", () -> openRightPanel(permissionUI, permission, channelUI, channel, settingsUI, settings)) {
+                    @Override
+                    public boolean isEnabled() {
+                        return super.isEnabled() && container.canOpenChannelDetails();
                     }
-                }.addTooltip(TextFormatting.BOLD + "频道列表"),
-                permission = new ButtonComponent(7, 29, 19, 19, this, "permission", () -> {
-                    permissionUI.setVisible(true);
-                    permission.setEnabled(false);
-                }).addTooltip(TextFormatting.BOLD + "权限设置"),
+                }.addTooltip(boldTooltip("gui.hub.tooltip.permission_settings")),
                 settings = new ButtonComponent(7, 51, 19, 19, this, "settings", () -> {
-                    settingsUI.setVisible(true);
+                    channelUI.setVisible(false);
+                    permissionUI.setVisible(false);
+                    channel.setEnabled(true);
+                    permission.setEnabled(true);
+                    if (settingsUI instanceof ChannelSettingsDialogComponent dialog) {
+                        dialog.openEdit();
+                    } else {
+                        settingsUI.setVisible(true);
+                    }
                     settings.setEnabled(false);
                 }) {
                     @Override
                     public boolean isEnabled() {
-                        return super.isEnabled() && channel.isEnabled() && check();
+                        return super.isEnabled() && container.canOpenChannelDetails();
                     }
-
-                    private boolean check() {
-                        return container.hasChannel();
-                    }
-                }.addTooltip(TextFormatting.BOLD + "频道设置")
+                }.addTooltip(boldTooltip("gui.hub.tooltip.channel_settings"))
             )
         );
         bg.add(new Component(-34, 197, 33, 36, this)
@@ -125,13 +131,17 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
                     ++state;
                     oldInput = null;
                     oldOutput = null;
-                }).addTooltip(TextFormatting.BOLD + "能源显示")
+                }).addTooltip(boldTooltip("gui.hub.tooltip.energy_display"))
             )
         );
         bg.add(new TextComponent(11, 12, this, () -> f(container.input, true), 0x79d7ff));
         bg.add(new TextComponent(105, 127, this, () -> f(container.output, false), 0x79d7ff));
         List<Component> n = components.computeIfAbsent(RenderPhase.NORMAL, k -> new ObjectArrayList<>());
         int i = -1;
+        n.add(nodeUI = new NodeListPanelComponent(-116, 0, this, container)
+            .setVisible(false)
+            .addChild(getNewClose(node, 114, 8))
+        );
         n.add(upgradePluginUI = new DraggableComponent(-34, 51, 58, 117, this)
             .setSpriteLayers("upgrade_plugin_ui")
             .setVisible(false)
@@ -149,38 +159,75 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
             .setVisible(false)
             .addChild(
                 getNewClose(playerPowerSupply, 115, 9),
-                new ButtonComponent(94, 38, 18, 18, this, "supply_all", () -> CirculationFlowNetworks.sendToServer(new UpdatePlayerChargingMode((byte) 1)))
-                    .addTooltip(TextFormatting.BOLD + "全部启用"),
-                new ButtonComponent(94, 10, 18, 18, this, "supply_reset", () -> CirculationFlowNetworks.sendToServer(new UpdatePlayerChargingMode((byte) 2)))
-                    .addTooltip(TextFormatting.BOLD + "全部关闭"),
+                new ButtonComponent(94, 38, 18, 18, this, "supply_all", setAllCharging(true))
+                    .addTooltip(boldTooltip("gui.hub.tooltip.all_enable")),
+                new ButtonComponent(94, 10, 18, 18, this, "supply_reset", setAllCharging(false))
+                    .addTooltip(boldTooltip("gui.hub.tooltip.all_disable")),
                 new TriStateButtonComponent(13, 12, 8, 41, this, "supply_armored_fence", setC(ChargingDefinition.ARMOR))
                     .setActiveSupplier(getC(ChargingDefinition.ARMOR))
-                    .addTooltip(TextFormatting.BOLD + "盔甲栏"),
+                    .addTooltip(boldTooltip("gui.hub.tooltip.armor_slot")),
                 new TriStateButtonComponent(57, 45, 8, 8, this, "supply_left", setC(ChargingDefinition.MAIN_HAND))
                     .setActiveSupplier(() -> container.chargingMode.getPreference(ChargingDefinition.MAIN_HAND) || container.chargingMode.getPreference(ChargingDefinition.HOTBAR))
-                    .addTooltip(TextFormatting.BOLD + "主手"),
+                    .addTooltip(boldTooltip("gui.hub.tooltip.main_hand")),
                 new TriStateButtonComponent(68, 45, 8, 8, this, "supply_right", setC(ChargingDefinition.OFF_HAND))
                     .setActiveSupplier(getC(ChargingDefinition.OFF_HAND))
-                    .addTooltip(TextFormatting.BOLD + "副手"),
+                    .addTooltip(boldTooltip("gui.hub.tooltip.off_hand")),
                 new TriStateButtonComponent(13, 58, 96, 30, this, "supply_inventory", setC(ChargingDefinition.INVENTORY))
                     .setActiveSupplier(getC(ChargingDefinition.INVENTORY))
-                    .addTooltip(TextFormatting.BOLD + "背包"),
+                    .addTooltip(boldTooltip("gui.hub.tooltip.inventory")),
                 new TriStateButtonComponent(13, 93, 96, 8, this, "supply_quick_access_bar", setC(ChargingDefinition.HOTBAR))
                     .setActiveSupplier(getC(ChargingDefinition.HOTBAR))
-                    .addTooltip(TextFormatting.BOLD + "快捷栏"),
+                    .addTooltip(boldTooltip("gui.hub.tooltip.hotbar")),
                 new TriStateButtonComponent(57, 12, 8, 8, this, "supply_accessory", setC(ChargingDefinition.ACCESSORY))
                     .setActiveSupplier(getC(ChargingDefinition.ACCESSORY))
-                    .addTooltip(TextFormatting.BOLD + "饰品栏")
+                    .addTooltip(boldTooltip("gui.hub.tooltip.accessory_slot"))
             )
+        );
+        n.add(channelUI = new ChannelListPanelComponent(37, 0, this, container, () -> {
+            if (settingsUI instanceof ChannelSettingsDialogComponent dialog) {
+                dialog.openCreate();
+                settings.setEnabled(true);
+            }
+        })
+            .setVisible(false)
+            .addChild(getNewClose(channel, 8, 8))
+        );
+        n.add(permissionUI = new PermissionListPanelComponent(37, 0, this, container)
+            .setVisible(false)
+            .addChild(getNewClose(permission, 8, 8))
+        );
+        n.add(settingsUI = new ChannelSettingsDialogComponent(18, 78, this, container)
+            .setVisible(false)
+            .addChild(getNewClose(settings, 8, 8))
         );
     }
 
     private CloseButtonComponent getNewClose(Component c, int x, int y) {
-        return new CloseButtonComponent(x, y, 19, 19, this).setMutuallyComponent(c).addTooltip(TextFormatting.BOLD + "关闭UI");
+        return new CloseButtonComponent(x, y, 19, 19, this).setMutuallyComponent(c).addTooltip(boldTooltip("gui.hub.tooltip.close_ui"));
     }
 
     private BooleanSupplier getC(ChargingDefinition c) {
         return () -> container.chargingMode.getPreference(c);
+    }
+
+    private void openRightPanel(Component primary, ButtonComponent primaryButton,
+                                Component secondary, ButtonComponent secondaryButton,
+                                Component tertiary, ButtonComponent tertiaryButton) {
+        primary.setVisible(true);
+        primaryButton.setEnabled(false);
+
+        if (secondary != null) {
+            secondary.setVisible(false);
+        }
+        if (secondaryButton != null) {
+            secondaryButton.setEnabled(true);
+        }
+        if (tertiary != null) {
+            tertiary.setVisible(false);
+        }
+        if (tertiaryButton != null) {
+            tertiaryButton.setEnabled(true);
+        }
     }
 
     @Override
@@ -213,5 +260,9 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
         final String o = (IO ? "I : " : "O : ") + FormatNumberUtils.formatNumber(e) + " " + p.unit() + "/t";
         e.recycle();
         return IO ? (oldFI = o) : (oldFO = o);
+    }
+
+    private String boldTooltip(String key) {
+        return TextFormatting.BOLD + CI18n.format(key);
     }
 }

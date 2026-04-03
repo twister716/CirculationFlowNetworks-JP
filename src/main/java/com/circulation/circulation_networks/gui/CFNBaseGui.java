@@ -6,17 +6,25 @@ import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.gui.component.base.ComponentScreenController;
 import com.circulation.circulation_networks.gui.component.base.RenderPhase;
+import net.minecraft.client.Minecraft;
+//? if <1.20 {
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+//?} else if <1.21 {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 //? if <1.20 {
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -26,8 +34,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.world.inventory.Slot;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 *///?} else {
 /*import net.minecraft.client.gui.GuiGraphics;
@@ -35,12 +42,12 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.world.inventory.Slot;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 *///?}
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.Rectangle;
@@ -68,19 +75,19 @@ import java.util.Map;
  * behavior are skipped.
  */
 @SuppressWarnings("unused")
-//? if <1.20 {
+//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
+//~}
+//? if <1.20 {
 public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContainer {
 //?} else {
-/*@OnlyIn(Dist.CLIENT)
-public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractContainerScreen<T> {
-*///?}
+    /*public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractContainerScreen<T> {
+     *///?}
 
     protected final T container;
+    private final ComponentScreenController componentController = new ComponentScreenController();
     @Nullable
     protected Slot hoveredSlot;
-
-    private final ComponentScreenController componentController = new ComponentScreenController();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -117,6 +124,21 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     public void setHoveredSlot(@Nullable Slot hoveredSlot) {
         this.hoveredSlot = hoveredSlot;
     }
+
+    //? if >=1.20 {
+    /*public List<String> getContainerItemTooltipLines(ItemStack stack) {
+        List<net.minecraft.network.chat.Component> lines = getTooltipFromContainerItem(stack);
+        if (lines.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        List<String> tooltip = new ObjectArrayList<>(lines.size());
+        for (net.minecraft.network.chat.Component line : lines) {
+            tooltip.add(line.getString());
+        }
+        return tooltip;
+    }
+    *///?}
 
     public boolean isTopComponent(Component component, int mouseX, int mouseY) {
         return componentController.getTopComponentAt(mouseX, mouseY) == component;
@@ -198,6 +220,23 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         componentController.renderPhase(RenderPhase.BACKGROUND, mouseX, mouseY, partialTicks);
     }
 
+    //? if <1.20 {
+    private void renderComponentPhase(RenderPhase phase, int mouseX, int mouseY, float partialTicks) {
+        resetColor();
+        componentController.renderPhase(phase, mouseX, mouseY, partialTicks);
+    }
+    //?} else {
+    /*private void renderComponentPhase(GuiGraphics guiGraphics, RenderPhase phase, int mouseX, int mouseY, float partialTicks) {
+        resetColor();
+        Component.setCurrentGuiGraphics(guiGraphics);
+        try {
+            componentController.renderPhase(phase, mouseX, mouseY, partialTicks);
+        } finally {
+            Component.setCurrentGuiGraphics(null);
+        }
+    }
+    *///?}
+
     private void renderComponentTooltip(int mouseX, int mouseY) {
         List<String> componentTooltip = componentController.collectTooltip(mouseX, mouseY);
         if (componentTooltip == null || componentTooltip.isEmpty()) return;
@@ -225,6 +264,10 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         RenderHelper.enableGUIStandardItemLighting();
         GlStateManager.pushMatrix();
         GlStateManager.translate(0.0F, 0.0F, 200.0F);
+        GlStateManager.enableDepth();
+        GlStateManager.enableCull();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableLighting();
         this.itemRender.zLevel = 200.0F;
         this.itemRender.renderItemAndEffectIntoGUI(Minecraft.getMinecraft().player, carried, mouseX - 8, mouseY - 8);
         this.itemRender.renderItemOverlayIntoGUI(this.fontRenderer, carried, mouseX - 8, mouseY - 8, null);
@@ -330,7 +373,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     //?} else {
     /*@Override
     protected final void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        renderBGPhase(mouseX, mouseY, partialTick);
+        renderComponentPhase(guiGraphics, RenderPhase.BACKGROUND, mouseX, mouseY, partialTick);
         resetColor();
         this.drawBG(this.leftPos, this.topPos, mouseX, mouseY);
     }
@@ -346,11 +389,10 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         componentController.handleActiveDrag(mouseX, mouseY);
-        resetColor();
-        componentController.renderPhase(RenderPhase.NORMAL, mouseX, mouseY, partialTick);
+        this.hoveredSlot = null;
+        renderComponentPhase(guiGraphics, RenderPhase.NORMAL, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        resetColor();
-        componentController.renderPhase(RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
+        renderComponentPhase(guiGraphics, RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
 
         List<String> componentTooltip = componentController.collectTooltip(mouseX, mouseY);
         if (componentTooltip != null && !componentTooltip.isEmpty()) {
@@ -359,20 +401,19 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
                 mcTooltip.add(net.minecraft.network.chat.Component.literal(line));
             }
             guiGraphics.renderTooltip(this.font, mcTooltip, Optional.empty(), mouseX, mouseY);
+        } else {
+            this.renderTooltip(guiGraphics, mouseX, mouseY);
         }
-
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
     //?} else {
-    /^@Override
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         componentController.handleActiveDrag(mouseX, mouseY);
-        resetColor();
-        componentController.renderPhase(RenderPhase.NORMAL, mouseX, mouseY, partialTick);
+        this.hoveredSlot = null;
+        renderComponentPhase(guiGraphics, RenderPhase.NORMAL, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        resetColor();
-        componentController.renderPhase(RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
+        renderComponentPhase(guiGraphics, RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
 
         List<String> componentTooltip = componentController.collectTooltip(mouseX, mouseY);
         if (componentTooltip != null && !componentTooltip.isEmpty()) {
@@ -381,11 +422,12 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
                 mcTooltip.add(net.minecraft.network.chat.Component.literal(line));
             }
             guiGraphics.renderTooltip(this.font, mcTooltip, Optional.empty(), mouseX, mouseY);
+        } else {
+            this.renderTooltip(guiGraphics, mouseX, mouseY);
         }
-
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
-    ^///?}
+
+    //?}
 
     @Override
     protected void containerTick() {
@@ -399,7 +441,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     // -------------------------------------------------------------------------
 
     @Override
-        //? if <1.20 {
+    //? if <1.20 {
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         if (componentController.mouseClicked(mouseX, mouseY, mouseButton)) {
             return;
@@ -416,7 +458,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     *///?}
 
     @Override
-        //? if <1.20 {
+    //? if <1.20 {
     protected void mouseReleased(int mouseX, int mouseY, int state) {
         if (componentController.mouseReleased(mouseX, mouseY, state)) {
             return;
@@ -433,7 +475,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     *///?}
 
     @Override
-        //? if <1.20 {
+    //? if <1.20 {
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (componentController.keyTyped(typedChar, keyCode)) {
             return;
@@ -447,18 +489,57 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (componentController.keyTyped(codePoint, 0)) {
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
     *///?}
 
     //? if <1.20 {
-    @Override
-    public void handleMouseInput() throws IOException {
-        super.handleMouseInput();
+    private boolean handleComponentMouseScroll() {
         int scrollDelta = Mouse.getEventDWheel();
-        if (scrollDelta != 0) {
-            int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
-            int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
-            int delta = scrollDelta > 0 ? 1 : -1;
-            componentController.mouseScrolled(mouseX, mouseY, delta);
+        if (scrollDelta == 0) {
+            return false;
+        }
+        int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
+        int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
+        int delta = scrollDelta > 0 ? 1 : -1;
+        return componentController.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
+    public void handleInput() throws IOException {
+        if (Mouse.isCreated()) {
+            while (Mouse.next()) {
+                this.mouseHandled = false;
+                if (handleComponentMouseScroll()) {
+                    continue;
+                }
+                if (net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiScreenEvent.MouseInputEvent.Pre(this))) {
+                    continue;
+                }
+                super.handleMouseInput();
+                if (this.equals(this.mc.currentScreen) && !this.mouseHandled) {
+                    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiScreenEvent.MouseInputEvent.Post(this));
+                }
+            }
+        }
+
+        if (Keyboard.isCreated()) {
+            while (Keyboard.next()) {
+                this.keyHandled = false;
+                if (net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiScreenEvent.KeyboardInputEvent.Pre(this))) {
+                    continue;
+                }
+                this.handleKeyboardInput();
+                if (this.equals(this.mc.currentScreen) && !this.keyHandled) {
+                    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.GuiScreenEvent.KeyboardInputEvent.Post(this));
+                }
+            }
         }
     }
     //?} else {
@@ -472,7 +553,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
     //?} else {
-    /^@Override
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (scrollY != 0) {
             int d = scrollY > 0 ? 1 : -1;
@@ -480,7 +561,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
-    ^///?}
+    //?}
     *///?}
 
     //? if <1.20 {

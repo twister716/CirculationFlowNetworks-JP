@@ -35,7 +35,7 @@ public class ComponentSlotLayout {
 
     //~ if >=1.20 '(InventoryPlayer ' -> '(Inventory ' {
     public static ComponentSlotLayout playerInventory(InventoryPlayer inventoryPlayer) {
-    //~}
+        //~}
         ComponentSlotLayout layout = new ComponentSlotLayout();
         IItemHandler inventory = new InvWrapper(inventoryPlayer);
         for (int i = 0; i < 3; i++) {

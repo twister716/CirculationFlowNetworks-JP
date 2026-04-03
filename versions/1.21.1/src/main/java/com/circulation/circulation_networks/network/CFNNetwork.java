@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.network;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
 import com.circulation.circulation_networks.packets.ContainerValueConfig;
+import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.packets.SpoceRendering;
@@ -27,6 +28,7 @@ public final class CFNNetwork {
 
         registerPlayToClient(registrar, SpoceRendering.class);
         registerPlayToClient(registrar, NodeNetworkRendering.class);
+        registerPlayToClient(registrar, EnergyWarningRendering.class);
         registerPlayToClient(registrar, ConfigOverrideRendering.class);
         registerPlayToClient(registrar, ContainerProgressBar.class);
         registerPlayToClient(registrar, ContainerValueConfig.class);
