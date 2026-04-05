@@ -19,6 +19,9 @@ public final class MEKHandlerManager implements IEnergyHandlerManager {
             return false;
         }
         var pos = blockEntity.getBlockPos();
+        if (level.getCapability(Capabilities.STRICT_ENERGY.block(), pos, null) != null) {
+            return true;
+        }
         for (Direction direction : DIRECTIONS) {
             if (level.getCapability(Capabilities.STRICT_ENERGY.block(), pos, direction) != null) {
                 return true;

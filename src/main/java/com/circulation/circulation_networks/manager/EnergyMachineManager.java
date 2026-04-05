@@ -723,7 +723,7 @@ public final class EnergyMachineManager {
             return;
         }
         int gridCount = grids.size();
-        if (gridCount <= 0) {
+        if (gridCount == 0) {
             return;
         }
         long baseShare = durationNanos / gridCount;

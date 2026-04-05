@@ -7,7 +7,9 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 //?} else {
-/*import com.mojang.blaze3d.vertex.BufferBuilder;
+/*import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -30,7 +32,13 @@ public final class AtlasRenderHelper {
         buf.pos(screenX, screenY, 0).tex(region.u0(), region.v0()).endVertex();
         tess.draw();
         //?} else {
-            /*Tesselator tess = Tesselator.getInstance();
+            /*RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableDepthTest();
+            RenderSystem.disableCull();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            Tesselator tess = Tesselator.getInstance();
             //? if <1.21 {
             BufferBuilder buf = tess.getBuilder();
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
@@ -83,7 +91,13 @@ public final class AtlasRenderHelper {
         buf.pos(screenX, screenY, 0).tex(u0, v0).endVertex();
         tess.draw();
         //?} else {
-            /*Tesselator tess = Tesselator.getInstance();
+            /*RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableDepthTest();
+            RenderSystem.disableCull();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            Tesselator tess = Tesselator.getInstance();
             //? if <1.21 {
             BufferBuilder buf = tess.getBuilder();
             buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);

@@ -9,6 +9,7 @@ import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeHighlightRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
+import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL32L3;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
@@ -18,6 +19,8 @@ import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -32,8 +35,11 @@ final class CirculationFlowNetworksClient {
     }
 
     static void init(IEventBus modEventBus) {
+        java.io.File modConfigDir = new java.io.File(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile(), CirculationFlowNetworks.MOD_ID);
+        ComponentAtlas.INSTANCE.configure(modConfigDir);
         // Defer GL detection to the render thread — GL context is only current on the main thread
         Minecraft.getInstance().execute(() -> {
+            registerAtlasReloadListener();
             openGLLevel = detectOpenGLLevel();
             SpoceRenderingHandler.INSTANCE = createSpoceHandler();
             MinecraftForge.EVENT_BUS.register(SpoceRenderingHandler.INSTANCE);
@@ -63,6 +69,14 @@ final class CirculationFlowNetworksClient {
                 return I18n.exists(key);
             }
         });
+    }
+
+    private static void registerAtlasReloadListener() {
+        var resourceManager = Minecraft.getInstance().getResourceManager();
+        if (resourceManager instanceof ReloadableResourceManager reloadable) {
+            reloadable.registerReloadListener((ResourceManagerReloadListener) ignored -> ComponentAtlas.INSTANCE.restart());
+        }
+        ComponentAtlas.INSTANCE.restart();
     }
 
     private static OpenGLLevel detectOpenGLLevel() {

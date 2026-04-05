@@ -408,7 +408,11 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
                     entry.x(), entry.y(), entry.z())
             ));
         }
-        mc.player.closeContainer();
+        if (mc.screen != null) {
+            mc.screen.onClose();
+        } else if (mc.player != null) {
+            mc.player.closeContainer();
+        }
     }
 
     private static final class EditableNameField extends TextFieldComponent {

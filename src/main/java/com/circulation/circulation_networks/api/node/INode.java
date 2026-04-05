@@ -31,6 +31,15 @@ public interface INode {
     //~}
 
     @Nonnull
+    default String getSerializedDimensionKey() {
+        //? if <1.20 {
+        return Integer.toString(getWorld().provider.getDimension());
+        //?} else {
+        /*return getWorld().dimension().location().toString();
+         *///?}
+    }
+
+    @Nonnull
     NodeType<?> getNodeType();
 
     @Nonnull

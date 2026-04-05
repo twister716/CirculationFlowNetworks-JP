@@ -25,7 +25,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
-import java.io.IOException;
 *///?}
 import org.jetbrains.annotations.NotNull;
 
@@ -328,11 +327,7 @@ public abstract class CFNBaseContainer extends Container {
         //? if <1.20 {
         return !this.player.world.isRemote;
         //?} else {
-        /*try (var l = player.level()) {
-            return !l.isClientSide;
-        } catch (IOException ignored) {
-            return true;
-        }
+        /*return !player.level().isClientSide;
          *///?}
     }
 

@@ -6,16 +6,13 @@ import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.util.ResourceLocation;
 //? if <1.20 {
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 //?} else if <1.21 {
-/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
+/*import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 *///?} else {
-/*import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.api.distmarker.Dist;
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 //? if <1.20 {
@@ -23,10 +20,14 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import com.github.bsideup.jabel.Desugar;
 //?}
-//? if <1.21 {
+//? if <1.20 {
 import net.minecraftforge.common.MinecraftForge;
-//?} else {
+//?} else if <1.21 {
+/*import net.minecraftforge.common.MinecraftForge;
+import com.mojang.blaze3d.systems.RenderSystem;
+*///?} else {
 /*import net.neoforged.neoforge.common.NeoForge;
+import com.mojang.blaze3d.systems.RenderSystem;
  *///?}
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
@@ -86,6 +87,14 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
     // ── Public API ────────────────────────────────────────────────────────────
 
     private ComponentAtlas() {
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void configure(File modConfigDir) {
+        cacheDir = modConfigDir;
+        if (cacheDir != null && !cacheDir.exists()) {
+            cacheDir.mkdirs();
+        }
     }
 
     private static StitchResult stitch(List<SpriteData> sprites) {
@@ -381,33 +390,28 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         return String.format("%016x", crc.getValue());
     }
 
-    @SubscribeEvent
-    public void onRegisterSprites(RegisterComponentSpritesEvent event) {
-        GeneratedComponentAtlasRegistration.register(event);
-    }
-
     /**
      * Starts the background stitching task. Call once during client init and again
      * (via {@link #restart()}) after each resource-pack reload.
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void startAsync(File modConfigDir) {
+        configure(modConfigDir);
         if (init) return;
         init = true;
         RegisterComponentSpritesEvent event = new RegisterComponentSpritesEvent();
+        // Always register this mod's built-in component sprites directly.
+        // The event bus is only for third-party additions.
+        GeneratedComponentAtlasRegistration.register(event);
         //? if <1.21 {
         MinecraftForge.EVENT_BUS.post(event);
         //?} else {
         /*NeoForge.EVENT_BUS.post(event);
          *///?}
+        CirculationFlowNetworks.LOGGER.info("Collected {} component atlas sprites", event.getSprites().size());
         List<String> sprites = event.getSprites();
         if (!sprites.isEmpty()) {
             for (String sprite : sprites) addSprite(sprite);
-        }
-
-        cacheDir = modConfigDir;
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs();
         }
 
         //? if <1.20 {
@@ -510,6 +514,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
      */
     public void restart() {
         if (cacheDir != null) {
+            clearRegisteredRegions();
+            future = null;
+            glTextureId = 0;
             init = false;
             startAsync(cacheDir);
         }
@@ -522,6 +529,9 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
      * Must be called on the GL thread. Safe to call multiple times (no-op after first upload).
      */
     public void awaitReady() {
+        if (future == null && cacheDir != null) {
+            startAsync(cacheDir);
+        }
         if (future == null || glTextureId != 0) return;
 
         StitchResult result;
@@ -549,7 +559,7 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
             GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             GlStateManager.bindTexture(glTextureId);
             //?} else {
-            /*GL11.glBindTexture(GL11.GL_TEXTURE_2D, glTextureId);
+            /*RenderSystem.setShaderTexture(0, glTextureId);
              *///?}
         }
     }

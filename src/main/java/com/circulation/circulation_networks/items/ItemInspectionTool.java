@@ -13,6 +13,7 @@ import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
+import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.packets.SpoceRendering;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
@@ -130,6 +131,60 @@ public class ItemInspectionTool extends BaseItem {
     //~ if >=1.20 '.toLong()' -> '.asLong()' {
     private static long packPos(BlockPos pos) {
         return pos.toLong();
+    }
+    //~}
+
+    //~ if >=1.20 'EntityPlayerMP' -> 'ServerPlayer' {
+    public static void refreshInspectionRendering(EntityPlayerMP player, BlockPos pos) {
+        NodeNetworkRendering.removePlayer(player);
+        CirculationFlowNetworks.sendToPlayer(RenderingClear.INSTANCE, player);
+
+        if (pos == null) {
+            return;
+        }
+
+        //? if <1.20 {
+        ItemStack stack = player.getHeldItemMainhand();
+        //?} else {
+        /*ItemStack stack = player.getMainHandItem();
+        *///?}
+        if (!(stack.getItem() instanceof ItemInspectionTool)) {
+            return;
+        }
+        if (InspectionToolState.getFunction(stack) != ToolFunction.INSPECTION) {
+            return;
+        }
+
+        //? if <1.20 {
+        var world = player.world;
+        //?} else {
+        /*var world = player.level();
+        *///?}
+        INode node = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
+        if (node == null) {
+            return;
+        }
+
+        InspectionMode mode = InspectionMode.fromID(InspectionToolState.getSubMode(stack));
+        double energyScope = 0;
+        double chargingScope = 0;
+        if (node instanceof IEnergySupplyNode energySupplyNode) {
+            energyScope = energySupplyNode.getEnergyScope();
+        }
+        if (node instanceof IChargingNode chargingNode) {
+            chargingScope = chargingNode.getChargingScope();
+        }
+
+        if (mode.isMode(InspectionMode.SPOCE)) {
+            CirculationFlowNetworks.sendToPlayer(
+                new SpoceRendering(node.getPos(), node.getLinkScope(), energyScope, chargingScope),
+                player
+            );
+        }
+        if (mode.isLinkMode()) {
+            CirculationFlowNetworks.sendToPlayer(new NodeNetworkRendering(player, node.getGrid()), player);
+            NodeNetworkRendering.addPlayer(node.getGrid(), player);
+        }
     }
     //~}
 

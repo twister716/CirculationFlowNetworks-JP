@@ -106,12 +106,15 @@ public final class ConfigOverrideRenderingHandler {
         //?} else if <1.21 {
         /*PoseStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushPose();
+        RenderingUtils.seedModelViewFromPoseStack(event.getPoseStack());
         mvStack.translate(-doubleX, -doubleY, -doubleZ);
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*var mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
+        RenderingUtils.seedModelViewFromPoseStack(event.getPoseStack());
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
+        RenderSystem.applyModelViewMatrix();
         *///?}
         RenderingUtils.setupWorldRenderState();
         RenderingUtils.setupAdditiveBlend();
@@ -172,6 +175,7 @@ public final class ConfigOverrideRenderingHandler {
         RenderSystem.applyModelViewMatrix();
         *///?} else {
         /*RenderSystem.getModelViewStack().popMatrix();
+        RenderSystem.applyModelViewMatrix();
          *///?}
     }
 }

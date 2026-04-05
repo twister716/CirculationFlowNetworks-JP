@@ -14,6 +14,9 @@ public final class FEHandlerManager implements IEnergyHandlerManager {
 
     @Override
     public boolean isAvailable(BlockEntity blockEntity) {
+        if (blockEntity.getCapability(ForgeCapabilities.ENERGY, null).isPresent()) {
+            return true;
+        }
         for (Direction direction : DIRECTIONS) {
             if (blockEntity.getCapability(ForgeCapabilities.ENERGY, direction).isPresent()) return true;
         }

@@ -23,18 +23,24 @@ public final class FEHandler implements IEnergyHandler {
     public FEHandler() {
     }
 
+    private void bindStorage(@Nullable IEnergyStorage storage) {
+        if (storage == null) {
+            return;
+        }
+        if (send == null && storage.canExtract()) {
+            send = storage;
+        }
+        if (receive == null && storage.canReceive()) {
+            receive = storage;
+        }
+    }
+
     @Override
     public IEnergyHandler init(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
+        bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, null));
         for (int i = 0; i < 6 && (this.send == null || this.receive == null); i++) {
             EnumFacing facing = EnumFacing.VALUES[i];
-            var ies = tileEntity.getCapability(CapabilityEnergy.ENERGY, facing);
-            if (ies == null) continue;
-            if (ies.canExtract() && this.send == null) {
-                this.send = ies;
-            }
-            if (ies.canReceive() && this.receive == null) {
-                this.receive = ies;
-            }
+            bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, facing));
         }
         return this;
     }

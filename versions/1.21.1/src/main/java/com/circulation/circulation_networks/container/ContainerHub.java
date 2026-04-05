@@ -26,7 +26,6 @@ public class ContainerHub extends CFNBaseContainer {
     private static final byte CHANNEL_CAPABILITY_FLAG = 0x1;
     private static final byte[] EMPTY_CHANNEL_SNAPSHOT = ChannelSnapshotList.EMPTY.toBytes();
     private static final byte[] EMPTY_PERMISSION_SNAPSHOT = PermissionSnapshotList.EMPTY.toBytes();
-    private static final byte[] EMPTY_NODE_SNAPSHOT = NodeSnapshotList.EMPTY.toBytes();
 
     public final ComponentSlotLayout playerInvLayout;
     public final ComponentSlotLayout[] slots = new ComponentSlotLayout[5];

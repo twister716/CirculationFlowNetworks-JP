@@ -93,7 +93,9 @@ public final class ComponentScreenController {
         //? if <1.21 {
         modelView.pushPose();
         RenderSystem.applyModelViewMatrix();
-        //?}
+        //?} else {
+        /^modelView.pushMatrix();
+        ^///?}
         *///?}
         for (Component component : phaseComponents[phase.ordinal()]) {
             component.renderComponent(mouseX, mouseY, partialTicks);

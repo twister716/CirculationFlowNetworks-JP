@@ -30,7 +30,10 @@ import net.minecraftforge.client.event.MouseEvent;
 import org.lwjgl.input.Mouse;
 //?} else {
 /*import net.minecraft.ChatFormatting;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 //~ neo_imports
 import net.minecraftforge.client.event.InputEvent;
 *///?}
@@ -66,7 +69,16 @@ public class ItemToolHandler {
                 int mode = InspectionToolState.getSubMode(stack) + delta;
                 InspectionToolState.setSubMode(stack, mode);
 
+                //? if <1.20 {
                 CirculationFlowNetworks.sendToServer(new UpdateItemModeMessage(mode));
+                //?} else {
+                /*BlockPos targetPos = null;
+                HitResult hitResult = mc.hitResult;
+                if (hitResult instanceof BlockHitResult blockHitResult && hitResult.getType() == HitResult.Type.BLOCK) {
+                    targetPos = blockHitResult.getBlockPos();
+                }
+                CirculationFlowNetworks.sendToServer(new UpdateItemModeMessage(mode, targetPos));
+                *///?}
 
                 InspectionToolSelection selection = InspectionToolSelection.fromStack(stack);
                 String modeName = CI18n.format(selection.modeLangKey());

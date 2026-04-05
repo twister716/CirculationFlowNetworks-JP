@@ -1,6 +1,3 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "circulation_networks:items/pocket_charging_node"
-  }
+  "parent": "circulation_networks:block/charging_node"
 }

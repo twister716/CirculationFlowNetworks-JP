@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManage
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.proxy.CommonProxy;
+import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -42,7 +43,7 @@ public class CirculationFlowNetworks {
     public static final CreativeTabs CREATIVE_TAB = new CreativeTabs(CirculationFlowNetworks.MOD_ID) {
         @Override
         public @NotNull ItemStack createIcon() {
-            return ItemStack.EMPTY;
+            return CFNBlocks.blockHub == null ? ItemStack.EMPTY : new ItemStack(CFNBlocks.blockHub);
         }
     };
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)

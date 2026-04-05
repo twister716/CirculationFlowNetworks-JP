@@ -56,6 +56,9 @@ public final class CirculationShielderRenderingHandler {
     private static final float ANIMATION_DURATION = 2.0f;
 
     private final Map<ICirculationShielderBlockEntity, Float> animProgress = new WeakHashMap<>();
+    //? if >=1.20 {
+    /*private PoseStack currentWorldPoseStack;
+    *///?}
 
     public void clear() {
         animProgress.clear();
@@ -93,6 +96,7 @@ public final class CirculationShielderRenderingHandler {
         //?} else if <1.21 {
         /*PoseStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushPose();
+        RenderingUtils.seedModelViewFromPoseStack(currentWorldPoseStack);
         modelViewStack.translate(-playerX, -playerY, -playerZ);
         RenderSystem.applyModelViewMatrix();
 
@@ -104,7 +108,9 @@ public final class CirculationShielderRenderingHandler {
         *///?} else {
         /*var modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushMatrix();
+        RenderingUtils.seedModelViewFromPoseStack(currentWorldPoseStack);
         modelViewStack.translate((float) -playerX, (float) -playerY, (float) -playerZ);
+        RenderSystem.applyModelViewMatrix();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -143,6 +149,7 @@ public final class CirculationShielderRenderingHandler {
         /*RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         modelViewStack.popMatrix();
+        RenderSystem.applyModelViewMatrix();
         *///?}
     }
 
@@ -188,11 +195,17 @@ public final class CirculationShielderRenderingHandler {
             CirculationShielderManager.INSTANCE.getShieldersForDim(dimId);
         if (shielders == null || shielders.isEmpty()) return;
 
+        //? if >=1.20 {
+        /*currentWorldPoseStack = event.getPoseStack();
+        *///?}
         for (ICirculationShielderBlockEntity shielder : shielders) {
             if (shielder.isShowingRange()) {
                 animProgress.putIfAbsent(shielder, 0.0f);
                 renderShielderRange(shielder, playerX, playerY, playerZ);
             }
         }
+        //? if >=1.20 {
+        /*currentWorldPoseStack = null;
+        *///?}
     }
 }

@@ -241,6 +241,15 @@ public class Node implements INode {
     }
 
     @Override
+    public @NotNull String getSerializedDimensionKey() {
+        //? if <1.20 {
+        return Integer.toString(dimensionId);
+        //?} else {
+        /*return dimensionKey;
+         *///?}
+    }
+
+    @Override
     public ReferenceSet<INode> getNeighbors() {
         return ReferenceSets.unmodifiable(neighbors);
     }

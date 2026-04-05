@@ -19,6 +19,7 @@ import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
+import com.circulation.circulation_networks.registry.CFNCreativeTabs;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
@@ -66,6 +67,7 @@ public final class CirculationFlowNetworks {
         CFNConfig.register(modContainer);
         RegistryItems.register(modEventBus);
         RegistryBlocks.register(modEventBus);
+        CFNCreativeTabs.register(modEventBus);
         registerEnergyHandlers();
         modEventBus.addListener(CFNConfig::onConfigLoad);
         modEventBus.addListener(CFNConfig::onConfigReload);

@@ -227,6 +227,7 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContaine
     }
     //?} else {
     /*private void renderComponentPhase(GuiGraphics guiGraphics, RenderPhase phase, int mouseX, int mouseY, float partialTicks) {
+        resetGuiRenderState();
         resetColor();
         Component.setCurrentGuiGraphics(guiGraphics);
         try {
@@ -311,6 +312,11 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContaine
     }
 
     private void resetGuiRenderState() {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableCull();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
     *///?}
 
@@ -411,8 +417,8 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContaine
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         componentController.handleActiveDrag(mouseX, mouseY);
         this.hoveredSlot = null;
-        renderComponentPhase(guiGraphics, RenderPhase.NORMAL, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        renderComponentPhase(guiGraphics, RenderPhase.NORMAL, mouseX, mouseY, partialTick);
         renderComponentPhase(guiGraphics, RenderPhase.FOREGROUND, mouseX, mouseY, partialTick);
 
         List<String> componentTooltip = componentController.collectTooltip(mouseX, mouseY);

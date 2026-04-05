@@ -14,6 +14,9 @@ public final class MEKHandlerManager implements IEnergyHandlerManager {
 
     @Override
     public boolean isAvailable(BlockEntity blockEntity) {
+        if (blockEntity.getCapability(Capabilities.STRICT_ENERGY, null).isPresent()) {
+            return true;
+        }
         for (Direction direction : DIRECTIONS) {
             if (blockEntity.getCapability(Capabilities.STRICT_ENERGY, direction).isPresent()) {
                 return true;

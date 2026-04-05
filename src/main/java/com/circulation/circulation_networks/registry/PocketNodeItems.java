@@ -19,6 +19,10 @@ public final class PocketNodeItems {
     }
 
     public static @Nullable Item getItemForType(NodeType<?> nodeType) {
+        Item pocketItem = getPocketItem(nodeType);
+        if (pocketItem != null) {
+            return pocketItem;
+        }
         String visualId = nodeType.fallbackVisualId();
         if (visualId == null || visualId.isEmpty()) {
             return null;
@@ -41,6 +45,20 @@ public final class PocketNodeItems {
         Item blockItem = Item.byBlock(block);
         return blockItem != net.minecraft.world.item.Items.AIR ? blockItem : null;
         *///?}
+    }
+
+    private static @Nullable Item getPocketItem(NodeType<?> nodeType) {
+        String nodeTypeId = nodeType.id();
+        if (NodeTypes.PORT_NODE.id().equals(nodeTypeId)) {
+            return CFNItems.pocketPortNode;
+        }
+        if (NodeTypes.CHARGING_NODE.id().equals(nodeTypeId)) {
+            return CFNItems.pocketChargingNode;
+        }
+        if (NodeTypes.RELAY_NODE.id().equals(nodeTypeId)) {
+            return CFNItems.pocketRelayNode;
+        }
+        return null;
     }
 
     public static ItemStack createStack(NodeType<?> nodeType) {

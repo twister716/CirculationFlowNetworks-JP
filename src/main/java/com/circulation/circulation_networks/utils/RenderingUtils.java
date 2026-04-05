@@ -18,12 +18,14 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 //?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
+/*import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.player.LocalPlayer;
 *///?}
 import org.lwjgl.opengl.GL11;
@@ -80,6 +82,22 @@ public final class RenderingUtils {
          *///?}
     }
 
+    //? if >=1.20 {
+    /*public static void seedModelViewFromPoseStack(PoseStack poseStack) {
+        if (poseStack == null) {
+            return;
+        }
+        //? if <1.21 {
+        PoseStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.last().pose().set(poseStack.last().pose());
+        mvStack.last().normal().set(poseStack.last().normal());
+        //?} else {
+        /^RenderSystem.getModelViewStack().set(poseStack.last().pose());
+        ^///?}
+        RenderSystem.applyModelViewMatrix();
+    }
+    *///?}
+
     public static void drawFilledBox(double x0, double y0, double z0,
                                      double x1, double y1, double z1,
                                      float r, float g, float b, float a) {
@@ -99,6 +117,7 @@ public final class RenderingUtils {
         /*Tesselator tess = Tesselator.getInstance();
 
         RenderSystem.setShaderColor(r, g, b, a);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
         BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         *///?}
 
@@ -206,6 +225,7 @@ public final class RenderingUtils {
 
         RenderSystem.setShaderColor(r, g, b, a);
         RenderSystem.lineWidth(lineWidth);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
         BufferBuilder buf = tess.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION);
         *///?}
 
@@ -341,6 +361,7 @@ public final class RenderingUtils {
         /*Tesselator tess = Tesselator.getInstance();
 
         RenderSystem.setShaderColor(r, g, b, alpha);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
         BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
         *///?}
         for (int i = 0; i <= CYLINDER_SIDES; i++) {
@@ -386,7 +407,7 @@ public final class RenderingUtils {
         *///?} else {
         /*RenderSystem.setShaderColor(r, g, b, alpha);
         Tesselator tess = Tesselator.getInstance();
-        int ri = (int)(r * 255), gi = (int)(g * 255), bi = (int)(b * 255), ai = (int)(alpha * 255);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
         *///?}
 
         double phiStep = Math.PI / slices;
@@ -402,7 +423,7 @@ public final class RenderingUtils {
             //?} else if <1.21 {
             /*buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
              *///?} else {
-            /*BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+            /*BufferBuilder buf = tess.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
              *///?}
             for (int j = 0; j <= stacks; j++) {
                 double theta = thetaStep * j;
@@ -415,7 +436,7 @@ public final class RenderingUtils {
                 //?} else if <1.21 {
                 /*buf.vertex(x1, y1, z1).color(ri, gi, bi, ai).normal(x1 / radius, y1 / radius, z1 / radius).endVertex();
                  *///?} else {
-                /*buf.addVertex(x1, y1, z1).setColor(ri, gi, bi, ai).setNormal(x1 / radius, y1 / radius, z1 / radius);
+                /*buf.addVertex(x1, y1, z1);
                  *///?}
                 float x2 = (float) (radius * sinPhi2 * cosTheta);
                 float y2 = (float) (radius * cosPhi2);
@@ -425,7 +446,7 @@ public final class RenderingUtils {
                 //?} else if <1.21 {
                 /*buf.vertex(x2, y2, z2).color(ri, gi, bi, ai).normal(x2 / radius, y2 / radius, z2 / radius).endVertex();
                  *///?} else {
-                /*buf.addVertex(x2, y2, z2).setColor(ri, gi, bi, ai).setNormal(x2 / radius, y2 / radius, z2 / radius);
+                /*buf.addVertex(x2, y2, z2);
                  *///?}
             }
             //? if <1.20 {
@@ -502,6 +523,7 @@ public final class RenderingUtils {
         *///?} else {
         /*RenderSystem.setShaderColor(r, g, b, 1.0f);
         RenderSystem.lineWidth(lineWidth);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
         Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION);
         for (int i = 0; i < verts.length; i += 3) {

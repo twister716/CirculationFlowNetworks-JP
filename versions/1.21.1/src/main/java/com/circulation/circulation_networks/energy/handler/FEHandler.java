@@ -25,21 +25,27 @@ public final class FEHandler implements IEnergyHandler {
     public FEHandler() {
     }
 
+    private void bindStorage(@Nullable IEnergyStorage storage) {
+        if (storage == null) {
+            return;
+        }
+        if (send == null && storage.canExtract()) {
+            send = storage;
+        }
+        if (receive == null && storage.canReceive()) {
+            receive = storage;
+        }
+    }
+
     @Override
     public IEnergyHandler init(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         var level = blockEntity.getLevel();
         if (level == null) return this;
         var pos = blockEntity.getBlockPos();
+        bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null));
         for (Direction direction : DIRECTIONS) {
             if (send != null && receive != null) break;
-            var ies = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction);
-            if (ies == null) continue;
-            if (ies.canExtract() && this.send == null) {
-                this.send = ies;
-            }
-            if (ies.canReceive() && this.receive == null) {
-                this.receive = ies;
-            }
+            bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction));
         }
         return this;
     }

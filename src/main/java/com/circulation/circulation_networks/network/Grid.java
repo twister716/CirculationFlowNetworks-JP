@@ -170,7 +170,7 @@ public final class Grid implements IGrid {
         nbt.putUUID("id", id);
         if (!nodes.isEmpty()) {
             for (var node : nodes) {
-                nbt.putString("dim", node.getWorld().dimension().location().toString());
+                nbt.putString("dim", node.getSerializedDimensionKey());
                 break;
             }
             for (var node : nodes) {

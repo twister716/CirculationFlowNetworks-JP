@@ -30,6 +30,18 @@ public final class MEKHandler implements IEnergyHandler {
     public MEKHandler() {
     }
 
+    private void bindHandler(@Nullable IStrictEnergyHandler handler) {
+        if (handler == null) {
+            return;
+        }
+        if (send == null && canExtract(handler)) {
+            send = handler;
+        }
+        if (receive == null && canReceive(handler)) {
+            receive = handler;
+        }
+    }
+
     private static boolean canExtract(IStrictEnergyHandler handler) {
         return !handler.extractEnergy(FloatingLong.ONE, Action.SIMULATE).isZero();
     }
@@ -58,6 +70,11 @@ public final class MEKHandler implements IEnergyHandler {
     @Override
     public IEnergyHandler init(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         IStrictEnergyHandler fallback = null;
+        var unsided = blockEntity.getCapability(Capabilities.STRICT_ENERGY, null).orElse(null);
+        if (unsided != null) {
+            fallback = unsided;
+            bindHandler(unsided);
+        }
         for (Direction direction : DIRECTIONS) {
             if (send != null && receive != null) {
                 break;
@@ -73,12 +90,7 @@ public final class MEKHandler implements IEnergyHandler {
             if (fallback == null) {
                 fallback = handler;
             }
-            if (send == null && canExtract(handler)) {
-                send = handler;
-            }
-            if (receive == null && canReceive(handler)) {
-                receive = handler;
-            }
+            bindHandler(handler);
         }
         if (send == null) {
             send = fallback;

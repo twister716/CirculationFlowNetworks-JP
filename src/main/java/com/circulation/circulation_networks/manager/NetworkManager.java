@@ -848,7 +848,18 @@ public final class NetworkManager {
             List<IGrid> dirtyGrids = new ObjectArrayList<>(markGird);
             markGird.clear();
             for (IGrid grid : dirtyGrids) {
-                tryWriteCompressedNbt(grid.serialize(), new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
+                //? if <1.20 {
+                NBTTagCompound serializedGrid;
+                //?} else {
+                /*CompoundTag serializedGrid;
+                *///?}
+                try {
+                    serializedGrid = grid.serialize();
+                } catch (Exception e) {
+                    CirculationFlowNetworks.LOGGER.error("Failed to serialize grid {}", grid.getId(), e);
+                    continue;
+                }
+                tryWriteCompressedNbt(serializedGrid, new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
             }
         }
     }

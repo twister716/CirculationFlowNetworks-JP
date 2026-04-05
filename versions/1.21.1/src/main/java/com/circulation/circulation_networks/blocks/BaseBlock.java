@@ -57,16 +57,28 @@ public abstract class BaseBlock extends Block implements EntityBlock {
     public abstract boolean hasGui();
 
     @Override
+    public @Nullable MenuProvider getMenuProvider(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos) {
+        if (!hasGui()) {
+            return null;
+        }
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof MenuProvider menuProvider) {
+            return menuProvider;
+        }
+        return null;
+    }
+
+    @Override
     protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                                         @NotNull Player player, @NotNull BlockHitResult hit) {
-        if (!level.isClientSide() && hasGui()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(menuProvider, pos);
-                return InteractionResult.CONSUME;
-            }
+        MenuProvider menuProvider = state.getMenuProvider(level, pos);
+        if (menuProvider == null) {
+            return super.useWithoutItem(state, level, pos, player, hit);
         }
-        return super.useWithoutItem(state, level, pos, player, hit);
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.openMenu(menuProvider, pos);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override

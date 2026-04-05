@@ -13,6 +13,9 @@ public final class FEHandlerManager implements IEnergyHandlerManager {
 
     @Override
     public boolean isAvailable(TileEntity tileEntity) {
+        if (tileEntity.hasCapability(CapabilityEnergy.ENERGY, null)) {
+            return true;
+        }
         for (var i = 0; i < EnumFacing.VALUES.length; ++i) {
             if (tileEntity.hasCapability(CapabilityEnergy.ENERGY, EnumFacing.VALUES[i])) return true;
         }

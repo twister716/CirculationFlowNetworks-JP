@@ -12,6 +12,7 @@ import net.minecraft.world.World;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
@@ -73,6 +74,11 @@ public abstract class BaseItem extends Item {
         for (var lc : buildTooltips(stack)) {
             tooltip.add(lc.get());
         }
+    }
+
+    @Override
+    public @NotNull String getItemStackDisplayName(@NotNull ItemStack stack) {
+        return I18n.translateToLocal(this.getTranslationKey(stack) + ".name").trim();
     }
     //?} else if <1.21 {
     /*@Override
