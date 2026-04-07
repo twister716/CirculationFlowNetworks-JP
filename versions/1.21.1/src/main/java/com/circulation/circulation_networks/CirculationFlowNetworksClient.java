@@ -13,9 +13,12 @@ import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -43,6 +46,7 @@ final class CirculationFlowNetworksClient {
             registerAtlasReloadListener();
             openGLLevel = detectOpenGLLevel();
             SpoceRenderingHandler.INSTANCE = createSpoceHandler();
+            ItemBlockRenderTypes.setRenderLayer(CFNBlocks.blockNodePedestal, RenderType.cutout());
         });
         // Use addListener instead of register() to avoid NeoForge restriction
         // on @SubscribeEvent methods in superclass when registering a subclass
@@ -131,6 +135,7 @@ final class CirculationFlowNetworksClient {
             default -> ensureSupportedOpenGL();
         };
     }
+
 
     private static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CFNMenuTypes.HUB_MENU, GuiHub::new);

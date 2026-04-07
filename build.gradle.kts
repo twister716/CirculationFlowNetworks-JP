@@ -649,7 +649,7 @@ tasks.named<ProcessResources>("processResources") {
 }
 
 val syncLegacyForgeResourcesToClasses = if (currentPlatform == "legacyforge") {
-    tasks.register<Sync>("syncLegacyForgeResourcesToClasses") {
+    tasks.register<Copy>("syncLegacyForgeResourcesToClasses") {
         dependsOn(tasks.named("compileJava"))
         from(tasks.named<ProcessResources>("processResources"))
         into(tasks.named<JavaCompile>("compileJava").flatMap { it.destinationDirectory })

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "normal": {
+      "model": "circulation_networks:relay_node"
+    }
+  }
+}

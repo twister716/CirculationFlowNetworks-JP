@@ -76,8 +76,8 @@ gui.circulation_shielder.disabled=禁用
 gui.circulation_shielder.redstone_mode=红石模式
 gui.circulation_shielder.inverse_mode=反转模式
 gui.circulation_shielder.normal_mode=常规模式
-gui.circulation_shielder.inverse_desc=反转 (收信号→生效)
-gui.circulation_shielder.normal_desc=常规 (收信号→失效)
+gui.circulation_shielder.inverse_desc=收到红石信号时生效
+gui.circulation_shielder.normal_desc=收到红石信号时关闭
 
 # 中枢 GUI
 gui.hub.tooltip.node_list=节点列表

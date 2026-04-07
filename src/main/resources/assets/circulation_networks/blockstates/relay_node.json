@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "circulation_networks:block/relay_node"
+    }
+  }
+}

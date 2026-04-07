@@ -28,6 +28,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 //? if <1.20 {
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.util.EnumFacing;
@@ -72,6 +73,16 @@ public final class PocketNodeRenderingHandler {
         /*return pos.asLong();
          *///?}
     }
+
+    //? if <1.20 {
+    private static void applyWorldLight(Minecraft mc, BlockPos pos) {
+        int packedLight = mc.world.getCombinedLight(pos, 0);
+        int blockLight = packedLight % 65536;
+        int skyLight = packedLight / 65536;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, blockLight, skyLight);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+    //?}
 
     //? if <1.20 {
     private static void applyFaceTransform(EnumFacing face) {
@@ -248,6 +259,8 @@ public final class PocketNodeRenderingHandler {
             }
 
             BlockPos pos = host.getRecord().pos();
+            EnumFacing face = host.getRecord().attachmentFace();
+            BlockPos lightPos = face == null ? pos : pos.offset(face);
             GlStateManager.pushMatrix();
             GlStateManager.enableRescaleNormal();
             GlStateManager.enableBlend();
@@ -261,10 +274,12 @@ public final class PocketNodeRenderingHandler {
             GlStateManager.depthMask(false);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
-            applyFaceTransform(host.getRecord().attachmentFace());
+            applyFaceTransform(face);
             if (host.isGui3d()) {
                 GlStateManager.scale(1.0F, 1.0F, 0.002F);
             }
+            GlStateManager.enableLighting();
+            applyWorldLight(mc, lightPos);
             RenderHelper.enableGUIStandardItemLighting();
             mc.getRenderItem().renderItem(host.getRenderStack(), ItemCameraTransforms.TransformType.GUI);
             RenderHelper.disableStandardItemLighting();
@@ -273,6 +288,8 @@ public final class PocketNodeRenderingHandler {
             GlStateManager.disableBlend();
             GlStateManager.popMatrix();
         }
+
+        applyWorldLight(mc, player.getPosition());
     }
     //?} else {
     /*private static void applyFaceTransform(PoseStack poseStack, Direction face) {
