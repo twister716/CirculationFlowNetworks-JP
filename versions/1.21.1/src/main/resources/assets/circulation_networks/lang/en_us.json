@@ -42,7 +42,7 @@
   "gui.circulation_shielder.show_range_status": "Show Range",
   "gui.circulation_shielder.title": "Circulation Shielder Configuration",
   "gui.hub.energy_latency": "Latency:%s/t",
-  "gui.hub.no_channel": "No Channel Connected",
+  "gui.hub.no_channel": "No Channel",
   "gui.hub.node_count": "Node Count:%s",
   "gui.hub.tooltip.accessory_slot": "Accessory Slot",
   "gui.hub.tooltip.all_disable": "Disable All",
