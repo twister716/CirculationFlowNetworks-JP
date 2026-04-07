@@ -107,7 +107,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void setPermissionMode(PermissionMode mode) {
         this.permissionMode = mode;
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);
         }
     }
@@ -141,7 +141,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void setChannelId(@NotNull UUID channelId) {
         this.channelId = channelId != null ? channelId : EMPTY;
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.bindHub(this);
         }
     }
@@ -154,7 +154,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void setChannelName(@Nonnull String channelName) {
         this.channelName = channelName != null ? channelName : "";
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);
         }
     }
@@ -187,7 +187,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void setOwner(@Nullable UUID owner) {
         this.owner = owner;
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);
         }
     }
@@ -210,7 +210,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void setExplicitPermission(UUID playerId, HubPermissionLevel permissionLevel) {
         explicitPermissions.put(playerId, permissionLevel);
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);
         }
     }
@@ -218,7 +218,7 @@ public final class HubNode extends Node implements IHubNode {
     @Override
     public void removeExplicitPermission(UUID playerId) {
         explicitPermissions.remove(playerId);
-        if (!syncingChannelState) {
+        if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);
         }
     }
@@ -264,6 +264,18 @@ public final class HubNode extends Node implements IHubNode {
             explicitPermissions.clear();
         } finally {
             syncingChannelState = false;
+        }
+    }
+
+    private boolean shouldSyncChannelManager() {
+        try {
+            //? if <1.20 {
+            return !getWorld().isRemote;
+            //?} else {
+            /*return !getWorld().isClientSide;
+             *///?}
+        } catch (IllegalStateException ignored) {
+            return false;
         }
     }
 

@@ -27,6 +27,7 @@ import java.util.Objects;
 
 public class Node implements INode {
 
+    private static final int MAX_CUSTOM_NAME_LENGTH = 32;
     private final NodeType<?> nodeType;
     private final BlockPos pos;
     private final Vec3d vec3d;
@@ -133,6 +134,9 @@ public class Node implements INode {
         }
 
         String trimmedName = customName.trim();
+        if (trimmedName.length() > MAX_CUSTOM_NAME_LENGTH) {
+            trimmedName = trimmedName.substring(0, MAX_CUSTOM_NAME_LENGTH);
+        }
         return trimmedName.isEmpty() ? null : trimmedName;
     }
 

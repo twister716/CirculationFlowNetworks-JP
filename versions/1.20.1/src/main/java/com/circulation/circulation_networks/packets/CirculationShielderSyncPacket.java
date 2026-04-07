@@ -10,6 +10,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
+    private static final int MAX_SCOPE = 8;
 
     private int scope;
     private boolean redstoneMode;
@@ -45,7 +46,7 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             if (sender.containerMenu instanceof ContainerCirculationShielder c) {
                 var te = c.te;
                 if (te != null) {
-                    te.setScope(message.scope);
+                    te.setScope(Math.max(0, Math.min(MAX_SCOPE, message.scope)));
                     te.setRedstoneMode(message.redstoneMode);
                     te.setChanged();
                 }

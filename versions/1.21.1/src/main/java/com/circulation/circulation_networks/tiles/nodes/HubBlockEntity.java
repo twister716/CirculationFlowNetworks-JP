@@ -84,13 +84,13 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     @Override
     public void saveAdditional(CompoundTag compound, HolderLookup.Provider registries) {
         super.saveAdditional(compound, registries);
-        plugins.writeToNBT(compound, "plugins");
+        plugins.writeToNBT(compound, "plugins", registries);
     }
 
     @Override
     public void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
         super.loadAdditional(nbt, registries);
-        plugins.readFromNBT(nbt, "plugins");
+        plugins.readFromNBT(nbt, "plugins", registries);
 
         if (!init) {
             initNbt = nbt;
@@ -120,7 +120,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
 
     @Override
     public void onChangeInventory(CFNInternalInventory inventory, int slot, CFNInventoryChangeOperation operation, ItemStack oldStack, ItemStack newStack) {
-        if (init) {
+        if (init && level != null && !level.isClientSide()) {
             HubPluginStateTracker.saveAllPluginData(getNode(), plugins);
             HubPluginStateTracker.savePluginData(getNode(), oldStack);
             HubPluginStateTracker.syncInventoryChange(getNode(), oldStack, newStack);

@@ -119,7 +119,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
 
     @Override
     public void onChangeInventory(CFNInternalInventory inventory, int slot, CFNInventoryChangeOperation operation, ItemStack oldStack, ItemStack newStack) {
-        if (init) {
+        if (init && level != null && !level.isClientSide()) {
             HubPluginStateTracker.saveAllPluginData(getNode(), plugins);
             HubPluginStateTracker.savePluginData(getNode(), oldStack);
             HubPluginStateTracker.syncInventoryChange(getNode(), oldStack, newStack);

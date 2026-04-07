@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import org.jetbrains.annotations.Nullable;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
+    private static final int MAX_SCOPE = 8;
     private int scope;
     private boolean redstoneMode;
 
@@ -37,7 +38,7 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
         if (ctx.getServerHandler().player.openContainer instanceof ContainerCirculationShielder c) {
             var te = c.te;
             if (te != null) {
-                te.setScope(message.scope);
+                te.setScope(Math.max(0, Math.min(MAX_SCOPE, message.scope)));
                 te.setRedstoneMode(message.redstoneMode);
                 te.markDirty();
             }

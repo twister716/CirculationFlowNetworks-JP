@@ -135,7 +135,7 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
 
     @Override
     public void onChangeInventory(CFNInternalInventory inventory, int slot, CFNInventoryChangeOperation operation, ItemStack oldStack, ItemStack newStack) {
-        if (init) {
+        if (init && world != null && !world.isRemote) {
             HubPluginStateTracker.saveAllPluginData(getNode(), plugins);
             HubPluginStateTracker.savePluginData(getNode(), oldStack);
             HubPluginStateTracker.syncInventoryChange(getNode(), oldStack, newStack);

@@ -12,6 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
+    private static final int MAX_SCOPE = 8;
 
     public static final Type<CirculationShielderSyncPacket> TYPE = new Type<>(
         ResourceLocation.parse(CirculationFlowNetworks.MOD_ID + ":circulation_shielder_sync")
@@ -49,7 +50,7 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             if (sender.containerMenu instanceof ContainerCirculationShielder c) {
                 var te = c.te;
                 if (te != null) {
-                    te.setScope(message.scope);
+                    te.setScope(Math.clamp(message.scope, 0, MAX_SCOPE));
                     te.setRedstoneMode(message.redstoneMode);
                     te.setChanged();
                 }

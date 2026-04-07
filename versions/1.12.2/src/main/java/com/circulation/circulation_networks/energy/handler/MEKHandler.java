@@ -13,34 +13,43 @@ import mekanism.common.base.IEnergyWrapper;
 import mekanism.common.content.matrix.SynchronizedMatrixData;
 import mekanism.common.tier.EnergyCubeTier;
 import mekanism.common.tile.TileEntityEnergyCube;
-import mekanism.common.tile.TileEntityMultiblock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public final class MEKHandler implements IEnergyHandler {
 
     private static final Class<?> inductionPort;
+    private static final MethodHandle structureGet;
     private static final double FE_TO_MEK_RATIO = 2.5D;
     private static final BigInteger MAX_DIRECT_DOUBLE_TRANSFER = BigDecimal.valueOf(Double.MAX_VALUE).toBigInteger();
     private static final BigInteger MAX_SCALED_DOUBLE_TRANSFER = BigDecimal.valueOf(Double.MAX_VALUE / FE_TO_MEK_RATIO).toBigInteger();
 
     static {
         Class<?> temp;
+        MethodHandle temp2;
         try {
             temp = Class.forName("mekanism.common.tile.multiblock.TileEntityInductionPort");
         } catch (ClassNotFoundException e) {
             try {
                 temp = Class.forName("mekanism.common.tile.TileEntityInductionPort");
             } catch (ClassNotFoundException ex) {
-                temp = null;
+                throw new RuntimeException(ex);
             }
         }
+        try {
+            temp2 = MethodHandles.lookup().unreflectGetter(temp.getField("structure"));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            temp2 = null;
+        }
         inductionPort = temp;
+        structureGet = temp2;
     }
 
     private final EnergyAmount maxReceive = EnergyAmount.obtain(MAX_SCALED_DOUBLE_TRANSFER);
@@ -81,11 +90,14 @@ public final class MEKHandler implements IEnergyHandler {
             send = (IStrictEnergyStorage) tileEntity;
             receive = (IStrictEnergyStorage) tileEntity;
             energyType = EnergyType.STORAGE;
-            @SuppressWarnings("unchecked")
-            SynchronizedMatrixData m = ((TileEntityMultiblock<SynchronizedMatrixData>) tileEntity).structure;
-            if (m != null) {
-                EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, m.getRemainingOutput());
-                EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, m.getRemainingInput());
+            try {
+                SynchronizedMatrixData m = (SynchronizedMatrixData) structureGet.invoke(tileEntity);
+                if (m != null) {
+                    EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, m.getRemainingOutput());
+                    EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, m.getRemainingInput());
+                }
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
         } else {
             boolean a = false;

@@ -293,19 +293,17 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         deserializeNBT(data);
     }
     *///?} else {
-    /*public void writeToNBT(final CompoundTag data, final String name) {
-        var provider = ServerLifecycleHooks.getCurrentServer().registryAccess();
+    /*public void writeToNBT(final CompoundTag data, final String name, net.minecraft.core.HolderLookup.Provider provider) {
         data.put(name, serializeNBT(provider));
     }
 
-    public void readFromNBT(final CompoundTag data, final String name) {
+    public void readFromNBT(final CompoundTag data, final String name, net.minecraft.core.HolderLookup.Provider provider) {
         if (data.contains(name)) {
-            readFromNBT(data.getCompound(name));
+            readFromNBT(data.getCompound(name), provider);
         }
     }
 
-    public void readFromNBT(final CompoundTag data) {
-        var provider = ServerLifecycleHooks.getCurrentServer().registryAccess();
+    public void readFromNBT(final CompoundTag data, net.minecraft.core.HolderLookup.Provider provider) {
         deserializeNBT(provider, data);
     }
     *///?}
