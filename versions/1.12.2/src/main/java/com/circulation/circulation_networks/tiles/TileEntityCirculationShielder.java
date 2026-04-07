@@ -107,6 +107,7 @@ public class TileEntityCirculationShielder extends BaseTileEntity implements ICi
     @Override
     public void validate() {
         super.validate();
+        setScope(scope);
         CirculationShielderManager.INSTANCE.register(this, world.provider.getDimension());
     }
 

@@ -21,12 +21,13 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
 
     private transient final BlockPos.MutableBlockPos min = new BlockPos.MutableBlockPos();
     private transient final BlockPos.MutableBlockPos max = new BlockPos.MutableBlockPos();
-    private int scope;
+    private int scope = 0;
     private boolean redstoneMode = false;
     private boolean showingRange = false;
 
     public CirculationShielderBlockEntity(BlockPos pos, BlockState state) {
         super(CFNBlockEntityTypes.CIRCULATION_SHIELDER, pos, state);
+        setScope(scope);
     }
 
     public int getScope() {

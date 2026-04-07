@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.packets;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
@@ -12,8 +13,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
-    private static final int MAX_SCOPE = 8;
-
     public static final Type<CirculationShielderSyncPacket> TYPE = new Type<>(
         ResourceLocation.parse(CirculationFlowNetworks.MOD_ID + ":circulation_shielder_sync")
     );
@@ -50,12 +49,17 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             if (sender.containerMenu instanceof ContainerCirculationShielder c) {
                 var te = c.te;
                 if (te != null) {
-                    te.setScope(Math.clamp(message.scope, 0, MAX_SCOPE));
+                    te.setScope(clampScope(message.scope));
                     te.setRedstoneMode(message.redstoneMode);
                     te.setChanged();
                 }
             }
         });
+    }
+
+    private static int clampScope(int value) {
+        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
+        return Math.clamp(value, 0, maxScope);
     }
 
     @NotNull

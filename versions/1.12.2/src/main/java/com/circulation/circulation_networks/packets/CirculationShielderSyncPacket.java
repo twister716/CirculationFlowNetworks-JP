@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.packets;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.tiles.TileEntityCirculationShielder;
 import com.circulation.circulation_networks.utils.Packet;
@@ -9,7 +10,6 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import org.jetbrains.annotations.Nullable;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
-    private static final int MAX_SCOPE = 8;
     private int scope;
     private boolean redstoneMode;
 
@@ -38,11 +38,16 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
         if (ctx.getServerHandler().player.openContainer instanceof ContainerCirculationShielder c) {
             var te = c.te;
             if (te != null) {
-                te.setScope(Math.max(0, Math.min(MAX_SCOPE, message.scope)));
+                te.setScope(clampScope(message.scope));
                 te.setRedstoneMode(message.redstoneMode);
                 te.markDirty();
             }
         }
         return null;
+    }
+
+    private static int clampScope(int value) {
+        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
+        return Math.max(0, Math.min(maxScope, value));
     }
 }

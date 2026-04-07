@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.packets;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
 import com.circulation.circulation_networks.utils.Packet;
@@ -10,8 +11,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class CirculationShielderSyncPacket implements Packet<CirculationShielderSyncPacket> {
-    private static final int MAX_SCOPE = 8;
-
     private int scope;
     private boolean redstoneMode;
 
@@ -46,12 +45,17 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             if (sender.containerMenu instanceof ContainerCirculationShielder c) {
                 var te = c.te;
                 if (te != null) {
-                    te.setScope(Math.max(0, Math.min(MAX_SCOPE, message.scope)));
+                    te.setScope(clampScope(message.scope));
                     te.setRedstoneMode(message.redstoneMode);
                     te.setChanged();
                 }
             }
         });
         context.setPacketHandled(true);
+    }
+
+    private static int clampScope(int value) {
+        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
+        return Math.max(0, Math.min(maxScope, value));
     }
 }

@@ -26,7 +26,7 @@ dependencies {
     deobfRuntimeOnly("curse.maven:supermartijn642s-config-lib-438332:4715393")
     deobfRuntimeOnly("curse.maven:trash-cans-394535:4606884")
     deobfRuntimeOnly("curse.maven:building-gadgets-298187:3005950")
-    deobfCompileOnly("mezz.jei:jei_1.12.2:4.16.1.1013")
+    deobfImplementation("mezz.jei:jei_1.12.2:4.16.1.1013")
     deobfRuntimeOnly("curse.maven:ender-utilities-224320:2977010")
     deobfRuntimeOnly("curse.maven:flare-692142:6598523")
     deobfRuntimeOnly("curse.maven:packagedauto-308380:7329681")

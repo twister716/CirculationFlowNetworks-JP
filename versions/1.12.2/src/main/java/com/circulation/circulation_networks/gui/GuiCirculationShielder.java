@@ -1,165 +1,47 @@
 package com.circulation.circulation_networks.gui;
 
-import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
-import com.circulation.circulation_networks.packets.CirculationShielderSyncPacket;
+import com.circulation.circulation_networks.gui.component.BackgroundComponent;
+import com.circulation.circulation_networks.gui.component.CirculationShielderPanelComponent;
+import com.circulation.circulation_networks.gui.component.base.Component;
+import com.circulation.circulation_networks.gui.component.base.RenderPhase;
 import com.circulation.circulation_networks.tiles.TileEntityCirculationShielder;
-import com.circulation.circulation_networks.utils.CI18n;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.client.gui.inventory.GuiContainer;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Keyboard;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @SideOnly(Side.CLIENT)
-public class GuiCirculationShielder extends GuiContainer {
+public class GuiCirculationShielder extends CFNBaseGui<ContainerCirculationShielder> {
 
-    private static final int MAX_SCOPE = 8;
+    private static final int GUI_WIDTH = 138;
+    private static final int GUI_HEIGHT = 56;
 
     private final TileEntityCirculationShielder tileEntity;
-    private final ContainerCirculationShielder container;
-    public GuiTextField scopeField;
-    private GuiButton redstoneModeButton;
 
     public GuiCirculationShielder(EntityPlayer player, TileEntityCirculationShielder te) {
         super(new ContainerCirculationShielder(player, te));
         this.tileEntity = te;
-        this.container = (ContainerCirculationShielder) this.inventorySlots;
-        this.xSize = 256;
-        this.ySize = 200;
+        this.xSize = GUI_WIDTH;
+        this.ySize = GUI_HEIGHT;
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
-        Keyboard.enableRepeatEvents(true);
-        int centerX = this.guiLeft + (this.xSize / 2);
-        int centerY = this.guiTop + (this.ySize / 2);
-
-        this.scopeField = new GuiTextField(1, this.fontRenderer, centerX - 25, centerY - 60, 50, 20);
-        this.scopeField.setMaxStringLength(1);
-        this.scopeField.setText(String.valueOf(tileEntity.getScope()));
-        this.scopeField.setValidator(input -> {
-            if (input == null || input.isEmpty()) return true;
-            try {
-                int val = Integer.parseInt(input);
-                return val >= 0 && val <= MAX_SCOPE;
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        });
-
-        GuiButton showRangeButton = new GuiButton(2, centerX - 75, centerY - 30, 70, 20, CI18n.format("gui.circulation_shielder.show_range"));
-        this.buttonList.add(showRangeButton);
-
-        this.redstoneModeButton = new GuiButton(3, centerX + 5, centerY - 30, 70, 20, getRedstoneModeButtonText());
-        this.buttonList.add(this.redstoneModeButton);
-
-        GuiButton closeButton = new GuiButton(4, centerX - 40, centerY + 20, 80, 20, CI18n.format("gui.circulation_shielder.close"));
-        this.buttonList.add(closeButton);
+    protected void buildComponents(Map<RenderPhase, List<Component>> components) {
+        List<Component> bg = components.computeIfAbsent(RenderPhase.BACKGROUND, k -> new ObjectArrayList<>());
+        bg.add(new BackgroundComponent("shielder_base", this));
+        List<Component> normal = components.computeIfAbsent(RenderPhase.NORMAL, k -> new ObjectArrayList<>());
+        normal.add(new CirculationShielderPanelComponent(container, tileEntity, this));
     }
 
     @Override
-    public void onGuiClosed() {
-        super.onGuiClosed();
-        Keyboard.enableRepeatEvents(false);
+    public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (this.scopeField.textboxKeyTyped(typedChar, keyCode)) {
-            applyScopeFromField();
-        } else {
-            super.keyTyped(typedChar, keyCode);
-        }
-    }
-
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        this.scopeField.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    private void applyScopeFromField() {
-        String text = this.scopeField.getText();
-        if (text.isEmpty()) return;
-        try {
-            int val = Integer.parseInt(text);
-            if (val >= 0 && val <= MAX_SCOPE && val != container.scope) {
-                container.scope = val;
-                tileEntity.setScope(val);
-                CirculationFlowNetworks.sendToServer(new CirculationShielderSyncPacket(tileEntity));
-            }
-        } catch (NumberFormatException ignored) {
-        }
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton button) {
-        if (button.id == 2) {
-            tileEntity.setShowingRange(!tileEntity.isShowingRange());
-        } else if (button.id == 3) {
-            tileEntity.toggleRedstoneMode();
-            this.redstoneModeButton.displayString = getRedstoneModeButtonText();
-            CirculationFlowNetworks.sendToServer(new CirculationShielderSyncPacket(tileEntity));
-        } else if (button.id == 4) {
-            this.mc.displayGuiScreen(null);
-        }
-    }
-
-    @Override
-    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-    }
-
-    @Override
-    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-        int centerX = this.xSize / 2;
-        int centerY = this.ySize / 2;
-
-        String title = TextFormatting.BOLD + CI18n.format("gui.circulation_shielder.title") + TextFormatting.RESET;
-        this.fontRenderer.drawString(title, centerX - this.fontRenderer.getStringWidth(title) / 2, centerY - 90, 0xFFFFFF);
-
-        String scopeLabel = CI18n.format("gui.circulation_shielder.scope") + ": ";
-        this.fontRenderer.drawString(scopeLabel, centerX - 25 - this.fontRenderer.getStringWidth(scopeLabel) - 2 - this.guiLeft, centerY - 55 - this.guiTop, 0xAAAAAA);
-
-        String showRangeStatus = CI18n.format("gui.circulation_shielder.show_range_status") + ": " + (tileEntity.isShowingRange() ? TextFormatting.GREEN + CI18n.format("gui.circulation_shielder.enabled") : TextFormatting.RED + CI18n.format("gui.circulation_shielder.disabled")) + TextFormatting.RESET;
-        this.fontRenderer.drawString(showRangeStatus, centerX - this.fontRenderer.getStringWidth(showRangeStatus) / 2, centerY + 10, 0xFFFFFF);
-
-        String redstoneModeStatus = CI18n.format("gui.circulation_shielder.redstone_mode") + ": " + getRedstoneModeText();
-        this.fontRenderer.drawString(redstoneModeStatus, centerX - this.fontRenderer.getStringWidth(redstoneModeStatus) / 2, centerY + 30, 0xFFFFFF);
-    }
-
-    @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        super.drawScreen(mouseX, mouseY, partialTicks);
-        this.scopeField.drawTextBox();
-    }
-
-    @Override
-    public void updateScreen() {
-        super.updateScreen();
-        this.scopeField.updateCursorCounter();
-    }
-
-    private String getRedstoneModeButtonText() {
-        return tileEntity.getRedstoneMode() ? CI18n.format("gui.circulation_shielder.inverse_mode") : CI18n.format("gui.circulation_shielder.normal_mode");
-    }
-
-    private String getRedstoneModeText() {
-        if (tileEntity.getRedstoneMode()) {
-            return TextFormatting.YELLOW + CI18n.format("gui.circulation_shielder.normal_mode") + TextFormatting.RESET + " " + CI18n.format("gui.circulation_shielder.normal_desc");
-        } else {
-            return TextFormatting.LIGHT_PURPLE + CI18n.format("gui.circulation_shielder.inverse_mode") + TextFormatting.RESET + " " + CI18n.format("gui.circulation_shielder.inverse_desc");
-        }
-    }
-
-    @Override
-    public boolean doesGuiPauseGame() {
-        return super.doesGuiPauseGame();
+    public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
     }
 }

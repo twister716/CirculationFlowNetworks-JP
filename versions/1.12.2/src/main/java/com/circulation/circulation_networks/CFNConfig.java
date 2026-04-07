@@ -8,6 +8,9 @@ public final class CFNConfig {
     @Config.Name("Node")
     public static final Node NODE = new Node();
 
+    @Config.Name("Shielder")
+    public static final Shielder SHIELDER = new Shielder();
+
     @Config.Name("EnergyBlacklist")
     @Config.Comment({
         "能源实体黑名单（完全限定名或类名前缀）",
@@ -99,6 +102,13 @@ public final class CFNConfig {
             @Config.RangeDouble(min = 1, max = 32)
             public double linkScope = 16;
         }
+    }
+
+    public static class Shielder {
+        @Config.Comment({"环流屏蔽仪的最大范围", "Max range of Circulation Shielder"})
+        @Config.Name("maxScope")
+        @Config.RangeInt(min = 0, max = 16)
+        public int maxScope = 8;
     }
 
 }

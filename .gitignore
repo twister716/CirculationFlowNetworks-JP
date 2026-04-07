@@ -25,3 +25,4 @@ run
 /.github/prompts/
 *.txt
 /textures/
+/.worktrees/

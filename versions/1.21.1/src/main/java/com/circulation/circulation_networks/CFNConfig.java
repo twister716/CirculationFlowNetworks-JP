@@ -11,6 +11,7 @@ import java.util.List;
 public final class CFNConfig {
 
     public static final Node NODE = new Node();
+    public static final Shielder SHIELDER = new Shielder();
     static final ModConfigSpec SPEC;
     private static final ModConfigSpec.ConfigValue<List<? extends String>> CLASS_NAMES;
     private static final ModConfigSpec.ConfigValue<List<? extends String>> SUPPLY_CLASS_NAMES;
@@ -22,6 +23,7 @@ public final class CFNConfig {
     private static final ModConfigSpec.DoubleValue HUB_ENERGY_SCOPE;
     private static final ModConfigSpec.DoubleValue HUB_CHARGING_SCOPE;
     private static final ModConfigSpec.DoubleValue HUB_LINK_SCOPE;
+    private static final ModConfigSpec.IntValue SHIELDER_MAX_SCOPE;
     public static String[] classNames = new String[0];
     public static String[] supplyClassNames = new String[0];
 
@@ -68,6 +70,10 @@ public final class CFNConfig {
 
         builder.pop();
 
+        builder.push("Shielder");
+        SHIELDER_MAX_SCOPE = builder.comment("Max range of Circulation Shielder").defineInRange("maxScope", 8, 0, 16);
+        builder.pop();
+
         SPEC = builder.build();
     }
 
@@ -94,6 +100,7 @@ public final class CFNConfig {
         NODE.hub.energyScope = HUB_ENERGY_SCOPE.get();
         NODE.hub.chargingScope = HUB_CHARGING_SCOPE.get();
         NODE.hub.linkScope = HUB_LINK_SCOPE.get();
+        SHIELDER.maxScope = SHIELDER_MAX_SCOPE.get();
     }
 
     public static class Node {
@@ -121,5 +128,9 @@ public final class CFNConfig {
             public double chargingScope = 8;
             public double linkScope = 16;
         }
+    }
+
+    public static class Shielder {
+        public int maxScope = 8;
     }
 }
