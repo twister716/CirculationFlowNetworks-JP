@@ -9,10 +9,10 @@ import com.circulation.circulation_networks.packets.CirculationShielderSyncPacke
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.NotNull;
 //? if <1.20 {
 import com.circulation.circulation_networks.tiles.TileEntityCirculationShielder;
 import net.minecraft.client.Minecraft;
-import org.jetbrains.annotations.NotNull;
 //?} else {
 /*import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
 import net.minecraft.client.Minecraft;

@@ -8,7 +8,6 @@ import groovy.lang.Binding
 import groovy.lang.GroovyObject
 import groovy.lang.GroovyShell
 import groovy.text.SimpleTemplateEngine
-import org.gradle.api.tasks.Sync
 import org.gradle.jvm.tasks.Jar
 import java.util.Properties
 

@@ -20,19 +20,16 @@ public final class BlockNodePedestal extends BaseBlock {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public int getLightBlock(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
         return 10;
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean isOcclusionShapeFullBlock(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
         return false;
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean skipRendering(@NotNull BlockState state, @NotNull BlockState adjacentState, @NotNull Direction side) {
         return false;
     }

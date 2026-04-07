@@ -9,6 +9,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("deprecation")
 public final class BlockNodePedestal extends BaseBlock {
 
     public BlockNodePedestal() {
