@@ -108,12 +108,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         for (AtlasDimensions dimensions : dimensionsList) {
             StitchResult result = tryPack(sorted, dimensions.width, dimensions.height);
             if (result != null) {
-                int usedArea = usedArea(result.regions);
-                int atlasArea = dimensions.width * dimensions.height;
-                CirculationFlowNetworks.LOGGER.info(
-                    "Stitched {} sprites into {}×{} atlas (usage: {} / {} = {}%).",
-                    sprites.size(), dimensions.width, dimensions.height, usedArea, atlasArea,
-                    atlasArea == 0 ? 0 : (usedArea * 100) / atlasArea);
                 return result;
             }
         }
@@ -299,17 +293,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
             .thenComparing(s -> s.name));
     }
 
-    private static int usedArea(List<AtlasRegion> regions) {
-        if (regions.isEmpty()) {
-            return 0;
-        }
-        int usedArea = 0;
-        for (AtlasRegion region : regions) {
-            usedArea += region.width * region.height;
-        }
-        return usedArea;
-    }
-
     private static List<AtlasDimensions> candidateDimensions() {
         List<AtlasDimensions> dimensions = new ObjectArrayList<>();
         for (int width = MIN_SIZE; width <= MAX_SIZE; width <<= 1) {
@@ -359,8 +342,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         /*GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
          *///?}
 
-        CirculationFlowNetworks.LOGGER.info(
-            "Uploaded atlas {}×{} to GL texture #{}", width, height, texId);
         return texId;
     }
 
@@ -408,7 +389,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
         //?} else {
         /*NeoForge.EVENT_BUS.post(event);
          *///?}
-        CirculationFlowNetworks.LOGGER.info("Collected {} component atlas sprites", event.getSprites().size());
         List<String> sprites = event.getSprites();
         if (!sprites.isEmpty()) {
             for (String sprite : sprites) addSprite(sprite);
@@ -472,8 +452,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
                     if (cached != null) {
                         StitchResult cachedResult = buildRegions(stitchedSprites, cached);
                         if (cachedResult != StitchResult.EMPTY && !cachedResult.regions.isEmpty()) {
-                            CirculationFlowNetworks.LOGGER.info(
-                                "Atlas cache hit (hash {})", hash);
                             return cachedResult;
                         }
                         CirculationFlowNetworks.LOGGER.warn(
@@ -482,9 +460,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
                     }
                 }
 
-                CirculationFlowNetworks.LOGGER.info(
-                    "Stitching atlas for {} sprites (hash {})…",
-                    stitchedSprites.size(), hash);
                 StitchResult result = stitch(stitchedSprites);
 
                 File[] old = cacheDir.listFiles(f ->
@@ -494,8 +469,6 @@ public final class ComponentAtlas extends ComponentAtlasRegistry {
                 }
                 try {
                     ImageIO.write(result.image, "PNG", cacheFile);
-                    CirculationFlowNetworks.LOGGER.info(
-                        "Atlas cached at {}", cacheFile.getAbsolutePath());
                 } catch (IOException e) {
                     CirculationFlowNetworks.LOGGER.warn(
                         "Could not write atlas cache: {}", e.getMessage());

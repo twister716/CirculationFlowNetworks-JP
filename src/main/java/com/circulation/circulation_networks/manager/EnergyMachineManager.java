@@ -782,6 +782,10 @@ public final class EnergyMachineManager {
             return;
         }
         for (var handler : receiveHandlers) {
+            var target = receiveTargets.get(handler);
+            if (target == null || !isWarningSendDue(target)) {
+                continue;
+            }
             EnergyAmount receivable = handler.canReceiveValue(hubMetadata);
             try {
                 if (receivable.isZero()) {
@@ -790,10 +794,7 @@ public final class EnergyMachineManager {
             } finally {
                 receivable.recycle();
             }
-            var target = receiveTargets.get(handler);
-            if (target == null || !shouldSendWarning(target)) {
-                continue;
-            }
+            markWarningSent(target);
             LongSet dimWarnings = warningPositions.get(target.dimId);
             if (dimWarnings == null) {
                 dimWarnings = new LongOpenHashSet();
@@ -803,19 +804,25 @@ public final class EnergyMachineManager {
         }
     }
 
-    private boolean shouldSendWarning(WarningTarget target) {
-        Long2LongMap dimWarnings = lastWarningTicks.get(target.dimId);
+    private @Nonnull Long2LongMap getWarningTicksForDimension(int dimId) {
+        Long2LongMap dimWarnings = lastWarningTicks.get(dimId);
         if (dimWarnings == null) {
             dimWarnings = new Long2LongOpenHashMap();
             dimWarnings.defaultReturnValue(Long.MIN_VALUE);
-            lastWarningTicks.put(target.dimId, dimWarnings);
+            lastWarningTicks.put(dimId, dimWarnings);
         }
+        return dimWarnings;
+    }
+
+    private boolean isWarningSendDue(WarningTarget target) {
+        Long2LongMap dimWarnings = getWarningTicksForDimension(target.dimId);
         long lastTick = dimWarnings.get(target.posLong);
-        if (lastTick != Long.MIN_VALUE && warningTickCounter - lastTick < WARNING_SEND_INTERVAL_TICKS) {
-            return false;
-        }
+        return lastTick == Long.MIN_VALUE || warningTickCounter - lastTick >= WARNING_SEND_INTERVAL_TICKS;
+    }
+
+    private void markWarningSent(WarningTarget target) {
+        Long2LongMap dimWarnings = getWarningTicksForDimension(target.dimId);
         dimWarnings.put(target.posLong, warningTickCounter);
-        return true;
     }
 
     private void sendWarningsToNearbyPlayers(MinecraftServer server, Int2ObjectMap<LongSet> warningPositions) {
@@ -836,7 +843,7 @@ public final class EnergyMachineManager {
                 }
             }
             if (!visibleWarningsScratch.isEmpty()) {
-                CirculationFlowNetworks.sendToPlayer(new EnergyWarningRendering(dimId, new LongOpenHashSet(visibleWarningsScratch)), player);
+                CirculationFlowNetworks.sendToPlayer(new EnergyWarningRendering(dimId, visibleWarningsScratch), player);
             }
         }
     }

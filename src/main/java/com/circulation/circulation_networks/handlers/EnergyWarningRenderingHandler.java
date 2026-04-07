@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.handlers;
 
-import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -64,7 +63,6 @@ public final class EnergyWarningRenderingHandler {
     private static final String WARNING_SPRITE = "warning";
     private final Int2ObjectMap<Long2LongMap> warnings = new Int2ObjectOpenHashMap<>();
     private long clientTick;
-    private long lastRefreshLogTick = Long.MIN_VALUE;
 
     private EnergyWarningRenderingHandler() {
     }
@@ -87,19 +85,11 @@ public final class EnergyWarningRenderingHandler {
         for (long posLong : positions) {
             dimWarnings.put(posLong, clientTick);
         }
-        if (clientTick - lastRefreshLogTick >= 20L) {
-            lastRefreshLogTick = clientTick;
-            CirculationFlowNetworks.LOGGER.info(
-                "[EnergyWarning] refresh dim={} positions={} clientTick={}",
-                dimId, positions.size(), clientTick
-            );
-        }
     }
 
     public void clear() {
         warnings.clear();
         clientTick = 0L;
-        lastRefreshLogTick = Long.MIN_VALUE;
     }
 
     @SubscribeEvent
@@ -164,22 +154,7 @@ public final class EnergyWarningRenderingHandler {
         double cameraZ = cameraPos.z;
         AtlasRegion warningRegion = getWarningRegion();
         if (warningRegion == null) {
-            if (!missingRegionLogged) {
-                missingRegionLogged = true;
-                CirculationFlowNetworks.LOGGER.warn("[EnergyWarning] warning region missing from component atlas");
-            }
             return;
-        }
-        missingRegionLogged = false;
-
-        if (clientTick - lastRenderPassLogTick >= 20L) {
-            lastRenderPassLogTick = clientTick;
-            CirculationFlowNetworks.LOGGER.info(
-                "[EnergyWarning] render pass dim={} warnings={} camera=({}, {}, {})",
-                mc.level.dimension().location(),
-                dimWarnings.size(),
-                cameraX, cameraY, cameraZ
-            );
         }
 
         //? if <1.21 {
@@ -201,13 +176,6 @@ public final class EnergyWarningRenderingHandler {
             BlockPos pos = BlockPos.of(entry.getLongKey());
             if (distanceSqToPlayer(mc, pos) > MAX_RENDER_DISTANCE_SQ) {
                 continue;
-            }
-            if (lastRenderAttemptLogTick != clientTick) {
-                lastRenderAttemptLogTick = clientTick;
-                CirculationFlowNetworks.LOGGER.info(
-                    "[EnergyWarning] render attempt pos={} dim={} clientTick={}",
-                    pos, mc.level.dimension().location(), clientTick
-                );
             }
             renderWarning(warningRegion, pos);
         }

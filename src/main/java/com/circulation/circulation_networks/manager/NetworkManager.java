@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
@@ -79,6 +80,7 @@ public final class NetworkManager {
     private final Int2ObjectMap<Object2ObjectMap<INode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<LongSet>> pendingNodeValidation = new Int2ObjectOpenHashMap<>();
+    private final LongArrayList pendingValidationClearScratch = new LongArrayList();
     private final ObjectSet<IGrid> markGird = new ObjectOpenHashSet<>();
     private boolean init;
 
@@ -481,8 +483,8 @@ public final class NetworkManager {
             return;
         }
 
-        LongSet positions = new LongOpenHashSet(pending);
-        for (long posLong : positions) {
+        pendingValidationClearScratch.clear();
+        for (long posLong : pending) {
             var pos = blockPosFromLong(posLong);
             INode mapped = posNodes.get(dimId).get(posLong);
             var blockEntity = getBlockEntity(world, pos);
@@ -503,12 +505,15 @@ public final class NetworkManager {
                 && pos.equals(mapped.getPos())
                 && blockEntity instanceof INodeBlockEntity nbe
                 && nbe.getNode() == mapped) {
-                clearPendingNodeValidation(dimId, posLong);
+                pendingValidationClearScratch.add(posLong);
             } else if (mapped != null) {
                 removeNode(mapped);
             } else {
-                clearPendingNodeValidation(dimId, posLong);
+                pendingValidationClearScratch.add(posLong);
             }
+        }
+        for (int i = 0; i < pendingValidationClearScratch.size(); i++) {
+            clearPendingNodeValidation(dimId, pendingValidationClearScratch.getLong(i));
         }
     }
 

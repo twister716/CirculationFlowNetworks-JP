@@ -12,6 +12,7 @@ import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.circulation.circulation_networks.utils.Functions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -47,6 +48,7 @@ public final class PocketNodeManager {
     private final Int2ObjectMap<Long2ObjectMap<PocketNodeRecord>> pendingHosts = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<LongSet>> activeChunkIndex = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<LongSet>> pendingChunkIndex = new Int2ObjectOpenHashMap<>();
+    private final LongArrayList chunkLoadIterationScratch = new LongArrayList();
     private boolean loaded;
     private boolean dirty;
     private PocketNodeManager() {
@@ -94,14 +96,6 @@ public final class PocketNodeManager {
         return addResult.getStatus() == NetworkManager.AddNodeResult.Status.HUB_CONFLICT;
     }
 
-    private static void logDeferredActivation(PocketNodeRecord record) {
-        CirculationFlowNetworks.LOGGER.debug(
-            "Deferred pocket node activation type={} pos={} dim={}",
-            record.nodeType().id(),
-            record.pos(),
-            record.dimensionId()
-        );
-    }
     //~}
 
     //~ if >=1.20 '(World ' -> '(Level ' {
@@ -291,10 +285,7 @@ public final class PocketNodeManager {
 
         for (var dimEntry : new ObjectArrayList<>(pendingHosts.int2ObjectEntrySet())) {
             for (var record : new ObjectArrayList<>(dimEntry.getValue().values())) {
-                RegisterPocketNodeResult activated = tryActivate(record, true);
-                if (!activated.isSuccess()) {
-                    logDeferredActivation(record);
-                }
+                tryActivate(record, true);
             }
         }
 
@@ -361,7 +352,10 @@ public final class PocketNodeManager {
         LongSet activePositions = getChunkPositions(activeChunkIndex.get(dimId), chunkCoord);
         if (activePositions != null && !activePositions.isEmpty()) {
             Long2ObjectMap<PocketNodeHost> activeDimMap = activeHosts.get(dimId);
-            for (long posLong : new LongOpenHashSet(activePositions)) {
+            chunkLoadIterationScratch.clear();
+            chunkLoadIterationScratch.addAll(activePositions);
+            for (int i = 0; i < chunkLoadIterationScratch.size(); i++) {
+                long posLong = chunkLoadIterationScratch.getLong(i);
                 PocketNodeHost host = activeDimMap == null ? null : activeDimMap.get(posLong);
                 if (host == null) {
                     continue;
@@ -379,7 +373,10 @@ public final class PocketNodeManager {
         if (positions == null || positions.isEmpty()) {
             return;
         }
-        for (long posLong : new LongOpenHashSet(positions)) {
+        chunkLoadIterationScratch.clear();
+        chunkLoadIterationScratch.addAll(positions);
+        for (int i = 0; i < chunkLoadIterationScratch.size(); i++) {
+            long posLong = chunkLoadIterationScratch.getLong(i);
             PocketNodeRecord record = getPendingDimMap(dimId).get(posLong);
             if (record != null) {
                 tryActivate(record, true);
@@ -656,39 +653,33 @@ public final class PocketNodeManager {
     //~}
 
     private void syncAdd(PocketNodeRecord record) {
-        for (var player : getPlayers(record.dimensionId())) {
-            CirculationFlowNetworks.sendToPlayer(new PocketNodeRendering(record), player);
-        }
+        syncToDimensionPlayers(record.dimensionId(), new PocketNodeRendering(record));
     }
 
     private void syncRemove(int dimId, BlockPos pos) {
-        for (var player : getPlayers(dimId)) {
-            CirculationFlowNetworks.sendToPlayer(new PocketNodeRendering(dimId, pos), player);
-        }
+        syncToDimensionPlayers(dimId, new PocketNodeRendering(dimId, pos));
     }
 
     //~ if >=1.20 'EntityPlayerMP' -> 'ServerPlayer' {
     //~ if >=1.20 'World ' -> 'Level ' {
-    private ObjectList<EntityPlayerMP> getPlayers(int dimId) {
-        ObjectList<EntityPlayerMP> players = new ObjectArrayList<>();
+    private void syncToDimensionPlayers(int dimId, PocketNodeRendering packet) {
         World world = resolveWorld(dimId);
         if (world == null) {
-            return players;
+            return;
         }
         //? if <1.20 {
         for (var player : world.playerEntities) {
             if (player instanceof EntityPlayerMP serverPlayer) {
-                players.add(serverPlayer);
+                CirculationFlowNetworks.sendToPlayer(packet, serverPlayer);
             }
         }
         //?} else {
         /*for (var player : world.players()) {
             if (player instanceof EntityPlayerMP serverPlayer) {
-                players.add(serverPlayer);
+                CirculationFlowNetworks.sendToPlayer(packet, serverPlayer);
             }
         }
         *///?}
-        return players;
     }
     //~}
     //~}

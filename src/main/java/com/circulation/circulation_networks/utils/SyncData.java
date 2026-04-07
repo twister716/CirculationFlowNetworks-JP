@@ -1,7 +1,5 @@
 package com.circulation.circulation_networks.utils;
 
-import com.circulation.circulation_networks.CirculationFlowNetworks;
-
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Objects;
@@ -83,12 +81,10 @@ public class SyncData {
                 try {
                     this.send(sender, val);
                     updateCachedVersion(val);
-                } catch (Exception e) {
-                    CirculationFlowNetworks.LOGGER.debug("Failed to sync data", e);
+                } catch (Exception ignored) {
                 }
             }
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            CirculationFlowNetworks.LOGGER.debug(e);
+        } catch (IllegalArgumentException | IllegalAccessException ignored) {
         }
     }
 
@@ -146,7 +142,7 @@ public class SyncData {
                 updateCallback.onUpdate(this.field.getName(), oldValue, this.field.get(this.source));
             }
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            CirculationFlowNetworks.LOGGER.debug(e);
+            // Ignore invalid sync payloads.
         }
     }
 

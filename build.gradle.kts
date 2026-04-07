@@ -657,6 +657,7 @@ val syncLegacyForgeResourcesToClasses = if (currentPlatform == "legacyforge") {
 }
 
 tasks.named<Jar>("jar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         val attributeMap = mutableMapOf<String, Any>()
         if (propertyBool("is_coremod")) {
