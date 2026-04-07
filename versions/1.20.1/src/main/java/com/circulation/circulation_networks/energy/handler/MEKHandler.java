@@ -26,7 +26,8 @@ public final class MEKHandler implements IEnergyHandler {
     private static final BigInteger MAX_DIRECT_DOUBLE_TRANSFER = BigDecimal.valueOf(Double.MAX_VALUE).toBigInteger();
     private static final BigInteger MAX_SCALED_DOUBLE_TRANSFER = BigDecimal.valueOf(Double.MAX_VALUE / FE_TO_MEK_RATIO).toBigInteger();
 
-    private final EnergyAmount maxOutput = EnergyAmountConversionUtils.obtainFromDoubleFloor(Double.MAX_VALUE);
+    private final EnergyAmount maxExtract = EnergyAmount.obtain(0L);
+    private final EnergyAmount maxReceive = EnergyAmount.obtain(0L);
     private final EnergyAmount needEnergy = EnergyAmount.obtain(0L);
     @Nullable
     private IStrictEnergyHandler send;
@@ -81,57 +82,47 @@ public final class MEKHandler implements IEnergyHandler {
 
     @Override
     public IEnergyHandler init(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
-        EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, Double.MAX_VALUE);
+        maxExtract.setZero();
+        maxReceive.setZero();
         if (blockEntity instanceof TileEntityEnergyCube energyCube) {
             send = energyCube;
             receive = energyCube;
             energyType = EnergyType.STORAGE;
-            EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, joulesToFe(energyCube.getTier().getOutput().doubleValue()));
-            return this;
-        }
-        if (blockEntity instanceof TileEntityInductionPort port) {
+        } else if (blockEntity instanceof TileEntityInductionPort port) {
             send = port;
             receive = port;
             energyType = EnergyType.STORAGE;
-            return this;
-        }
-        for (Direction direction : DIRECTIONS) {
-            if (send != null && receive != null) {
-                break;
+        } else {
+            for (Direction direction : DIRECTIONS) {
+                if (send != null && receive != null) {
+                    break;
+                }
+                var optional = blockEntity.getCapability(Capabilities.STRICT_ENERGY, direction);
+                if (!optional.isPresent()) {
+                    continue;
+                }
+                bindHandler(optional.orElse(null));
             }
-            var optional = blockEntity.getCapability(Capabilities.STRICT_ENERGY, direction);
-            if (!optional.isPresent()) {
-                continue;
-            }
-            bindHandler(optional.orElse(null));
-        }
-        if (send == null && receive == null) {
-            var unsided = blockEntity.getCapability(Capabilities.STRICT_ENERGY, null).orElse(null);
-            if (unsided != null) {
-                bindHandler(unsided);
-                if (send == null && receive == null) {
-                    send = unsided;
-                    receive = unsided;
+            if (send == null && receive == null) {
+                var unsided = blockEntity.getCapability(Capabilities.STRICT_ENERGY, null).orElse(null);
+                if (unsided != null) {
+                    bindHandler(unsided);
+                    if (send == null && receive == null) {
+                        send = unsided;
+                        receive = unsided;
+                    }
                 }
             }
         }
-        double detectedRate = Double.MAX_VALUE;
         if (send != null) {
             double probe = send.extractEnergy(FloatingLong.MAX_VALUE, Action.SIMULATE).doubleValue();
-            double stored = getStoredEnergy(send);
-            if (stored > 0 && probe < stored) {
-                detectedRate = Math.min(detectedRate, probe);
-            }
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, joulesToFe(probe));
         }
         if (receive != null) {
             FloatingLong remainder = receive.insertEnergy(FloatingLong.MAX_VALUE, Action.SIMULATE);
             double accepted = FloatingLong.MAX_VALUE.subtract(remainder).doubleValue();
-            double room = getMaxStoredEnergy(receive) - getStoredEnergy(receive);
-            if (room > 0 && accepted < room) {
-                detectedRate = Math.min(detectedRate, accepted);
-            }
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, joulesToFe(accepted));
         }
-        EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, joulesToFe(detectedRate));
         if (send != null) {
             energyType = receive != null ? EnergyType.STORAGE : EnergyType.SEND;
         } else if (receive != null) {
@@ -163,7 +154,8 @@ public final class MEKHandler implements IEnergyHandler {
 
     @Override
     public void clear() {
-        EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, Double.MAX_VALUE);
+        maxExtract.setZero();
+        maxReceive.setZero();
         send = null;
         receive = null;
         energyType = EnergyType.INVALID;
@@ -224,7 +216,7 @@ public final class MEKHandler implements IEnergyHandler {
     public EnergyAmount canExtractValue(@Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
         EnergyAmount extractable = EnergyAmountConversionUtils.obtainFromDoubleFloor(getStoredEnergy(send) * 0.4D);
-        return extractable.min(maxOutput);
+        return extractable.min(maxExtract);
     }
 
     @Override
@@ -236,7 +228,7 @@ public final class MEKHandler implements IEnergyHandler {
         EnergyAmount receivable = EnergyAmountConversionUtils.obtainFromDoubleFloor(
                 (getMaxStoredEnergy(receive) - getStoredEnergy(receive)) * 0.4D
         );
-        return receivable.min(maxOutput);
+        return receivable.min(maxReceive);
     }
 
     @Override

@@ -10,8 +10,10 @@ import mekanism.api.energy.IStrictEnergyAcceptor;
 import mekanism.api.energy.IStrictEnergyOutputter;
 import mekanism.api.energy.IStrictEnergyStorage;
 import mekanism.common.base.IEnergyWrapper;
+import mekanism.common.content.matrix.SynchronizedMatrixData;
 import mekanism.common.tier.EnergyCubeTier;
 import mekanism.common.tile.TileEntityEnergyCube;
+import mekanism.common.tile.TileEntityMultiblock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -41,7 +43,8 @@ public final class MEKHandler implements IEnergyHandler {
         inductionPort = temp;
     }
 
-    private final EnergyAmount maxOutput = EnergyAmountConversionUtils.obtainFromDoubleFloor(Double.MAX_VALUE);
+    private final EnergyAmount maxReceive = EnergyAmount.obtain(MAX_SCALED_DOUBLE_TRANSFER);
+    private final EnergyAmount maxExtract = EnergyAmount.obtain(MAX_SCALED_DOUBLE_TRANSFER);
     private final EnergyAmount needEnergy = EnergyAmount.obtain(0L);
     @Nullable
     private IStrictEnergyStorage send;
@@ -75,18 +78,21 @@ public final class MEKHandler implements IEnergyHandler {
 
     @Override
     public IEnergyHandler init(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
-        EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, Double.MAX_VALUE);
         if (tileEntity instanceof TileEntityEnergyCube te) {
             creative = te.tier == EnergyCubeTier.CREATIVE;
             send = (IStrictEnergyStorage) tileEntity;
             receive = (IStrictEnergyStorage) tileEntity;
             energyType = EnergyType.STORAGE;
-            EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, te.getMaxOutput());
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, te.getMaxOutput());
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, te.getMaxOutput());
         } else if (inductionPort != null && inductionPort.isInstance(tileEntity)) {
             send = (IStrictEnergyStorage) tileEntity;
             receive = (IStrictEnergyStorage) tileEntity;
             energyType = EnergyType.STORAGE;
-            EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, ((IEnergyWrapper) tileEntity).getMaxOutput());
+            @SuppressWarnings("unchecked")
+            SynchronizedMatrixData m = ((TileEntityMultiblock<SynchronizedMatrixData>) tileEntity).structure;
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, m.getRemainingOutput());
+            EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, m.getRemainingInput());
         } else {
             boolean a = false;
             boolean b = false;
@@ -109,7 +115,7 @@ public final class MEKHandler implements IEnergyHandler {
             else if (b) energyType = EnergyType.SEND;
 
             if (tileEntity instanceof IEnergyWrapper te && te.getMaxOutput() != 0) {
-                EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, te.getMaxOutput());
+                EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, te.getMaxOutput());
             }
         }
         return this;
@@ -129,7 +135,8 @@ public final class MEKHandler implements IEnergyHandler {
 
     @Override
     public void clear() {
-        EnergyAmountConversionUtils.setFromDoubleFloor(maxOutput, Double.MAX_VALUE);
+        maxReceive.init(MAX_SCALED_DOUBLE_TRANSFER);
+        maxExtract.init(MAX_SCALED_DOUBLE_TRANSFER);
         send = null;
         receive = null;
         receiveItem = null;
@@ -177,9 +184,9 @@ public final class MEKHandler implements IEnergyHandler {
     @Override
     public EnergyAmount canExtractValue(@Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
-        if (creative) return EnergyAmount.obtain(maxOutput);
+        if (creative) return EnergyAmount.obtain(maxExtract);
         EnergyAmount extractable = EnergyAmountConversionUtils.obtainFromDoubleFloor(send.getEnergy() * 0.4D);
-        return extractable.min(maxOutput);
+        return extractable.min(maxExtract);
     }
 
     @Override
@@ -189,7 +196,7 @@ public final class MEKHandler implements IEnergyHandler {
         } else {
             if (receive == null) return EnergyAmounts.ZERO;
             EnergyAmount receivable = EnergyAmountConversionUtils.obtainFromDoubleFloor((receive.getMaxEnergy() - receive.getEnergy()) * 0.4D);
-            return receivable.min(maxOutput);
+            return receivable.min(maxReceive);
         }
     }
 
