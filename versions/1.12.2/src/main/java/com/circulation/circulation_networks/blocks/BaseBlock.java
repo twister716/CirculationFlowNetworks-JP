@@ -46,6 +46,9 @@ public abstract class BaseBlock extends Block implements ITileEntityProvider {
         this.setRegistryName(new ResourceLocation(modid, name));
         this.setTranslationKey(modid + "." + name);
         this.setCreativeTab(CREATIVE_TAB);
+        this.setHardness(1.5F);
+        this.setResistance(10.0F);
+        this.setHarvestLevel("pickaxe", 0);
     }
 
     public boolean hasTileEntity(@NotNull IBlockState state) {

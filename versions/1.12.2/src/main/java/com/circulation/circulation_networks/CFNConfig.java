@@ -43,6 +43,9 @@ public final class CFNConfig {
 
     public static class Node {
 
+        @Config.Name("Rendering")
+        public final RenderingConfig rendering = new RenderingConfig();
+
         @Config.Name("PortNode")
         public final PortNodeConfig portNode = new PortNodeConfig();
 
@@ -101,6 +104,18 @@ public final class CFNConfig {
             @Config.Name("linkScope")
             @Config.RangeDouble(min = 1, max = 32)
             public double linkScope = 16;
+        }
+
+        public static class RenderingConfig {
+            @Config.Comment({
+                "是否为中继节点与节点基座启用动态模型渲染",
+                "关闭后会退回静态方块/物品模型，用于排查或降低渲染开销",
+                "",
+                "Whether to enable animated model rendering for relay nodes and node pedestals.",
+                "When disabled, they fall back to static block/item models for debugging or lower render cost."
+            })
+            @Config.Name("animatedSpecialModels")
+            public boolean animatedSpecialModels = true;
         }
     }
 

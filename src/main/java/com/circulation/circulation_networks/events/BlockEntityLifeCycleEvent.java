@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.eventhandler.Event;
 /*import net.neoforged.bus.api.Event;
  *///?}
 
-// Shared lifecycle event for block entities across supported loaders.
+// Shared lifecycle event for block entities across supported loaders and versions.
 public class BlockEntityLifeCycleEvent extends Event {
 
     //~ if >=1.20 '(World ' -> '(Level ' {

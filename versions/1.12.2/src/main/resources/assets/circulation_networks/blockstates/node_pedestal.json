@@ -1,7 +1,7 @@
 {
   "variants": {
     "normal": {
-      "model": "circulation_networks:node_pedestal"
+      "model": "circulation_networks:node_pedestal/node_pedestal"
     }
   }
 }

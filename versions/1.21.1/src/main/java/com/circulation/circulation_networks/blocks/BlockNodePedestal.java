@@ -3,15 +3,13 @@ package com.circulation.circulation_networks.blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.MapColor;
 import org.jetbrains.annotations.NotNull;
 
 public final class BlockNodePedestal extends BaseBlock {
 
     public BlockNodePedestal() {
-        super(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 6.0f).requiresCorrectToolForDrops().noOcclusion());
+        super(metalPropertiesNoOcclusion());
     }
 
     @Override

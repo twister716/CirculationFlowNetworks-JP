@@ -5,15 +5,13 @@ import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.MapColor;
 import org.jetbrains.annotations.NotNull;
 
 public final class BlockHub extends BaseNodeBlock {
 
     public BlockHub() {
-        super(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 6.0f).requiresCorrectToolForDrops(),
+        super(metalProperties(),
             () -> CFNBlockEntityTypes.HUB);
     }
 

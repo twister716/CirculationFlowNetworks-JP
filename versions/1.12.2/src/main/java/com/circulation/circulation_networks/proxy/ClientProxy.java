@@ -1,6 +1,11 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.client.render.NodePedestalRotatingRenderer;
+import com.circulation.circulation_networks.client.render.RelayNodeRotatingRenderer;
+import com.circulation.circulation_networks.client.render.AnimatedNodeItemStackRenderer;
+import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
+import com.circulation.circulation_networks.client.render.RotatingModelRenderHelper;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
@@ -18,6 +23,8 @@ import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManage
 import com.circulation.circulation_networks.registry.RegistryBlocks;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
+import com.circulation.circulation_networks.tiles.TileEntityNodePedestal;
+import com.circulation.circulation_networks.tiles.nodes.TileEntityRelayNode;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -28,6 +35,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -104,6 +112,9 @@ public final class ClientProxy extends CommonProxy {
         super.init();
         File modConfigDir = new File(Loader.instance().getConfigDir(), CirculationFlowNetworks.MOD_ID);
         ComponentAtlas.INSTANCE.startAsync(modConfigDir);
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityRelayNode.class, new RelayNodeRotatingRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityNodePedestal.class, new NodePedestalRotatingRenderer());
+        AnimatedNodeItemStackRenderer.bindItemRenderers();
         openGLLevel = detectOpenGLLevel();
         SpoceRenderingHandler.INSTANCE = createSpoceHandler();
     }
@@ -140,6 +151,8 @@ public final class ClientProxy extends CommonProxy {
     @SubscribeEvent
     public void onTextureReloadPre(TextureStitchEvent.Pre event) {
         ComponentAtlas.INSTANCE.dispose();
+        RotatingModelRenderHelper.clearDisplayLists();
+        RotatingBlockModelCache.clear();
     }
 
     @SubscribeEvent

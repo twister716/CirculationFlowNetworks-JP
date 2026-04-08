@@ -4,6 +4,8 @@ import com.circulation.circulation_networks.blocks.BaseBlock;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
+@SuppressWarnings("deprecation")
 public abstract class BaseNodeBlock extends BaseBlock {
     protected Class<? extends BaseNodeTileEntity<?>> nodeTileClass;
 
@@ -44,6 +47,12 @@ public abstract class BaseNodeBlock extends BaseBlock {
                 return null;
             }
         }
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean hasCustomBreakingProgress(@NotNull IBlockState state) {
+        return true;
     }
 
 }

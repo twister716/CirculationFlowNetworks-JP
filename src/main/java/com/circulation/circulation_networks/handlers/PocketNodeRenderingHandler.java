@@ -30,8 +30,11 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.EnumFacing;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import org.lwjgl.opengl.GL11;
 //?} else {
@@ -53,7 +56,7 @@ public final class PocketNodeRenderingHandler {
 
     public static final PocketNodeRenderingHandler INSTANCE = new PocketNodeRenderingHandler();
     private static final double FACE_OFFSET = 0.501D;
-    private static final float FACE_SCALE = 0.5F;
+    private static final float FACE_SCALE = 0.03125F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
     private final Int2ObjectMap<Long2ObjectMap<PocketNodeClientHost>> hosts = new Int2ObjectOpenHashMap<>();
 
@@ -80,6 +83,11 @@ public final class PocketNodeRenderingHandler {
         int blockLight = packedLight % 65536;
         int skyLight = packedLight / 65536;
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, blockLight, skyLight);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+
+    private static void applyFullBrightLight() {
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
     }
     //?}
@@ -260,7 +268,6 @@ public final class PocketNodeRenderingHandler {
 
             BlockPos pos = host.getRecord().pos();
             EnumFacing face = host.getRecord().attachmentFace();
-            BlockPos lightPos = face == null ? pos : pos.offset(face);
             GlStateManager.pushMatrix();
             GlStateManager.enableRescaleNormal();
             GlStateManager.enableBlend();
@@ -271,18 +278,22 @@ public final class PocketNodeRenderingHandler {
                 GL11.GL_ZERO
             );
             GlStateManager.disableCull();
-            GlStateManager.depthMask(false);
+            GlStateManager.depthMask(true);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
             applyFaceTransform(face);
+            mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+            GlStateManager.enableAlpha();
+            GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+            GlStateManager.scale(1.0F, -1.0F, 1.0F);
+            GlStateManager.scale(16.0F, 16.0F, 16.0F);
             if (host.isGui3d()) {
                 GlStateManager.scale(1.0F, 1.0F, 0.002F);
             }
-            GlStateManager.enableLighting();
-            applyWorldLight(mc, lightPos);
-            RenderHelper.enableGUIStandardItemLighting();
-            mc.getRenderItem().renderItem(host.getRenderStack(), ItemCameraTransforms.TransformType.GUI);
+            IBakedModel model = mc.getRenderItem().getItemModelWithOverrides(host.getRenderStack(), mc.world, null);
+            model = ForgeHooksClient.handleCameraTransforms(model, ItemCameraTransforms.TransformType.GUI, false);
             RenderHelper.disableStandardItemLighting();
+            mc.getRenderItem().renderItem(host.getRenderStack(), model);
             GlStateManager.depthMask(true);
             GlStateManager.enableCull();
             GlStateManager.disableBlend();
