@@ -1,0 +1,52 @@
+package com.circulation.circulation_networks.client.render;
+
+import com.circulation.circulation_networks.CFNConfig;
+import com.circulation.circulation_networks.tiles.NodePedestalBlockEntity;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
+
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.*;
+
+@OnlyIn(Dist.CLIENT)
+public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedestalBlockEntity> {
+
+    private static final float CENTER = 0.5F;
+
+    private static final float FRAME_PIVOT_X = 8.0F / 16.0F;
+    private static final float FRAME_PIVOT_Y = 5.0F / 16.0F;
+    private static final float FRAME_PIVOT_Z = 8.0F / 16.0F;
+
+    public NodePedestalRenderer(BlockEntityRendererProvider.Context context) {
+    }
+
+    @Override
+    public void render(@NotNull NodePedestalBlockEntity te, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
+            return;
+        }
+
+        long worldTime = te.getLevel().getGameTime();
+
+        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PEDESTAL_BASE,
+            0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PEDESTAL_BASE_EMISSIVE,
+            0.0F, CENTER, CENTER, CENTER);
+        RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_CLOCKWISE,
+            NodeRotationAnimation.pedestalClockwiseFrameAngle(worldTime, partialTick),
+            FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
+            NodeRotationAnimation.tiltedAxisXForZRotation(-22.5F),
+            NodeRotationAnimation.tiltedAxisY(),
+            NodeRotationAnimation.tiltedAxisZ());
+        RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_COUNTER_CLOCKWISE,
+            NodeRotationAnimation.pedestalCounterClockwiseFrameAngle(worldTime, partialTick),
+            FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
+            NodeRotationAnimation.tiltedAxisXForZRotation(22.5F),
+            NodeRotationAnimation.tiltedAxisY(),
+            NodeRotationAnimation.tiltedAxisZ());
+    }
+}

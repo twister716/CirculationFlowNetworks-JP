@@ -95,17 +95,7 @@ public final class ClientProxy extends CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
         super.preInit(event);
-        CI18n.setI18nInternal(new CI18n() {
-            @Override
-            public String formatInternal(String key, Object... params) {
-                return I18n.format(key, params);
-            }
-
-            @Override
-            public boolean hasKeyInternal(String key) {
-                return I18n.hasKey(key);
-            }
-        });
+        CI18n.setI18nInternal(new MyCI18n());
     }
 
     public void init() {
@@ -182,5 +172,17 @@ public final class ClientProxy extends CommonProxy {
 
     public enum OpenGLLevel {
         GL_1_1, GL_3_2_PLUS, GL_4_6
+    }
+
+    private static class MyCI18n extends CI18n {
+        @Override
+        public String formatInternal(String key, Object... params) {
+            return I18n.format(key, params);
+        }
+
+        @Override
+        public boolean hasKeyInternal(String key) {
+            return I18n.hasKey(key);
+        }
     }
 }

@@ -1,5 +1,8 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
+import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
@@ -13,6 +16,7 @@ import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
@@ -21,6 +25,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -52,6 +58,13 @@ final class CirculationFlowNetworksClient {
         MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
+
+        modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
+        modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
+        modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.NODE_PEDESTAL, NodePedestalRenderer::new);
+        });
 
         modEventBus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(() -> {
             MenuScreens.register(CFNMenuTypes.HUB_MENU, GuiHub::new);

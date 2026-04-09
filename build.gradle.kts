@@ -313,6 +313,13 @@ extensions.configure<JavaPluginExtension> {
     }
 }
 
+tasks.withType<Jar>().configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.withType<ProcessResources>().configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 val embed by configurations.creating
 configurations.named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME) {
     extendsFrom(embed)
@@ -402,9 +409,7 @@ val generatedComponentAtlasPackage = "com.circulation.circulation_networks.gui.c
 val generatedComponentAtlasFile = generatedComponentAtlasDir.map {
     it.file(generatedComponentAtlasPackage.replace('.', '/') + "/GeneratedComponentAtlasRegistration.java").asFile
 }
-val atlasResourceRoots = listOf(sharedResourcesDir, localResourcesDir)
-    .distinctBy { it.absolutePath }
-    .filter { it.exists() }
+val atlasResourceRoots = mainResourceRoots.filter { it.exists() }
 val atlasComponentRelativePath = "assets/${propertyString("mod_id")}/textures/gui/component"
 val componentAtlasInputDirs = atlasResourceRoots.map { File(it, atlasComponentRelativePath) }.filter { it.exists() }
 
@@ -583,34 +588,7 @@ if (isLegacyRfg && propertyBool("use_access_transformer")) {
 }
 
 tasks.named<ProcessResources>("processResources") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    inputs.property("mod_id", propertyString("mod_id"))
-    inputs.property("mod_name", propertyString("mod_name"))
-    inputs.property("mod_version", propertyString("mod_version"))
-    inputs.property("minecraft_version", propertyString("minecraft_version"))
-    inputs.property("minecraft_version_range", propertyString("minecraft_version_range"))
-    inputs.property("loader_version_range", propertyString("loader_version_range"))
-    inputs.property("resource_pack_format", propertyString("resource_pack_format"))
-    inputs.property("mod_description", propertyString("mod_description"))
-    inputs.property("mod_authors", propertyStringList("mod_authors", ",").joinToString(", "))
-    inputs.property("mod_credits", propertyString("mod_credits"))
-    inputs.property("mod_url", propertyString("mod_url"))
-    inputs.property("mod_update_json", propertyString("mod_update_json"))
-    inputs.property("mod_logo_path", propertyString("mod_logo_path"))
-    inputs.property("mixin_refmap", propertyString("mixin_refmap"))
-    inputs.property("mixin_package", propertyString("mixin_package"))
-    inputs.property("mixin_configs", propertyStringList("mixin_configs").joinToString(" "))
-
-    val filterList = mutableListOf("mcmod.info", "pack.mcmeta", "META-INF/mods.toml", "META-INF/neoforge.mods.toml")
-    filterList += propertyStringList("mixin_configs").map { "mixins.$it.json" }
-
-    when (currentPlatform) {
-        "rfg" -> exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
-        "forgegradle" -> exclude("mcmod.info", "META-INF/neoforge.mods.toml")
-        "legacyforge" -> exclude("mcmod.info", "META-INF/neoforge.mods.toml")
-        "neoforge" -> exclude("mcmod.info", "META-INF/mods.toml")
-    }
+    dependsOn(generateMixinJson)
 
     val expansionMap = mutableMapOf(
         "mod_id" to propertyString("mod_id"),
@@ -629,13 +607,23 @@ tasks.named<ProcessResources>("processResources") {
         "mixin_refmap" to propertyString("mixin_refmap"),
         "mixin_package" to propertyString("mixin_package")
     )
-
-    // Only add version range properties for versions that need them
     if (currentPlatform in listOf("forgegradle", "legacyforge")) {
         expansionMap["forge_version_range"] = propertyString("forge_version_range")
     }
     if (currentPlatform == "neoforge") {
         expansionMap["neo_version_range"] = propertyString("neo_version_range")
+    }
+    expansionMap["mixin_configs"] = propertyStringList("mixin_configs").joinToString(" ")
+
+    expansionMap.forEach { (key, value) -> inputs.property(key, value) }
+
+    val filterList = mutableListOf("mcmod.info", "pack.mcmeta", "META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+    filterList += propertyStringList("mixin_configs").map { "mixins.$it.json" }
+
+    when (currentPlatform) {
+        "rfg" -> exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+        "forgegradle", "legacyforge" -> exclude("mcmod.info", "META-INF/neoforge.mods.toml")
+        "neoforge" -> exclude("mcmod.info", "META-INF/mods.toml")
     }
 
     filesMatching(filterList) {
@@ -659,7 +647,6 @@ val syncLegacyForgeResourcesToClasses = if (currentPlatform == "legacyforge") {
 }
 
 tasks.named<Jar>("jar") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         val attributeMap = mutableMapOf<String, Any>()
         if (propertyBool("is_coremod")) {
@@ -799,10 +786,6 @@ val generateComponentAtlasRegistration = tasks.register("generateComponentAtlasR
             )
         )
     }
-}
-
-tasks.named<ProcessResources>("processResources") {
-    dependsOn(generateMixinJson)
 }
 
 tasks.named("compileJava") {

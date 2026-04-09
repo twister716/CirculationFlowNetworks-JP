@@ -23,6 +23,7 @@ public final class CFNConfig {
     private static final ForgeConfigSpec.DoubleValue HUB_CHARGING_SCOPE;
     private static final ForgeConfigSpec.DoubleValue HUB_LINK_SCOPE;
     private static final ForgeConfigSpec.IntValue SHIELDER_MAX_SCOPE;
+    private static final ForgeConfigSpec.BooleanValue ANIMATED_SPECIAL_MODELS;
     public static String[] classNames = new String[0];
     public static String[] supplyClassNames = new String[0];
 
@@ -67,6 +68,10 @@ public final class CFNConfig {
         HUB_LINK_SCOPE = builder.comment("Link range of Hub").defineInRange("linkScope", 16.0, 1.0, 32.0);
         builder.pop();
 
+        builder.push("Rendering");
+        ANIMATED_SPECIAL_MODELS = builder.comment("Enable animated models for relay nodes and node pedestals").define("animatedSpecialModels", true);
+        builder.pop();
+
         builder.pop();
 
         builder.push("Shielder");
@@ -100,6 +105,7 @@ public final class CFNConfig {
         NODE.hub.chargingScope = HUB_CHARGING_SCOPE.get();
         NODE.hub.linkScope = HUB_LINK_SCOPE.get();
         SHIELDER.maxScope = SHIELDER_MAX_SCOPE.get();
+        NODE.rendering.animatedSpecialModels = ANIMATED_SPECIAL_MODELS.get();
     }
 
     public static class Node {
@@ -107,6 +113,7 @@ public final class CFNConfig {
         public final ChargingNodeConfig chargingNode = new ChargingNodeConfig();
         public final RelayNodeConfig relayNode = new RelayNodeConfig();
         public final HubConfig hub = new HubConfig();
+        public final RenderingConfig rendering = new RenderingConfig();
 
         public static class PortNodeConfig {
             public double energyScope = 8;
@@ -126,6 +133,10 @@ public final class CFNConfig {
             public double energyScope = 10;
             public double chargingScope = 8;
             public double linkScope = 16;
+        }
+
+        public static class RenderingConfig {
+            public boolean animatedSpecialModels = true;
         }
     }
 

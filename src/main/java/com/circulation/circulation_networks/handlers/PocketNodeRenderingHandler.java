@@ -39,10 +39,13 @@ import net.minecraftforge.client.event.RenderWorldLastEvent;
 import org.lwjgl.opengl.GL11;
 //?} else {
 /*import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 //~ neo_imports
@@ -212,19 +215,19 @@ public final class PocketNodeRenderingHandler {
             poseStack.pushPose();
             poseStack.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
             applyFaceTransform(poseStack, host.getRecord().getAttachmentFace());
+            poseStack.scale(16.0F, 16.0F, 16.0F);
+            poseStack.last().pose().scale(1.0F, -1.0F, 1.0F);
             if (host.isGui3d()) {
                 poseStack.scale(1.0F, 1.0F, 0.002F);
             }
 
-            mc.getItemRenderer().renderStatic(
-                host.getRenderStack(),
-                ItemDisplayContext.GUI,
-                LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY,
-                poseStack,
-                bufferSource,
-                mc.level,
-                0
+            BakedModel itemModel = mc.getItemRenderer().getModel(host.getRenderStack(), mc.level, null, 0);
+            itemModel.getTransforms().getTransform(ItemDisplayContext.GUI).apply(false, poseStack);
+            poseStack.translate(-0.5F, -0.5F, -0.5F);
+            VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+            mc.getBlockRenderer().getModelRenderer().renderModel(
+                poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
             );
             renderedAny = true;
             poseStack.popPose();

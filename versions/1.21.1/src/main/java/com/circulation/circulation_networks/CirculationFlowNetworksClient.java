@@ -1,5 +1,8 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
+import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
@@ -13,6 +16,7 @@ import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
@@ -22,6 +26,8 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -61,6 +67,12 @@ final class CirculationFlowNetworksClient {
         NeoForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterMenuScreens);
+        modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
+        modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
+        modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.NODE_PEDESTAL, NodePedestalRenderer::new);
+        });
 
         CI18n.setI18nInternal(new CI18n() {
             @Override
