@@ -19,19 +19,34 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.*;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_BASE_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_CLOCKWISE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_COUNTER_CLOCKWISE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_STATIC;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_CRYSTAL;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_STATIC;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_EMISSIVE;
 
 @OnlyIn(Dist.CLIENT)
 public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevelRenderer {
-
-    private static AnimatedNodeItemStackRenderer instance;
 
     private static final float CENTER = 0.5F;
     private static final float FRAME_PIVOT_X = 8.0F / 16.0F;
     private static final float FRAME_PIVOT_Y = 5.0F / 16.0F;
     private static final float FRAME_PIVOT_Z = 8.0F / 16.0F;
+    private static AnimatedNodeItemStackRenderer instance;
+
+    private AnimatedNodeItemStackRenderer(BlockEntityRenderDispatcher dispatcher, EntityModelSet modelSet) {
+        super(dispatcher, modelSet);
+    }
 
     public static AnimatedNodeItemStackRenderer getInstance() {
         if (instance == null) {
@@ -41,28 +56,8 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
         return instance;
     }
 
-    private AnimatedNodeItemStackRenderer(BlockEntityRenderDispatcher dispatcher, EntityModelSet modelSet) {
-        super(dispatcher, modelSet);
-    }
-
-    @Override
-    public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        if (stack.isEmpty()) return;
-
-        Block block = stack.getItem() instanceof BlockItem blockItem ? blockItem.getBlock() : null;
-        if (block == null) return;
-
-        AnimationTick tick = resolveAnimationTick();
-
-        if (block == CFNBlocks.blockRelayNode) {
-            renderRelayNode(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
-        } else if (block == CFNBlocks.blockNodePedestal) {
-            renderNodePedestal(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
-        }
-    }
-
     private static void renderRelayNode(PoseStack poseStack, MultiBufferSource bufferSource,
-                                         long worldTime, float partialTicks, int packedLight, int packedOverlay) {
+                                        long worldTime, float partialTicks, int packedLight, int packedOverlay) {
         if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
             renderModel(poseStack, bufferSource, RELAY_STATIC, packedLight, packedOverlay);
             return;
@@ -80,7 +75,7 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
     }
 
     private static void renderNodePedestal(PoseStack poseStack, MultiBufferSource bufferSource,
-                                            long worldTime, float partialTicks, int packedLight, int packedOverlay) {
+                                           long worldTime, float partialTicks, int packedLight, int packedOverlay) {
         if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
             renderModel(poseStack, bufferSource, PEDESTAL_STATIC, packedLight, packedOverlay);
             return;
@@ -105,40 +100,40 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
     }
 
     private static void renderModel(PoseStack poseStack, MultiBufferSource bufferSource,
-                                     ResourceLocation modelLocation, int packedLight, int packedOverlay) {
+                                    ResourceLocation modelLocation, int packedLight, int packedOverlay) {
         BakedModel model = RotatingBlockModelCache.get(modelLocation);
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
-            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay
+            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
         );
     }
 
     private static void renderModelFullBright(PoseStack poseStack, MultiBufferSource bufferSource,
-                                               ResourceLocation modelLocation, int packedOverlay) {
+                                              ResourceLocation modelLocation, int packedOverlay) {
         renderModel(poseStack, bufferSource, modelLocation, LightTexture.FULL_BRIGHT, packedOverlay);
     }
 
     private static void renderAroundYAxis(PoseStack poseStack, MultiBufferSource bufferSource,
-                                           ResourceLocation modelLocation, float angle,
-                                           float pivotX, float pivotY, float pivotZ,
-                                           int packedLight, int packedOverlay) {
+                                          ResourceLocation modelLocation, float angle,
+                                          float pivotX, float pivotY, float pivotZ,
+                                          int packedLight, int packedOverlay) {
         renderAroundAxis(poseStack, bufferSource, modelLocation, angle,
             pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F, packedLight, packedOverlay);
     }
 
     private static void renderAroundYAxisFullBright(PoseStack poseStack, MultiBufferSource bufferSource,
-                                                     ResourceLocation modelLocation, float angle,
-                                                     float pivotX, float pivotY, float pivotZ,
-                                                     int packedOverlay) {
+                                                    ResourceLocation modelLocation, float angle,
+                                                    float pivotX, float pivotY, float pivotZ,
+                                                    int packedOverlay) {
         renderAroundAxis(poseStack, bufferSource, modelLocation, angle,
             pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F, LightTexture.FULL_BRIGHT, packedOverlay);
     }
 
     private static void renderAroundAxis(PoseStack poseStack, MultiBufferSource bufferSource,
-                                          ResourceLocation modelLocation, float angle,
-                                          float pivotX, float pivotY, float pivotZ,
-                                          float axisX, float axisY, float axisZ,
-                                          int packedLight, int packedOverlay) {
+                                         ResourceLocation modelLocation, float angle,
+                                         float pivotX, float pivotY, float pivotZ,
+                                         float axisX, float axisY, float axisZ,
+                                         int packedLight, int packedOverlay) {
         BakedModel model = RotatingBlockModelCache.get(modelLocation);
 
         poseStack.pushPose();
@@ -149,7 +144,7 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
-            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay
+            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
         );
 
         poseStack.popPose();
@@ -166,5 +161,22 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
         return new AnimationTick(wholeTicks, (float) (tickTime - wholeTicks));
     }
 
-    private record AnimationTick(long worldTime, float partialTicks) {}
+    @Override
+    public void renderByItem(ItemStack stack, @NotNull ItemDisplayContext displayContext, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (stack.isEmpty()) return;
+
+        Block block = stack.getItem() instanceof BlockItem blockItem ? blockItem.getBlock() : null;
+        if (block == null) return;
+
+        AnimationTick tick = resolveAnimationTick();
+
+        if (block == CFNBlocks.blockRelayNode) {
+            renderRelayNode(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
+        } else if (block == CFNBlocks.blockNodePedestal) {
+            renderNodePedestal(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
+        }
+    }
+
+    private record AnimationTick(long worldTime, float partialTicks) {
+    }
 }

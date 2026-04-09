@@ -10,7 +10,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.*;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_BASE_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_CLOCKWISE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_COUNTER_CLOCKWISE;
 
 @OnlyIn(Dist.CLIENT)
 public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedestalBlockEntity> {

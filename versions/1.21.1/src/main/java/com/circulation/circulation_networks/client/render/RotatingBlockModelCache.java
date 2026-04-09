@@ -18,24 +18,21 @@ import java.util.Map;
 public final class RotatingBlockModelCache {
 
     private static final List<ResourceLocation> REGISTERED_MODELS = new ArrayList<>();
-    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
-
     // Relay node sub-part models
     public static final ResourceLocation RELAY_TOP_SPIRAL_BASE = register("relay_node/relay_node_top_spiral_base");
     public static final ResourceLocation RELAY_TOP_SPIRAL_EMISSIVE = register("relay_node/relay_node_top_spiral_emissive");
     public static final ResourceLocation RELAY_CRYSTAL = register("relay_node/relay_node_crystal");
     public static final ResourceLocation RELAY_BOTTOM_SPIRAL_BASE = register("relay_node/relay_node_bottom_spiral_base");
     public static final ResourceLocation RELAY_BOTTOM_SPIRAL_EMISSIVE = register("relay_node/relay_node_bottom_spiral_emissive");
-
     // Node pedestal sub-part models
     public static final ResourceLocation PEDESTAL_BASE = register("node_pedestal/node_pedestal_base");
     public static final ResourceLocation PEDESTAL_BASE_EMISSIVE = register("node_pedestal/node_pedestal_base_emissive");
     public static final ResourceLocation PEDESTAL_FRAME_CLOCKWISE = register("node_pedestal/node_pedestal_frame_clockwise");
     public static final ResourceLocation PEDESTAL_FRAME_COUNTER_CLOCKWISE = register("node_pedestal/node_pedestal_frame_counter_clockwise");
-
     // Full static models (for item rendering fallback)
     public static final ResourceLocation RELAY_STATIC = register("relay_node/relay_node");
     public static final ResourceLocation PEDESTAL_STATIC = register("node_pedestal/node_pedestal");
+    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 
     private RotatingBlockModelCache() {
     }

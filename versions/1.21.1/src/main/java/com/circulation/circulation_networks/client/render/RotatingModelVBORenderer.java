@@ -14,16 +14,17 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
@@ -118,7 +119,7 @@ public final class RotatingModelVBORenderer {
         poseStack.translate(-pivotX, -pivotY, -pivotZ);
 
         RenderSystem.setShader(GameRenderer::getRendertypeCutoutShader);
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
         RenderSystem.enableDepthTest();
@@ -145,7 +146,7 @@ public final class RotatingModelVBORenderer {
         PoseStack identity = new PoseStack();
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
             identity.last(), builder, state, model,
-            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
+            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null
         );
 
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
@@ -167,7 +168,7 @@ public final class RotatingModelVBORenderer {
         PoseStack identity = new PoseStack();
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().tesselateBlock(
             level, model, state, pos, identity, builder, false,
-            RandomSource.create(), 42L, OverlayTexture.NO_OVERLAY
+            RandomSource.create(), 42L, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null
         );
 
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);

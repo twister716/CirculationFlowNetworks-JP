@@ -21,6 +21,10 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
         this.redstoneMode = te.getRedstoneMode();
     }
 
+    private static int clampScope(int value, int maxScope) {
+        return Math.max(0, Math.min(Math.max(0, maxScope), value));
+    }
+
     @Override
     public CirculationShielderSyncPacket decode(FriendlyByteBuf buf) {
         CirculationShielderSyncPacket msg = new CirculationShielderSyncPacket();
@@ -51,9 +55,5 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             }
         });
         context.setPacketHandled(true);
-    }
-
-    private static int clampScope(int value, int maxScope) {
-        return Math.max(0, Math.min(Math.max(0, maxScope), value));
     }
 }

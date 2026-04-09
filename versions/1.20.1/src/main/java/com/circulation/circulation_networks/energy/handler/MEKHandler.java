@@ -173,8 +173,8 @@ public final class MEKHandler implements IEnergyHandler {
             }
             double requestedJoules = EnergyAmountConversionUtils.toDoubleClamped(accepted) * FE_TO_MEK_RATIO;
             FloatingLong remainder = receive.insertEnergy(
-                    FloatingLong.create(requestedJoules),
-                    Action.EXECUTE
+                FloatingLong.create(requestedJoules),
+                Action.EXECUTE
             );
             double inserted = requestedJoules - remainder.doubleValue();
             EnergyAmount actual = EnergyAmountConversionUtils.obtainFromDoubleFloor(joulesToFe(inserted));
@@ -225,7 +225,7 @@ public final class MEKHandler implements IEnergyHandler {
         }
         if (receive == null) return EnergyAmounts.ZERO;
         EnergyAmount receivable = EnergyAmountConversionUtils.obtainFromDoubleFloor(
-                (getMaxStoredEnergy(receive) - getStoredEnergy(receive)) * 0.4D
+            (getMaxStoredEnergy(receive) - getStoredEnergy(receive)) * 0.4D
         );
         return receivable.min(maxReceive);
     }

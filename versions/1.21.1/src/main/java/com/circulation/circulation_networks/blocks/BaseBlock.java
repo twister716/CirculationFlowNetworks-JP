@@ -21,9 +21,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
@@ -37,16 +37,16 @@ public abstract class BaseBlock extends Block implements EntityBlock {
 
     private String[] cachedAutoTooltipKeys;
 
+    protected BaseBlock(Properties properties) {
+        super(properties);
+    }
+
     protected static BlockBehaviour.Properties metalProperties() {
         return BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(1.5f, 6.0f);
     }
 
     protected static BlockBehaviour.Properties metalPropertiesNoOcclusion() {
         return metalProperties().noOcclusion();
-    }
-
-    protected BaseBlock(Properties properties) {
-        super(properties);
     }
 
     protected List<LocalizedComponent> buildTooltips(ItemStack stack) {

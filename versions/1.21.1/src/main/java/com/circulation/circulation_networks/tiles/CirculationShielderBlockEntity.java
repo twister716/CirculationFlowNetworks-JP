@@ -36,17 +36,17 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
         return scope;
     }
 
-    @Override
-    public int getMaxScope() {
-        return CFNConfig.SHIELDER.maxScope;
-    }
-
     public void setScope(int scope) {
         int maxScope = Math.max(0, getMaxScope());
-        int clamped = Math.max(0, Math.min(maxScope, scope));
+        int clamped = Math.clamp(scope, 0, maxScope);
         this.min.set(this.getBlockPos().getX() - clamped, this.getBlockPos().getY() - clamped, this.getBlockPos().getZ() - clamped);
         this.max.set(this.getBlockPos().getX() + clamped, this.getBlockPos().getY() + clamped, this.getBlockPos().getZ() + clamped);
         this.scope = clamped;
+    }
+
+    @Override
+    public int getMaxScope() {
+        return CFNConfig.SHIELDER.maxScope;
     }
 
     public boolean isShowingRange() {

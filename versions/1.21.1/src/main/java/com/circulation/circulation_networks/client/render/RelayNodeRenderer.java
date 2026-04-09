@@ -10,7 +10,11 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.*;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_CRYSTAL;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_EMISSIVE;
 
 @OnlyIn(Dist.CLIENT)
 public final class RelayNodeRenderer implements BlockEntityRenderer<RelayNodeBlockEntity> {

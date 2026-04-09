@@ -36,11 +36,10 @@ import java.util.function.BooleanSupplier;
 @OnlyIn(Dist.CLIENT)
 public class GuiHub extends CFNBaseGui<ContainerHub> {
 
-    private static int state;
     private static final int CHANNEL_TEXT_WIDTH = 83;
     private static final int ENERGY_TEXT_WIDTH = 60;
     private static final int LATENCY_TEXT_WIDTH = 83;
-
+    private static int state;
     private String oldInput;
     private String oldOutput;
     private String oldChannelName;

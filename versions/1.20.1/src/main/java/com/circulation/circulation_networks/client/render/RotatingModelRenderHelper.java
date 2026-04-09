@@ -1,6 +1,10 @@
 package com.circulation.circulation_networks.client.render;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -10,10 +14,7 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraftforge.client.model.data.ModelData;
 import org.joml.Quaternionf;
 
 @OnlyIn(Dist.CLIENT)
@@ -51,7 +52,7 @@ public final class RotatingModelRenderHelper {
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
-            poseStack.last(), consumer, state, model, 1.0F, 1.0F, 1.0F, FULL_BRIGHT, packedOverlay
+            poseStack.last(), consumer, state, model, 1.0F, 1.0F, 1.0F, FULL_BRIGHT, packedOverlay, ModelData.EMPTY, null
         );
 
         poseStack.popPose();
@@ -76,7 +77,7 @@ public final class RotatingModelRenderHelper {
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().tesselateBlock(
             level, model, state, pos, poseStack, consumer, false,
-            RandomSource.create(), 42L, packedOverlay
+            RandomSource.create(), 42L, packedOverlay, ModelData.EMPTY, null
         );
 
         poseStack.popPose();
