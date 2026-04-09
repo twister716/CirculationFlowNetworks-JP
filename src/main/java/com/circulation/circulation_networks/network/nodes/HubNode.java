@@ -161,18 +161,22 @@ public final class HubNode extends Node implements IHubNode {
 
     @Override
     public @NotNull ChargingPreference getChargingPreference(UUID playerId) {
-        HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-        if (channel != null) {
-            return channel.getChargingPreference(playerId);
+        if (shouldSyncChannelManager()) {
+            HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
+            if (channel != null) {
+                return channel.getChargingPreference(playerId);
+            }
         }
         return playerPreferences.computeIfAbsent(playerId, k -> ChargingPreference.defaultAll());
     }
 
     @Override
     public void setChargingPreference(UUID playerId, ChargingPreference preference) {
-        HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-        if (channel != null) {
-            channel.setChargingPreference(playerId, preference);
+        if (shouldSyncChannelManager()) {
+            HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
+            if (channel != null) {
+                channel.setChargingPreference(playerId, preference);
+            }
         }
         playerPreferences.put(playerId, preference);
     }
@@ -233,9 +237,11 @@ public final class HubNode extends Node implements IHubNode {
 
     @Override
     public HubPermissionLevel getPermissionLevel(UUID playerId) {
-        HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-        if (channel != null) {
-            return channel.getPermissionLevel(playerId);
+        if (shouldSyncChannelManager()) {
+            HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
+            if (channel != null) {
+                return channel.getPermissionLevel(playerId);
+            }
         }
 
         if (owner == null) return HubPermissionLevel.MEMBER;

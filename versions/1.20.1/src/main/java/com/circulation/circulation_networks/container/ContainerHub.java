@@ -25,6 +25,7 @@ public class ContainerHub extends CFNBaseContainer {
     private static final long LATENCY_REFRESH_INTERVAL = 20L;
     private static final byte CHANNEL_CAPABILITY_FLAG = 0x1;
     private static final byte CHANNEL_MANAGEMENT_OVERRIDE_FLAG = 0x2;
+    private static final byte CAN_EDIT_PLUGINS_FLAG = 0x4;
     private static final byte[] EMPTY_CHANNEL_SNAPSHOT = ChannelSnapshotList.EMPTY.toBytes();
     private static final byte[] EMPTY_PERMISSION_SNAPSHOT = PermissionSnapshotList.EMPTY.toBytes();
     private static final byte[] EMPTY_NODE_SNAPSHOT = NodeSnapshotList.EMPTY.toBytes();
@@ -54,9 +55,9 @@ public class ContainerHub extends CFNBaseContainer {
     public byte[] nodesSnapshot;
     @GuiSync(8)
     public byte channelStateFlags;
-    public ChannelSnapshotList availableChannels;
-    public PermissionSnapshotList onlinePlayers;
-    public NodeSnapshotList nodes;
+    public ChannelSnapshotList availableChannels = ChannelSnapshotList.EMPTY;
+    public PermissionSnapshotList onlinePlayers = PermissionSnapshotList.EMPTY;
+    public NodeSnapshotList nodes = NodeSnapshotList.EMPTY;
     public ChargingPreference chargingMode = ChargingPreference.defaultAll();
     private long availableChannelsVersion = Long.MIN_VALUE;
     private long onlinePlayersChannelVersion = Long.MIN_VALUE;
@@ -71,22 +72,22 @@ public class ContainerHub extends CFNBaseContainer {
 
         playerInvLayout = ComponentSlotLayout.playerInventory(player.getInventory()).build(this);
         for (int i = 0; i < 5; i++) {
-            slots[i] = new ComponentSlotLayout().addPrebuilt(new HubPluginSlot(node, playerId, node.getPlugins(), i, 0, 0)).build(this);
+            slots[i] = new ComponentSlotLayout().addPrebuilt(new HubPluginSlot(this::canEditPlugins, node.getPlugins(), i, 0, 0)).build(this);
         }
 
         input = "0";
         output = "0";
         interactionTimeMicros = "0";
-        chargingMode = node.getChargingPreference(playerId);
         syncChannelState();
         availableChannels = ChannelSnapshotList.EMPTY;
         onlinePlayers = PermissionSnapshotList.EMPTY;
-        nodes = NodeSnapshotList.fromGrid(node.getGrid());
         availableChannelsSnapshot = EMPTY_CHANNEL_SNAPSHOT.clone();
         onlinePlayersSnapshot = EMPTY_PERMISSION_SNAPSHOT.clone();
-        nodesSnapshot = nodes.toBytes();
 
         if (!node.getWorld().isClientSide()) {
+            nodes = NodeSnapshotList.fromGrid(node.getGrid());
+            chargingMode = node.getChargingPreference(playerId);
+            nodesSnapshot = nodes.toBytes();
             refreshEnergyStats(true, true);
             syncChannelState();
             refreshSnapshots(true);
@@ -198,6 +199,9 @@ public class ContainerHub extends CFNBaseContainer {
         if (HubPlatformServices.INSTANCE.hasChannelManagementOverride(player)) {
             flags |= CHANNEL_MANAGEMENT_OVERRIDE_FLAG;
         }
+        if ((flags & CHANNEL_MANAGEMENT_OVERRIDE_FLAG) != 0 || node.canEditPermissions(playerId)) {
+            flags |= CAN_EDIT_PLUGINS_FLAG;
+        }
         return flags;
     }
 
@@ -226,6 +230,10 @@ public class ContainerHub extends CFNBaseContainer {
 
     public boolean hasChannelManagementOverride() {
         return (channelStateFlags & CHANNEL_MANAGEMENT_OVERRIDE_FLAG) != 0;
+    }
+
+    public boolean canEditPlugins() {
+        return (channelStateFlags & CAN_EDIT_PLUGINS_FLAG) != 0;
     }
 
     public boolean canOpenChannelList() {

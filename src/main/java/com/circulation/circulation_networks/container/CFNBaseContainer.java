@@ -102,7 +102,7 @@ public abstract class CFNBaseContainer extends Container {
         ItemStack result = stack.copy();
 
         if (slot instanceof FilterComponentSlot) return result;
-        if (slot instanceof HubPluginSlot pluginSlot && !pluginSlot.canModify()) return ItemStack.EMPTY;
+        if (slot instanceof HubPluginSlot pluginSlot && !pluginSlot.canModify()) return result;
 
         LayoutEntry source = null;
         for (LayoutEntry e : layouts) {

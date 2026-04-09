@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.container;
 
-import com.circulation.circulation_networks.api.node.IHubNode;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 //? if <1.20 {
@@ -15,21 +14,19 @@ import net.minecraftforge.items.IItemHandler;
  *///?}
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
+import java.util.function.BooleanSupplier;
 
 public class HubPluginSlot extends ComponentSlot {
 
-    private final IHubNode node;
-    private final UUID playerId;
+    private final BooleanSupplier canModifySupplier;
 
-    public HubPluginSlot(IHubNode node, UUID playerId, IItemHandler inventory, int index, int relX, int relY) {
+    public HubPluginSlot(BooleanSupplier canModifySupplier, IItemHandler inventory, int index, int relX, int relY) {
         super(inventory, index, relX, relY);
-        this.node = node;
-        this.playerId = playerId;
+        this.canModifySupplier = canModifySupplier;
     }
 
     public boolean canModify() {
-        return node.canEditPermissions(playerId);
+        return canModifySupplier.getAsBoolean();
     }
 
     //~ if >=1.20 'canTakeStack(@NotNull EntityPlayer' -> 'mayPickup(@NotNull Player' {
