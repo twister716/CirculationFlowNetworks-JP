@@ -1,7 +1,6 @@
 package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-import com.circulation.circulation_networks.blocks.AnimatedNodeBlockItem;
 import com.circulation.circulation_networks.blocks.BlockCirculationShielder;
 import com.circulation.circulation_networks.blocks.BlockNodePedestal;
 import com.circulation.circulation_networks.blocks.nodes.BlockChargingNode;
@@ -52,10 +51,10 @@ public final class RegistryBlocks {
         event.register(Registries.ITEM, helper -> {
             registerBlockItem(helper, "hub", CFNBlocks.blockHub);
             registerBlockItem(helper, "charging_node", CFNBlocks.blockChargingNode);
-            registerAnimatedNodeBlockItem(helper, "relay_node", CFNBlocks.blockRelayNode);
+            registerBlockItem(helper, "relay_node", CFNBlocks.blockRelayNode);
             registerBlockItem(helper, "port_node", CFNBlocks.blockPortNode);
             registerBlockItem(helper, "circulation_shielder", CFNBlocks.blockCirculationShielder);
-            registerAnimatedNodeBlockItem(helper, "node_pedestal", CFNBlocks.blockNodePedestal);
+            registerBlockItem(helper, "node_pedestal", CFNBlocks.blockNodePedestal);
         });
 
         event.register(Registries.BLOCK_ENTITY_TYPE, helper -> {
@@ -101,10 +100,6 @@ public final class RegistryBlocks {
 
     private static void registerBlockItem(RegisterEvent.RegisterHelper<Item> helper, String name, Block block) {
         helper.register(ResourceLocation.parse(CirculationFlowNetworks.MOD_ID + ":" + name), new BlockItem(block, new Item.Properties()));
-    }
-
-    private static void registerAnimatedNodeBlockItem(RegisterEvent.RegisterHelper<Item> helper, String name, Block block) {
-        helper.register(ResourceLocation.parse(CirculationFlowNetworks.MOD_ID + ":" + name), new AnimatedNodeBlockItem(block, new Item.Properties()));
     }
 
     private static <T extends BlockEntity> BlockEntityType<T> registerBlockEntityType(

@@ -16,6 +16,7 @@ import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.utils.CI18n;
@@ -30,6 +31,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.opengl.GL11;
 
@@ -67,6 +70,7 @@ final class CirculationFlowNetworksClient {
         NeoForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterMenuScreens);
+        modEventBus.addListener(CirculationFlowNetworksClient::onRegisterClientExtensions);
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
         modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
@@ -148,6 +152,19 @@ final class CirculationFlowNetworksClient {
     private static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CFNMenuTypes.HUB_MENU, GuiHub::new);
         event.register(CFNMenuTypes.CIRCULATION_SHIELDER_MENU, GuiCirculationShielder::new);
+    }
+
+    private static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        IClientItemExtensions animatedRenderer = new IClientItemExtensions() {
+            @Override
+            public @org.jetbrains.annotations.NotNull net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.circulation.circulation_networks.client.render.AnimatedNodeItemStackRenderer.getInstance();
+            }
+        };
+        event.registerItem(animatedRenderer,
+            CFNBlocks.blockRelayNode.asItem(),
+            CFNBlocks.blockNodePedestal.asItem()
+        );
     }
 
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

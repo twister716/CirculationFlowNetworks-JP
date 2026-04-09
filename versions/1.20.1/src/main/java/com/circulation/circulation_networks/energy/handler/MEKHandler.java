@@ -177,9 +177,12 @@ public final class MEKHandler implements IEnergyHandler {
                 Action.EXECUTE
             );
             double inserted = requestedJoules - remainder.doubleValue();
-            EnergyAmount actual = EnergyAmountConversionUtils.obtainFromDoubleFloor(joulesToFe(inserted));
-            needEnergy.subtract(actual);
-            return actual;
+            if (inserted <= 0.0D) {
+                accepted.recycle();
+                return EnergyAmounts.ZERO;
+            }
+            needEnergy.subtract(accepted);
+            return accepted;
         }
         EnergyAmount receivable = canReceiveValue(hubMetadata);
         receivable.min(maxReceive);

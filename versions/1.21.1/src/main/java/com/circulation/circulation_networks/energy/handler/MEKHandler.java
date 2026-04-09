@@ -175,9 +175,12 @@ public final class MEKHandler implements IEnergyHandler {
             long requested = (long) (EnergyAmountConversionUtils.toDoubleClamped(accepted) * FE_TO_MEK_RATIO);
             long remainder = receive.insertEnergy(requested, Action.EXECUTE);
             long inserted = Math.max(0L, requested - remainder);
-            EnergyAmount actual = EnergyAmountConversionUtils.obtainFromDoubleFloor(joulesToFe((double) inserted));
-            needEnergy.subtract(actual);
-            return actual;
+            if (inserted <= 0L) {
+                accepted.recycle();
+                return EnergyAmounts.ZERO;
+            }
+            needEnergy.subtract(accepted);
+            return accepted;
         }
         EnergyAmount receivable = canReceiveValue(hubMetadata);
         receivable.min(maxReceive);
