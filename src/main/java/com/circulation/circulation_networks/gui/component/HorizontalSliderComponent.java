@@ -17,7 +17,7 @@ public class HorizontalSliderComponent extends Component {
 
     private final HorizontalSliderParent sliderParent;
     private final SliderKnobComponent button;
-    private final int max;
+    private int max;
     private int value;
     private int step = 1;
 
@@ -51,6 +51,17 @@ public class HorizontalSliderComponent extends Component {
 
     public int getMax() {
         return max;
+    }
+
+    public HorizontalSliderComponent setMax(int max) {
+        if (max < 0) {
+            throw new IllegalArgumentException("max must be greater than or equal to 0");
+        }
+        this.max = max;
+        updateButtonBounds();
+        button.setEnabled(this.max > MIN && isEnabled());
+        setValueInternal(value, false);
+        return this;
     }
 
     public HorizontalSliderComponent setValue(int value) {

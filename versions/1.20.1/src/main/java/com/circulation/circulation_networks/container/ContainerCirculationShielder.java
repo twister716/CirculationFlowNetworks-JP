@@ -10,15 +10,19 @@ public class ContainerCirculationShielder extends CFNBaseContainer {
     public final CirculationShielderBlockEntity te;
     @GuiSync(0)
     public int scope;
+    @GuiSync(1)
+    public int maxScope;
 
     public ContainerCirculationShielder(MenuType<?> menuType, int containerId, Player player, CirculationShielderBlockEntity te) {
         super(menuType, containerId, player);
         this.te = te;
+        this.maxScope = te.getMaxScope();
     }
 
     @Override
     public void broadcastChanges() {
         scope = te.getScope();
+        maxScope = te.getMaxScope();
         super.broadcastChanges();
     }
 }

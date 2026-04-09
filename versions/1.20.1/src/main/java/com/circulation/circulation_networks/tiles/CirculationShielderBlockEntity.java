@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.tiles;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.manager.BlockEntityLifecycleAware;
@@ -34,10 +35,17 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
         return scope;
     }
 
+    @Override
+    public int getMaxScope() {
+        return CFNConfig.SHIELDER.maxScope;
+    }
+
     public void setScope(int scope) {
-        this.min.set(this.getBlockPos().getX() - scope, this.getBlockPos().getY() - scope, this.getBlockPos().getZ() - scope);
-        this.max.set(this.getBlockPos().getX() + scope, this.getBlockPos().getY() + scope, this.getBlockPos().getZ() + scope);
-        this.scope = scope;
+        int maxScope = Math.max(0, getMaxScope());
+        int clamped = Math.max(0, Math.min(maxScope, scope));
+        this.min.set(this.getBlockPos().getX() - clamped, this.getBlockPos().getY() - clamped, this.getBlockPos().getZ() - clamped);
+        this.max.set(this.getBlockPos().getX() + clamped, this.getBlockPos().getY() + clamped, this.getBlockPos().getZ() + clamped);
+        this.scope = clamped;
     }
 
     public boolean isShowingRange() {

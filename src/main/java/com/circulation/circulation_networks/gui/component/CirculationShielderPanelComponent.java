@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.gui.component;
 
-import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.gui.CFNBaseGui;
@@ -116,6 +115,9 @@ public class CirculationShielderPanelComponent extends Component implements Hori
     public void update() {
         super.update();
         int maxScope = getMaxScope();
+        if (slider.getMax() != maxScope) {
+            slider.setMax(maxScope);
+        }
         int serverScope = clampScope(container.scope, maxScope);
         if (!slider.isDragging() && slider.getValue() != serverScope) {
             slider.setValue(serverScope);
@@ -226,8 +228,8 @@ public class CirculationShielderPanelComponent extends Component implements Hori
         return "§l" + CI18n.format(key);
     }
 
-    private static int getMaxScope() {
-        return Math.max(0, CFNConfig.SHIELDER.maxScope);
+    private int getMaxScope() {
+        return Math.max(0, container.maxScope);
     }
 
     private static int clampScope(int value, int maxScope) {

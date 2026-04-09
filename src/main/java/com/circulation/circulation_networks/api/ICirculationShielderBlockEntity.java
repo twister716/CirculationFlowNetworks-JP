@@ -12,6 +12,8 @@ public interface ICirculationShielderBlockEntity {
 
     int getScope();
 
+    int getMaxScope();
+
     boolean isShowingRange();
 
     BlockPos getBEPos();

@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.packets;
 
-import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
@@ -49,7 +48,7 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             if (sender.containerMenu instanceof ContainerCirculationShielder c) {
                 var te = c.te;
                 if (te != null) {
-                    te.setScope(clampScope(message.scope));
+                    te.setScope(clampScope(message.scope, te.getMaxScope()));
                     te.setRedstoneMode(message.redstoneMode);
                     te.setChanged();
                 }
@@ -57,9 +56,8 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
         });
     }
 
-    private static int clampScope(int value) {
-        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
-        return Math.clamp(value, 0, maxScope);
+    private static int clampScope(int value, int maxScope) {
+        return Math.clamp(value, 0, Math.max(0, maxScope));
     }
 
     @NotNull

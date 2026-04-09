@@ -1,7 +1,6 @@
 package com.circulation.circulation_networks.blocks;
 
 import com.circulation.circulation_networks.CFNConfig;
-import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.tiles.NodePedestalBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
