@@ -9,6 +9,10 @@ public final class NodeRotationAnimation {
     private static final float RELAY_RING_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(20.0F);
     private static final float PEDESTAL_ROTATION_DEGREES_PER_TICK = 1.25F;
 
+    private static final float BOBBING_PERIOD_TICKS = 80.0F;
+    private static final float BOBBING_ANGULAR_VELOCITY = (float) (2.0 * Math.PI / BOBBING_PERIOD_TICKS);
+    private static final float BOBBING_AMPLITUDE = 1.0F / 16.0F;
+
     private static final float SIN_22_5 = 0.38268343F;
     private static final float COS_22_5 = 0.9238795F;
 
@@ -48,6 +52,10 @@ public final class NodeRotationAnimation {
 
     public static float tiltedAxisZ() {
         return 0.0F;
+    }
+
+    public static float bobOffset(long worldTime, float partialTicks) {
+        return (float) Math.sin((worldTime + partialTicks) * BOBBING_ANGULAR_VELOCITY) * BOBBING_AMPLITUDE;
     }
 
     private static float clockwiseDegrees(long worldTime, float partialTicks, float speed) {

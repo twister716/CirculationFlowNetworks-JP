@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.client.render;
 import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityRelayNode;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
@@ -33,11 +34,14 @@ public final class RelayNodeRotatingRenderer extends TileEntitySpecialRenderer<T
             float topAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTicks);
             float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTicks);
             float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTicks), 0.0F);
             batch.renderAroundAxis(TOP_SPIRAL_BASE, topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F, false, false);
             batch.renderAroundYAxisFullBright(TOP_SPIRAL_EMISSIVE, topAngle, CENTER, CENTER, CENTER);
             batch.renderAroundYAxisFullBright(CRYSTAL, crystalAngle, CENTER, CENTER, CENTER);
             batch.renderAroundAxis(BOTTOM_SPIRAL_BASE, bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F, false, false);
             batch.renderAroundYAxisFullBright(BOTTOM_SPIRAL_EMISSIVE, bottomAngle, CENTER, CENTER, CENTER);
+            GlStateManager.popMatrix();
         } finally {
             batch.end();
         }

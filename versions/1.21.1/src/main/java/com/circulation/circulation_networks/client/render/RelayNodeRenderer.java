@@ -31,6 +31,9 @@ public final class RelayNodeRenderer implements BlockEntityRenderer<RelayNodeBlo
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTick);
         float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTick);
 
+        poseStack.pushPose();
+        poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+
         RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_TOP_SPIRAL_BASE,
             topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
         RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_TOP_SPIRAL_EMISSIVE,
@@ -41,5 +44,7 @@ public final class RelayNodeRenderer implements BlockEntityRenderer<RelayNodeBlo
             bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
         RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_BOTTOM_SPIRAL_EMISSIVE,
             bottomAngle, CENTER, CENTER, CENTER);
+
+        poseStack.popPose();
     }
 }

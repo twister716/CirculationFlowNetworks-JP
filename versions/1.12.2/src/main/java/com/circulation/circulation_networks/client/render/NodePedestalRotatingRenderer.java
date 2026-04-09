@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.client.render;
 import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.tiles.TileEntityNodePedestal;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
@@ -38,6 +39,8 @@ public final class NodePedestalRotatingRenderer extends TileEntitySpecialRendere
             long worldTime = te.getWorld().getTotalWorldTime();
             batch.renderAroundAxis(BASE, 0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F, false, false);
             batch.renderAroundYAxisFullBright(BASE_EMISSIVE, 0.0F, CENTER, CENTER, CENTER);
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTicks), 0.0F);
             batch.renderAroundAxis(
                 CLOCKWISE_FRAME,
                 NodeRotationAnimation.pedestalClockwiseFrameAngle(worldTime, partialTicks),
@@ -62,6 +65,7 @@ public final class NodePedestalRotatingRenderer extends TileEntitySpecialRendere
                 true,
                 false
             );
+            GlStateManager.popMatrix();
         } finally {
             batch.end();
         }

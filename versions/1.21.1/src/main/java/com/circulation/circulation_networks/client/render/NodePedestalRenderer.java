@@ -36,6 +36,10 @@ public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedes
             0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
         RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PEDESTAL_BASE_EMISSIVE,
             0.0F, CENTER, CENTER, CENTER);
+
+        poseStack.pushPose();
+        poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+
         RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_CLOCKWISE,
             NodeRotationAnimation.pedestalClockwiseFrameAngle(worldTime, partialTick),
             FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
@@ -48,5 +52,7 @@ public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedes
             NodeRotationAnimation.tiltedAxisXForZRotation(22.5F),
             NodeRotationAnimation.tiltedAxisY(),
             NodeRotationAnimation.tiltedAxisZ());
+
+        poseStack.popPose();
     }
 }
