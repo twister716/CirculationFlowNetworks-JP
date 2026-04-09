@@ -20,16 +20,6 @@ public abstract class PedestalRequiredNodeBlock extends BaseNodeBlock {
     }
 
     @Override
-    public boolean isOpaqueCube(@NotNull IBlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(@NotNull IBlockState state) {
-        return false;
-    }
-
-    @Override
     @SideOnly(Side.CLIENT)
     public @NotNull BlockRenderLayer getRenderLayer() {
         return BlockRenderLayer.CUTOUT;

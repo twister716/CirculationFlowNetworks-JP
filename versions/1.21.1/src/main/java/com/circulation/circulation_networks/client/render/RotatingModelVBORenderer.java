@@ -124,6 +124,7 @@ public final class RotatingModelVBORenderer {
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(515);
         RenderSystem.depthMask(true);
+        RenderSystem.disableCull();
 
         Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
         modelView.mul(poseStack.last().pose());
@@ -132,6 +133,7 @@ public final class RotatingModelVBORenderer {
         vbo.drawWithShader(modelView, RenderSystem.getProjectionMatrix(), shader);
         VertexBuffer.unbind();
 
+        RenderSystem.enableCull();
         poseStack.popPose();
     }
 

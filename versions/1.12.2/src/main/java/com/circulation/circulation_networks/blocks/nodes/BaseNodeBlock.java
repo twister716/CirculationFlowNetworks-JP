@@ -21,6 +21,21 @@ public abstract class BaseNodeBlock extends BaseBlock {
         super(name);
     }
 
+    @Override
+    public boolean isOpaqueCube(@NotNull IBlockState state) {
+        return false;
+    }
+
+    @Override
+    public boolean isFullCube(@NotNull IBlockState state) {
+        return false;
+    }
+
+    @Override
+    public boolean isFullBlock(@NotNull IBlockState state) {
+        return false;
+    }
+
     protected final <T extends BaseNodeTileEntity<?>> void setNodeTileClass(Class<T> nodeTileClass) {
         this.nodeTileClass = nodeTileClass;
         TileEntity.register(Objects.requireNonNull(getRegistryName()).toString(), nodeTileClass);

@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.blocks.nodes;
 import com.circulation.circulation_networks.blocks.BaseBlock;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +23,11 @@ public abstract class BaseNodeBlock extends BaseBlock {
 
     @Override
     public boolean hasGui() {
+        return false;
+    }
+
+    @Override
+    public boolean isOcclusionShapeFullBlock(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
         return false;
     }
 

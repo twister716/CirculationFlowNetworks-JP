@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 public final class BlockRelayNode extends PedestalRequiredNodeBlock {
 
     public BlockRelayNode() {
-        super(metalProperties(),
+        super(metalPropertiesNoOcclusion(),
             () -> CFNBlockEntityTypes.RELAY_NODE);
     }
 

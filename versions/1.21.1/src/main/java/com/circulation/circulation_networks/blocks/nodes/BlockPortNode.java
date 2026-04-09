@@ -4,7 +4,7 @@ import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 public final class BlockPortNode extends PedestalRequiredNodeBlock {
 
     public BlockPortNode() {
-        super(metalProperties(),
+        super(metalPropertiesNoOcclusion(),
             () -> CFNBlockEntityTypes.PORT_NODE);
     }
 }

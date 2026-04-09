@@ -144,10 +144,9 @@ public final class MEKHandler implements IEnergyHandler {
             double stored = getStoredEnergy(handler);
             double max = getMaxStoredEnergy(handler);
             double remaining = max - stored;
-            double r = remaining / 10.0D;
             long insertRemainder = handler.insertEnergy(Long.MAX_VALUE, Action.SIMULATE);
             double maxInsert = (double) (Long.MAX_VALUE - insertRemainder);
-            EnergyAmountConversionUtils.setFromDoubleFloor(needEnergy, joulesToFe(Math.clamp(r, 0.0D, maxInsert)));
+            EnergyAmountConversionUtils.setFromDoubleFloor(needEnergy, joulesToFe(Math.clamp(remaining, 0.0D, maxInsert)));
         }
         energyType = EnergyType.RECEIVE;
         return this;

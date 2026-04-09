@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public final class BlockHub extends BaseNodeBlock {
 
     public BlockHub() {
-        super(metalProperties(),
+        super(metalPropertiesNoOcclusion(),
             () -> CFNBlockEntityTypes.HUB);
     }
 

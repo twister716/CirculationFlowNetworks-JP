@@ -132,7 +132,7 @@ public final class MEKHandler implements IEnergyHandler {
         isItem = true;
         receiveItem = (IEnergizedItem) itemStack.getItem();
         double i = receiveItem.getMaxTransfer(itemStack);
-        double r = (receiveItem.getMaxEnergy(itemStack) - receiveItem.getEnergy(itemStack)) / 10;
+        double r = receiveItem.getMaxEnergy(itemStack) - receiveItem.getEnergy(itemStack);
         EnergyAmountConversionUtils.setFromDoubleFloor(needEnergy, Math.max(0.0D, i == 0 ? r : Math.min(r, i)));
         stack = itemStack;
         energyType = EnergyType.RECEIVE;
