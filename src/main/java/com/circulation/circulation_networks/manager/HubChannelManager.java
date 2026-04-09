@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.hub.ChannelSnapshotEntry;
 import com.circulation.circulation_networks.api.hub.ChannelSnapshotList;
+import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
@@ -228,9 +229,20 @@ public final class HubChannelManager {
     }
 
     public boolean bindHubToChannel(IHubNode hub, UUID playerId, UUID channelId) {
+        return bindHubToChannel(hub, playerId, channelId, false);
+    }
+
+    public boolean bindHubToChannel(IHubNode hub, UUID playerId, UUID channelId, boolean privilegedOverride) {
         ensureLoaded();
         if (hub == null || playerId == null || channelId == null || channelId.equals(EMPTY)) {
             return false;
+        }
+
+        HubChannel currentChannel = getCurrentChannel(hub);
+        if (currentChannel != null) {
+            if (!privilegedOverride && !currentChannel.canEditPermissions(playerId)) {
+                return false;
+            }
         }
 
         HubChannel channel = channels.get(channelId);
@@ -454,6 +466,11 @@ public final class HubChannelManager {
         snapshotVersion++;
     }
 
+    public void markChargingDirty() {
+        dirty = true;
+        schedulePersistAsync();
+    }
+
     private void syncHubFromChannel(IHubNode hub, HubChannel channel) {
         if (hub instanceof HubNode hubNode) {
             hubNode.syncFromChannel(channel);
@@ -612,12 +629,17 @@ public final class HubChannelManager {
     private List<ChannelDataSnapshot> snapshotChannels() {
         List<ChannelDataSnapshot> snapshot = new ObjectArrayList<>(channels.size());
         for (HubChannel channel : channels.values()) {
+            Map<UUID, ChargingPreference> chargingCopy = new Object2ObjectOpenHashMap<>();
+            for (var entry : channel.getChargingPreferences().entrySet()) {
+                chargingCopy.put(entry.getKey(), new ChargingPreference(entry.getValue().toByte()));
+            }
             snapshot.add(new ChannelDataSnapshot(
                 channel.getChannelId(),
                 channel.getName(),
                 channel.getPermissionMode(),
                 channel.getOwner(),
-                new Object2ReferenceOpenHashMap<>(channel.getExplicitPermissions())
+                new Object2ReferenceOpenHashMap<>(channel.getExplicitPermissions()),
+                chargingCopy
             ));
         }
         return snapshot;
@@ -662,6 +684,18 @@ public final class HubChannelManager {
                             UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
                             HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInteger("permission"));
                             channel.setExplicitPermission(playerId, permission);
+                        }
+                    }
+                    if (channelNbt.hasKey("chargingPreferences", Constants.NBT.TAG_LIST)) {
+                        NBTTagList chargingList = channelNbt.getTagList("chargingPreferences", Constants.NBT.TAG_COMPOUND);
+                        for (int j = 0; j < chargingList.tagCount(); j++) {
+                            NBTTagCompound chargingNbt = chargingList.getCompoundTagAt(j);
+                            if (!chargingNbt.hasKey("playerUUID")) {
+                                continue;
+                            }
+                            UUID playerId = UUID.fromString(chargingNbt.getString("playerUUID"));
+                            ChargingPreference pref = new ChargingPreference(chargingNbt.getByte("prefs"));
+                            channel.setChargingPreference(playerId, pref);
                         }
                     }
                     channels.put(channelId, channel);
@@ -729,6 +763,18 @@ public final class HubChannelManager {
                             channel.setExplicitPermission(playerId, permission);
                         }
                     }
+                    if (channelNbt.contains("chargingPreferences", Tag.TAG_LIST)) {
+                        ListTag chargingList = channelNbt.getList("chargingPreferences", Tag.TAG_COMPOUND);
+                        for (int j = 0; j < chargingList.size(); j++) {
+                            CompoundTag chargingNbt = chargingList.getCompound(j);
+                            if (!chargingNbt.contains("playerUUID")) {
+                                continue;
+                            }
+                            UUID playerId = UUID.fromString(chargingNbt.getString("playerUUID"));
+                            ChargingPreference pref = new ChargingPreference(chargingNbt.getByte("prefs"));
+                            channel.setChargingPreference(playerId, pref);
+                        }
+                    }
                     channels.put(channelId, channel);
                 } catch (IllegalArgumentException ignored) {
                 }
@@ -774,6 +820,16 @@ public final class HubChannelManager {
                 permissionList.add(permissionNbt);
             }
             channelNbt.put("permissions", permissionList);
+
+            ListTag chargingList = new ListTag();
+            for (var entry : channel.chargingPreferences.entrySet()) {
+                CompoundTag chargingNbt = new CompoundTag();
+                chargingNbt.putString("playerUUID", entry.getKey().toString());
+                chargingNbt.putByte("prefs", entry.getValue().toByte());
+                chargingList.add(chargingNbt);
+            }
+            channelNbt.put("chargingPreferences", chargingList);
+
             channelList.add(channelNbt);
         }
         nbt.put("channels", channelList);
@@ -806,6 +862,16 @@ public final class HubChannelManager {
                 permissionList.appendTag(permissionNbt);
             }
             channelNbt.setTag("permissions", permissionList);
+
+            NBTTagList chargingList = new NBTTagList();
+            for (var entry : channel.chargingPreferences.entrySet()) {
+                NBTTagCompound chargingNbt = new NBTTagCompound();
+                chargingNbt.setString("playerUUID", entry.getKey().toString());
+                chargingNbt.setByte("prefs", entry.getValue().toByte());
+                chargingList.appendTag(chargingNbt);
+            }
+            channelNbt.setTag("chargingPreferences", chargingList);
+
             channelList.appendTag(channelNbt);
         }
         nbt.setTag("channels", channelList);
@@ -817,7 +883,8 @@ public final class HubChannelManager {
     //? if <1.20
     @Desugar
     private record ChannelDataSnapshot(UUID channelId, String name, PermissionMode permissionMode, @Nullable UUID owner,
-                                       Map<UUID, HubPermissionLevel> explicitPermissions) {
+                                       Map<UUID, HubPermissionLevel> explicitPermissions,
+                                       Map<UUID, ChargingPreference> chargingPreferences) {
     }
     //~}
     //~}

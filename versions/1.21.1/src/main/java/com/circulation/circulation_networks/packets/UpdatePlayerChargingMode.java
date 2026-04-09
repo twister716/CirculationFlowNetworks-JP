@@ -3,7 +3,9 @@ package com.circulation.circulation_networks.packets;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.container.ContainerHub;
+import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -65,6 +67,9 @@ public final class UpdatePlayerChargingMode implements Packet<UpdatePlayerChargi
                     case 2 -> containerHub.chargingMode.setPrefs((byte) 0);
                 }
                 NetworkManager.INSTANCE.markGridDirty(containerHub.node.getGrid());
+                if (!containerHub.node.getChannelId().equals(HubNode.EMPTY)) {
+                    HubChannelManager.INSTANCE.markChargingDirty();
+                }
             }
         });
     }

@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.network.hub;
 
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.IHubChannel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
@@ -19,6 +20,7 @@ public class HubChannel implements IHubChannel {
     private final UUID channelId;
     private final ReferenceSet<IGrid> grids = new ReferenceOpenHashSet<>();
     private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
+    private final Map<UUID, ChargingPreference> chargingPreferences = new Object2ObjectOpenHashMap<>();
     private String name;
     private PermissionMode permissionMode;
     @Nullable
@@ -124,5 +126,17 @@ public class HubChannel implements IHubChannel {
 
     public void removeGrid(IGrid grid) {
         grids.remove(grid);
+    }
+
+    public ChargingPreference getChargingPreference(UUID playerId) {
+        return chargingPreferences.computeIfAbsent(playerId, k -> ChargingPreference.defaultAll());
+    }
+
+    public Map<UUID, ChargingPreference> getChargingPreferences() {
+        return Collections.unmodifiableMap(chargingPreferences);
+    }
+
+    public void setChargingPreference(UUID playerId, ChargingPreference preference) {
+        chargingPreferences.put(playerId, preference);
     }
 }

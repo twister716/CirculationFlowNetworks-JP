@@ -38,8 +38,10 @@ public final class EnergyTypeOverrideManager {
     private EnergyTypeOverrideManager() {
     }
 
+    @Nullable
     public static EnergyTypeOverrideManager get() {
         if (INSTANCE != null) return INSTANCE;
+        if (!NetworkManager.isServerAvailable()) return null;
         INSTANCE = new EnergyTypeOverrideManager();
         INSTANCE.loadFromFile();
         return INSTANCE;

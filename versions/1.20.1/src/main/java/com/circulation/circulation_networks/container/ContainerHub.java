@@ -71,7 +71,7 @@ public class ContainerHub extends CFNBaseContainer {
 
         playerInvLayout = ComponentSlotLayout.playerInventory(player.getInventory()).build(this);
         for (int i = 0; i < 5; i++) {
-            slots[i] = new ComponentSlotLayout().addSlot(node.getPlugins(), i, 0, 0).build(this);
+            slots[i] = new ComponentSlotLayout().addPrebuilt(new HubPluginSlot(node, playerId, node.getPlugins(), i, 0, 0)).build(this);
         }
 
         input = "0";

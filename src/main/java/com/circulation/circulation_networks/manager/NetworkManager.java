@@ -105,6 +105,10 @@ public final class NetworkManager {
         return saveFile;
     }
 
+    public static boolean isServerAvailable() {
+        return saveFile != null;
+    }
+
     static void runFileIoAsync(Runnable task) {
         FILE_IO_EXECUTOR.execute(() -> {
             try {
