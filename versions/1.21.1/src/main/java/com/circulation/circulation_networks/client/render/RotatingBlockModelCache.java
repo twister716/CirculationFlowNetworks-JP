@@ -18,12 +18,23 @@ import java.util.Map;
 public final class RotatingBlockModelCache {
 
     private static final List<ResourceLocation> REGISTERED_MODELS = new ArrayList<>();
+    // Shared crystal model
+    public static final ResourceLocation NODE_CRYSTAL = register("node_crystal");
     // Relay node sub-part models
     public static final ResourceLocation RELAY_TOP_SPIRAL_BASE = register("relay_node/relay_node_top_spiral_base");
     public static final ResourceLocation RELAY_TOP_SPIRAL_EMISSIVE = register("relay_node/relay_node_top_spiral_emissive");
-    public static final ResourceLocation RELAY_CRYSTAL = register("relay_node/relay_node_crystal");
     public static final ResourceLocation RELAY_BOTTOM_SPIRAL_BASE = register("relay_node/relay_node_bottom_spiral_base");
     public static final ResourceLocation RELAY_BOTTOM_SPIRAL_EMISSIVE = register("relay_node/relay_node_bottom_spiral_emissive");
+    // Charging node sub-part models
+    public static final ResourceLocation CHARGING_IN_BASE = register("charging_node/charging_node_in_base");
+    public static final ResourceLocation CHARGING_IN_EMISSIVE = register("charging_node/charging_node_in_emissive");
+    public static final ResourceLocation CHARGING_RING_BASE = register("charging_node/charging_node_ring_base");
+    public static final ResourceLocation CHARGING_RING_EMISSIVE = register("charging_node/charging_node_ring_emissive");
+    // Port node sub-part models
+    public static final ResourceLocation PORT_IN_BASE = register("port_node/port_node_in_base");
+    public static final ResourceLocation PORT_IN_EMISSIVE = register("port_node/port_node_in_emissive");
+    public static final ResourceLocation PORT_OUT_BASE = register("port_node/port_node_out_base");
+    public static final ResourceLocation PORT_OUT_EMISSIVE = register("port_node/port_node_out_emissive");
     // Node pedestal sub-part models
     public static final ResourceLocation PEDESTAL_BASE = register("node_pedestal/node_pedestal_base");
     public static final ResourceLocation PEDESTAL_BASE_EMISSIVE = register("node_pedestal/node_pedestal_base_emissive");
@@ -31,6 +42,8 @@ public final class RotatingBlockModelCache {
     public static final ResourceLocation PEDESTAL_FRAME_COUNTER_CLOCKWISE = register("node_pedestal/node_pedestal_frame_counter_clockwise");
     // Full static models (for item rendering fallback)
     public static final ResourceLocation RELAY_STATIC = register("relay_node/relay_node");
+    public static final ResourceLocation CHARGING_STATIC = register("charging_node/charging_node");
+    public static final ResourceLocation PORT_STATIC = register("port_node/port_node");
     public static final ResourceLocation PEDESTAL_STATIC = register("node_pedestal/node_pedestal");
     private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 

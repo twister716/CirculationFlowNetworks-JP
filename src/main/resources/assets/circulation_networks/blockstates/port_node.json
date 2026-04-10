@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "circulation_networks:block/port_node/port_node"
+    }
+  }
+}

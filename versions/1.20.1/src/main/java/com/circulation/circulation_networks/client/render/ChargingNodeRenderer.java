@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CFNConfig;
-import com.circulation.circulation_networks.tiles.nodes.RelayNodeBlockEntity;
+import com.circulation.circulation_networks.tiles.nodes.ChargingNodeBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -10,43 +10,43 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_BASE;
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_IN_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_IN_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_RING_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_RING_EMISSIVE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.NODE_CRYSTAL;
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_BASE;
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_EMISSIVE;
 
 @OnlyIn(Dist.CLIENT)
-public final class RelayNodeRenderer implements BlockEntityRenderer<RelayNodeBlockEntity> {
+public final class ChargingNodeRenderer implements BlockEntityRenderer<ChargingNodeBlockEntity> {
 
     private static final float CENTER = 0.5F;
 
-    public RelayNodeRenderer(BlockEntityRendererProvider.Context context) {
+    public ChargingNodeRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(@NotNull RelayNodeBlockEntity te, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(@NotNull ChargingNodeBlockEntity te, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
             return;
         }
 
         long worldTime = te.getLevel().getGameTime();
-        float topAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTick);
+        float topAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTick);
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTick);
         float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTick);
 
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_TOP_SPIRAL_BASE,
+        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_IN_BASE,
             topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_TOP_SPIRAL_EMISSIVE,
+        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_IN_EMISSIVE,
             topAngle, CENTER, CENTER, CENTER);
         poseStack.pushPose();
         poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
         RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
             crystalAngle, CENTER, CENTER, CENTER);
         poseStack.popPose();
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_BOTTOM_SPIRAL_BASE,
+        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_RING_BASE,
             bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_BOTTOM_SPIRAL_EMISSIVE,
+        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_RING_EMISSIVE,
             bottomAngle, CENTER, CENTER, CENTER);
     }
 }

@@ -1,7 +1,9 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.client.render.ChargingNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRotatingRenderer;
+import com.circulation.circulation_networks.client.render.PortNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.AnimatedNodeItemStackRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
@@ -24,6 +26,8 @@ import com.circulation.circulation_networks.registry.RegistryBlocks;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
 import com.circulation.circulation_networks.tiles.TileEntityNodePedestal;
+import com.circulation.circulation_networks.tiles.nodes.TileEntityChargingNode;
+import com.circulation.circulation_networks.tiles.nodes.TileEntityPortNode;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityRelayNode;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
@@ -103,6 +107,8 @@ public final class ClientProxy extends CommonProxy {
         File modConfigDir = new File(Loader.instance().getConfigDir(), CirculationFlowNetworks.MOD_ID);
         ComponentAtlas.INSTANCE.startAsync(modConfigDir);
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityRelayNode.class, new RelayNodeRotatingRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityChargingNode.class, new ChargingNodeRotatingRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityPortNode.class, new PortNodeRotatingRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityNodePedestal.class, new NodePedestalRotatingRenderer());
         AnimatedNodeItemStackRenderer.bindItemRenderers();
         openGLLevel = detectOpenGLLevel();

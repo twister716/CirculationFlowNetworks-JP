@@ -4,6 +4,8 @@ import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
+import com.circulation.circulation_networks.network.nodes.HubNode;
+import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,6 +48,9 @@ public final class CreateHubChannel implements Packet<CreateHubChannel> {
             if (sender == null) return;
             if (!(sender.containerMenu instanceof ContainerHub containerHub)) return;
             if (!containerHub.node.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) return;
+            if (!containerHub.node.getChannelId().equals(HubNode.EMPTY)
+                && !containerHub.node.canEditPermissions(sender.getUUID())
+                && !HubPlatformServices.INSTANCE.hasChannelManagementOverride(sender)) return;
 
             HubChannelManager.INSTANCE.createChannel(
                 containerHub.node,

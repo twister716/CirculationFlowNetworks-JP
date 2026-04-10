@@ -206,15 +206,20 @@ public final class HubNode extends Node implements IHubNode {
 
     @Override
     public @Nullable HubPermissionLevel getExplicitPermission(UUID playerId) {
-        HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-        return channel != null ? channel.getExplicitPermission(playerId) : explicitPermissions.get(playerId);
+        if (shouldSyncChannelManager()) {
+            HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
+            if (channel != null) return channel.getExplicitPermission(playerId);
+        }
+        return explicitPermissions.get(playerId);
     }
 
     @Override
     public Map<UUID, HubPermissionLevel> getExplicitPermissions() {
-        HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-        if (channel != null) {
-            return channel.getExplicitPermissions();
+        if (shouldSyncChannelManager()) {
+            HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
+            if (channel != null) {
+                return channel.getExplicitPermissions();
+            }
         }
         return Collections.unmodifiableMap(explicitPermissions);
     }

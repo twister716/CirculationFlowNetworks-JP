@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "normal": {
+      "model": "circulation_networks:charging_node/charging_node"
+    }
+  }
+}

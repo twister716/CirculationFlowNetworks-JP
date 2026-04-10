@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "circulation_networks:block/charging_node/charging_node"
+    }
+  }
+}

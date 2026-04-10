@@ -51,9 +51,9 @@ public final class RegistryBlocks {
 
         event.register(ForgeRegistries.Keys.ITEMS, helper -> {
             registerBlockItem(helper, "hub", CFNBlocks.blockHub);
-            registerBlockItem(helper, "charging_node", CFNBlocks.blockChargingNode);
+            registerAnimatedNodeBlockItem(helper, "charging_node", CFNBlocks.blockChargingNode);
             registerAnimatedNodeBlockItem(helper, "relay_node", CFNBlocks.blockRelayNode);
-            registerBlockItem(helper, "port_node", CFNBlocks.blockPortNode);
+            registerAnimatedNodeBlockItem(helper, "port_node", CFNBlocks.blockPortNode);
             registerBlockItem(helper, "circulation_shielder", CFNBlocks.blockCirculationShielder);
             registerAnimatedNodeBlockItem(helper, "node_pedestal", CFNBlocks.blockNodePedestal);
         });

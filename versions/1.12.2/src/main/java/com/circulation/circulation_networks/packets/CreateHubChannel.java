@@ -4,6 +4,8 @@ import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
+import com.circulation.circulation_networks.network.nodes.HubNode;
+import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
 import io.netty.buffer.ByteBuf;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
@@ -42,6 +44,11 @@ public final class CreateHubChannel implements Packet<CreateHubChannel> {
             return null;
         }
         if (!containerHub.node.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) {
+            return null;
+        }
+        if (!containerHub.node.getChannelId().equals(HubNode.EMPTY)
+            && !containerHub.node.canEditPermissions(ctx.getServerHandler().player.getUniqueID())
+            && !HubPlatformServices.INSTANCE.hasChannelManagementOverride(ctx.getServerHandler().player)) {
             return null;
         }
 

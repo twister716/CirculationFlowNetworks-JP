@@ -1,7 +1,9 @@
 package com.circulation.circulation_networks.packets;
 
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.container.ContainerHub;
+import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.utils.Packet;
@@ -44,16 +46,21 @@ public final class UpdateNodeCustomName implements Packet<UpdateNodeCustomName> 
         if (!(ctx.getServerHandler().player.openContainer instanceof ContainerHub containerHub)) {
             return null;
         }
-        if (containerHub.node == null || containerHub.node.getWorld() == null || containerHub.node.getGrid() == null) {
+        IHubNode hubNode = containerHub.node;
+        if (hubNode == null || hubNode.getWorld() == null || hubNode.getGrid() == null) {
+            return null;
+        }
+        if (!hubNode.canEditPermissions(ctx.getServerHandler().player.getUniqueID())
+            && !HubPlatformServices.INSTANCE.hasChannelManagementOverride(ctx.getServerHandler().player)) {
             return null;
         }
 
         BlockPos pos = BlockPos.fromLong(message.posLong);
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(containerHub.node.getWorld(), pos);
+        INode node = NetworkManager.INSTANCE.getNodeFromPos(hubNode.getWorld(), pos);
         if (node == null || node.getGrid() == null) {
             return null;
         }
-        if (!Objects.equals(node.getGrid().getId(), containerHub.node.getGrid().getId())) {
+        if (!Objects.equals(node.getGrid().getId(), hubNode.getGrid().getId())) {
             return null;
         }
 

@@ -198,6 +198,8 @@ public final class API {
      * Returns all grids associated with the given hub channel UUID.
      * Hub nodes ({@code IHubNode}) share energy across grids that share the same channel UUID.
      *
+     * <p><b>仅服务端可用 / Server-side only.</b> 在客户端调用会导致 NPE。
+     *
      * @param channelId 频道 UUID / the channel UUID
      * @return 属于该频道的所有网格，若频道不存在则为 {@code null}
      * / all grids in this channel, or {@code null} if the channel does not exist

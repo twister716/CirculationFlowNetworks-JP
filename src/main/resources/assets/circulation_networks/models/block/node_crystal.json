@@ -6,8 +6,7 @@
   ],
   "textures": {
     "1": "circulation_networks:block/node/node_crystal",
-    "4": "circulation_networks:block/node/io/framework",
-    "particle": "circulation_networks:block/node/particle/relay_node_particle"
+    "particle": "circulation_networks:block/node/particle/node_particle"
   },
   "elements": [
     {

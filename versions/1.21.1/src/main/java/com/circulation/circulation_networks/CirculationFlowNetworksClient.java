@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
@@ -75,6 +77,8 @@ final class CirculationFlowNetworksClient {
         modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.CHARGING_NODE, ChargingNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.PORT_NODE, PortNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.NODE_PEDESTAL, NodePedestalRenderer::new);
         });
 
@@ -163,6 +167,8 @@ final class CirculationFlowNetworksClient {
         };
         event.registerItem(animatedRenderer,
             CFNBlocks.blockRelayNode.asItem(),
+            CFNBlocks.blockChargingNode.asItem(),
+            CFNBlocks.blockPortNode.asItem(),
             CFNBlocks.blockNodePedestal.asItem()
         );
     }

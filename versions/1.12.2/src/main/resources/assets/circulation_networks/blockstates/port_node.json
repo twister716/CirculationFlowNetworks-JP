@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "normal": {
+      "model": "circulation_networks:port_node/port_node"
+    }
+  }
+}

@@ -23,13 +23,23 @@ import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_IN_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_IN_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_RING_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_RING_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.CHARGING_STATIC;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.NODE_CRYSTAL;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_BASE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_CLOCKWISE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_FRAME_COUNTER_CLOCKWISE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PEDESTAL_STATIC;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PORT_IN_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PORT_IN_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PORT_OUT_BASE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PORT_OUT_EMISSIVE;
+import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.PORT_STATIC;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_BASE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_BOTTOM_SPIRAL_EMISSIVE;
-import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_CRYSTAL;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_STATIC;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_BASE;
 import static com.circulation.circulation_networks.client.render.RotatingBlockModelCache.RELAY_TOP_SPIRAL_EMISSIVE;
@@ -62,15 +72,51 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
             return;
         }
 
-        float topAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTicks);
+        float topAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTicks);
-        float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
+        float bottomAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTicks);
 
         renderAroundYAxis(poseStack, bufferSource, RELAY_TOP_SPIRAL_BASE, topAngle, packedLight, packedOverlay);
         renderAroundYAxisFullBright(poseStack, bufferSource, RELAY_TOP_SPIRAL_EMISSIVE, topAngle, packedOverlay);
-        renderAroundYAxisFullBright(poseStack, bufferSource, RELAY_CRYSTAL, crystalAngle, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, NODE_CRYSTAL, crystalAngle, packedOverlay);
         renderAroundYAxis(poseStack, bufferSource, RELAY_BOTTOM_SPIRAL_BASE, bottomAngle, packedLight, packedOverlay);
         renderAroundYAxisFullBright(poseStack, bufferSource, RELAY_BOTTOM_SPIRAL_EMISSIVE, bottomAngle, packedOverlay);
+    }
+
+    private static void renderChargingNode(PoseStack poseStack, MultiBufferSource bufferSource,
+                                           long worldTime, float partialTicks, int packedLight, int packedOverlay) {
+        if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
+            renderModel(poseStack, bufferSource, CHARGING_STATIC, packedLight, packedOverlay);
+            return;
+        }
+
+        float topAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
+        float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTicks);
+        float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
+
+        renderAroundYAxis(poseStack, bufferSource, CHARGING_IN_BASE, topAngle, packedLight, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, CHARGING_IN_EMISSIVE, topAngle, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, NODE_CRYSTAL, crystalAngle, packedOverlay);
+        renderAroundYAxis(poseStack, bufferSource, CHARGING_RING_BASE, bottomAngle, packedLight, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, CHARGING_RING_EMISSIVE, bottomAngle, packedOverlay);
+    }
+
+    private static void renderPortNode(PoseStack poseStack, MultiBufferSource bufferSource,
+                                       long worldTime, float partialTicks, int packedLight, int packedOverlay) {
+        if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
+            renderModel(poseStack, bufferSource, PORT_STATIC, packedLight, packedOverlay);
+            return;
+        }
+
+        float topAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTicks);
+        float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTicks);
+        float bottomAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTicks);
+
+        renderAroundYAxis(poseStack, bufferSource, PORT_IN_BASE, topAngle, packedLight, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, PORT_IN_EMISSIVE, topAngle, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, NODE_CRYSTAL, crystalAngle, packedOverlay);
+        renderAroundYAxis(poseStack, bufferSource, PORT_OUT_BASE, bottomAngle, packedLight, packedOverlay);
+        renderAroundYAxisFullBright(poseStack, bufferSource, PORT_OUT_EMISSIVE, bottomAngle, packedOverlay);
     }
 
     private static void renderNodePedestal(PoseStack poseStack, MultiBufferSource bufferSource,
@@ -168,6 +214,10 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
 
         if (block == CFNBlocks.blockRelayNode) {
             renderRelayNode(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
+        } else if (block == CFNBlocks.blockChargingNode) {
+            renderChargingNode(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
+        } else if (block == CFNBlocks.blockPortNode) {
+            renderPortNode(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
         } else if (block == CFNBlocks.blockNodePedestal) {
             renderNodePedestal(poseStack, bufferSource, tick.worldTime, tick.partialTicks, packedLight, packedOverlay);
         }

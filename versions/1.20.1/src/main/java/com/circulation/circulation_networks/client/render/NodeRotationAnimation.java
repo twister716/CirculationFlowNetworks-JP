@@ -11,7 +11,7 @@ public final class NodeRotationAnimation {
 
     private static final float BOBBING_PERIOD_TICKS = 80.0F;
     private static final float BOBBING_ANGULAR_VELOCITY = (float) (2.0 * Math.PI / BOBBING_PERIOD_TICKS);
-    private static final float BOBBING_AMPLITUDE = 1.0F / 16.0F;
+    private static final float BOBBING_AMPLITUDE = 0.75F / 16.0F;
 
     private static final float SIN_22_5 = 0.38268343F;
     private static final float COS_22_5 = 0.9238795F;
@@ -24,7 +24,7 @@ public final class NodeRotationAnimation {
     }
 
     public static float relayCrystalAngle(long worldTime, float partialTicks) {
-        return counterClockwiseDegrees(worldTime, partialTicks, RELAY_CRYSTAL_DEGREES_PER_TICK);
+        return clockwiseDegrees(worldTime, partialTicks, RELAY_CRYSTAL_DEGREES_PER_TICK);
     }
 
     public static float relayBottomSpiralAngle(long worldTime, float partialTicks) {
