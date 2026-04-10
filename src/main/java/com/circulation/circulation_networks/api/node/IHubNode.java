@@ -80,4 +80,9 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
     HubPermissionLevel getPermissionLevel(UUID playerId);
 
     boolean canEditPermissions(UUID playerId);
+
+    /**
+     * 获取所有本地玩家充能配置（无频道时用）
+     */
+    Map<UUID, ChargingPreference> getPlayerPreferences();
 }

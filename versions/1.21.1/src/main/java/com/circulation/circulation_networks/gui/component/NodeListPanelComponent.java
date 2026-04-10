@@ -384,8 +384,21 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
                 field.clearEntry();
                 continue;
             }
-            field.bindEntry(entryIndex, entries.get(entryIndex));
+            NodeSnapshotEntry entry = entries.get(entryIndex);
+            field.bindEntry(entryIndex, entry, resolveEntryDisplayName(entry));
         }
+    }
+
+    private String resolveEntryDisplayName(NodeSnapshotEntry entry) {
+        String name = normalizeEditableName(entry.customName());
+        if (!name.isEmpty()) {
+            return name;
+        }
+        ItemStack stack = resolveStack(entry.itemId());
+        if (stack.isEmpty()) {
+            return "";
+        }
+        return stack.getHoverName().getString();
     }
 
     private void commitVisibleNameFields() {
@@ -475,20 +488,19 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
             setZIndex(visibleIndex + 1);
         }
 
-        private void bindEntry(int entryIndex, NodeSnapshotEntry entry) {
+        private void bindEntry(int entryIndex, NodeSnapshotEntry entry, String resolvedName) {
             BlockPos entryPos = new BlockPos(entry.x(), entry.y(), entry.z());
-            String entryName = normalizeEditableName(entry.customName());
             boolean changedBinding = boundEntryIndex != entryIndex || !Objects.equals(boundPos, entryPos);
             if (changedBinding) {
                 commitIfDirty();
                 boundEntryIndex = entryIndex;
                 boundPos = entryPos;
-                committedText = entryName;
-                setText(entryName);
+                committedText = resolvedName;
+                setText(resolvedName);
                 setFocused(false);
-            } else if (!isFocused() && !Objects.equals(getText(), entryName)) {
-                committedText = entryName;
-                setText(entryName);
+            } else if (!isFocused() && !Objects.equals(getText(), resolvedName)) {
+                committedText = resolvedName;
+                setText(resolvedName);
             }
             setVisible(true);
         }

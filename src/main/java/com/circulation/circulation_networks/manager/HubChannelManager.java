@@ -92,9 +92,16 @@ public final class HubChannelManager {
             return;
         }
 
+
         HubChannel channel = channels.get(channelId);
         if (channel == null) {
             channel = new HubChannel(channelId, name, hub.getOwner(), permissionMode, hub.getExplicitPermissions());
+            // 新建频道时同步本地充能配置
+            if (hub.getPlayerPreferences() != null) {
+                for (var entry : hub.getPlayerPreferences().entrySet()) {
+                    channel.setChargingPreference(entry.getKey(), entry.getValue());
+                }
+            }
             channels.put(channelId, channel);
             markSnapshotsDirty();
             dirty = true;

@@ -122,6 +122,10 @@ public final class MEKHandler implements IEnergyHandler {
 
             if (tileEntity instanceof IEnergyWrapper te && te.getMaxOutput() != 0) {
                 EnergyAmountConversionUtils.setFromDoubleFloor(maxExtract, te.getMaxOutput());
+                EnergyAmountConversionUtils.setFromDoubleFloor(maxReceive, te.getMaxOutput());
+            } else {
+                maxExtract.init(MAX_SCALED_DOUBLE_TRANSFER);
+                maxReceive.init(MAX_SCALED_DOUBLE_TRANSFER);
             }
         }
         return this;

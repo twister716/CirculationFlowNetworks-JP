@@ -199,7 +199,7 @@ public class ContainerHub extends CFNBaseContainer {
         if (HubPlatformServices.INSTANCE.hasChannelManagementOverride(player)) {
             flags |= CHANNEL_MANAGEMENT_OVERRIDE_FLAG;
         }
-        if ((flags & CHANNEL_MANAGEMENT_OVERRIDE_FLAG) != 0 || node.canEditPermissions(playerId)) {
+        if ((flags & CHANNEL_MANAGEMENT_OVERRIDE_FLAG) != 0 || channelId.equals(EMPTY) || node.canEditPermissions(playerId)) {
             flags |= CAN_EDIT_PLUGINS_FLAG;
         }
         return flags;

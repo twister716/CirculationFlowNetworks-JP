@@ -1,3 +1,4 @@
+// ...existing code...
 package com.circulation.circulation_networks.network.nodes;
 
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
@@ -36,6 +37,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class HubNode extends Node implements IHubNode {
+
+    @Override
+    public Map<UUID, ChargingPreference> getPlayerPreferences() {
+        return Collections.unmodifiableMap(playerPreferences);
+    }
 
     public static final UUID EMPTY = new UUID(0, 0);
     private final double energyScope;

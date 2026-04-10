@@ -42,11 +42,9 @@ public final class NodeContext {
     }
 
     //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 '.getLocalizedName()' -> '.getName().getString()' {
     private static String resolveDefaultName(World world, BlockPos pos) {
-        return world.getBlockState(pos).getBlock().getLocalizedName();
+        return null;
     }
-    //~}
 
     private static String resolveVisualId(World world, BlockPos pos) {
         //? if <1.20 {
