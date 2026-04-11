@@ -6,7 +6,7 @@ public final class NodeRotationAnimation {
     private static final float TICKS_PER_SECOND = 20.0F;
     private static final float RELAY_TOP_SPIRAL_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(10.0F);
     private static final float RELAY_CRYSTAL_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(40.0F);
-    private static final float RELAY_RING_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(20.0F);
+    private static final float RELAY_RING_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(10.0F);
     private static final float PEDESTAL_ROTATION_DEGREES_PER_TICK = 1.25F;
 
     private static final float BOBBING_PERIOD_TICKS = 80.0F;
