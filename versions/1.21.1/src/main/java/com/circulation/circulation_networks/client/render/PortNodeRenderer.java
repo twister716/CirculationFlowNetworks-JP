@@ -35,18 +35,20 @@ public final class PortNodeRenderer implements BlockEntityRenderer<PortNodeBlock
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTick);
         float bottomAngle = NodeRotationAnimation.relayTopSpiralAngle(worldTime, partialTick);
 
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PORT_IN_BASE,
-            topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PORT_IN_EMISSIVE,
-            topAngle, CENTER, CENTER, CENTER);
-        poseStack.pushPose();
-        poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
-            crystalAngle, CENTER, CENTER, CENTER);
-        poseStack.popPose();
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PORT_OUT_BASE,
-            bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PORT_OUT_EMISSIVE,
-            bottomAngle, CENTER, CENTER, CENTER);
+        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
+            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PORT_IN_BASE,
+                topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PORT_IN_EMISSIVE,
+                topAngle, CENTER, CENTER, CENTER);
+            poseStack.pushPose();
+            poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
+                crystalAngle, CENTER, CENTER, CENTER);
+            poseStack.popPose();
+            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PORT_OUT_BASE,
+                bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PORT_OUT_EMISSIVE,
+                bottomAngle, CENTER, CENTER, CENTER);
+        }
     }
 }

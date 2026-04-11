@@ -52,6 +52,7 @@ public final class RotatingModelRenderHelper {
     private static final Map<BakedQuad, BakedQuad> NO_DIFFUSE_QUADS = new IdentityHashMap<>();
     private static final Map<NoDiffuseDisplayListKey, CachedDisplayList> NO_DIFFUSE_DISPLAY_LISTS = new HashMap<>();
     private static final Map<NoDiffuseDisplayListKey, CachedDisplayList> NORMAL_DISPLAY_LISTS = new HashMap<>();
+    private static final Map<LightSignatureKey, CachedLightSignature> LIGHT_SIGNATURES = new HashMap<>();
 
     private RotatingModelRenderHelper() {
     }
@@ -75,6 +76,14 @@ public final class RotatingModelRenderHelper {
             }
         }
         NORMAL_DISPLAY_LISTS.clear();
+        LIGHT_SIGNATURES.clear();
+    }
+
+    public static void removeDisplayLists(int worldId, BlockPos pos) {
+        BlockPos immutablePos = pos.toImmutable();
+        removeDisplayLists(NO_DIFFUSE_DISPLAY_LISTS, worldId, immutablePos);
+        removeDisplayLists(NORMAL_DISPLAY_LISTS, worldId, immutablePos);
+        LIGHT_SIGNATURES.remove(new LightSignatureKey(worldId, immutablePos));
     }
 
     /**
@@ -198,7 +207,7 @@ public final class RotatingModelRenderHelper {
         double blockZ
     ) {
         NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = computeNoDiffuseLightSignature(tileEntity, state);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
         CachedDisplayList cached = NO_DIFFUSE_DISPLAY_LISTS.get(key);
         if (cached == null || cached.lightSignature != lightSignature) {
             if (cached != null && cached.id > 0) {
@@ -238,7 +247,7 @@ public final class RotatingModelRenderHelper {
         double blockZ
     ) {
         NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = computeNoDiffuseLightSignature(tileEntity, state);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
         CachedDisplayList cached = NORMAL_DISPLAY_LISTS.get(key);
         if (cached == null || cached.lightSignature != lightSignature) {
             if (cached != null && cached.id > 0) {
@@ -307,9 +316,24 @@ public final class RotatingModelRenderHelper {
         return displayList;
     }
 
-    private static int computeNoDiffuseLightSignature(TileEntity tileEntity, IBlockState state) {
+    private static int resolveNoDiffuseLightSignature(TileEntity tileEntity, IBlockState state) {
+        BlockPos pos = tileEntity.getPos().toImmutable();
+        int worldId = System.identityHashCode(tileEntity.getWorld());
+        long worldTime = tileEntity.getWorld().getTotalWorldTime();
+        int stateHash = state.hashCode();
+        LightSignatureKey key = new LightSignatureKey(worldId, pos);
+        CachedLightSignature cached = LIGHT_SIGNATURES.get(key);
+        if (cached != null && cached.worldTime == worldTime && cached.stateHash == stateHash) {
+            return cached.signature;
+        }
+
+        int signature = computeNoDiffuseLightSignature(tileEntity, state, pos);
+        LIGHT_SIGNATURES.put(key, new CachedLightSignature(worldTime, stateHash, signature));
+        return signature;
+    }
+
+    private static int computeNoDiffuseLightSignature(TileEntity tileEntity, IBlockState state, BlockPos pos) {
         int signature = state.hashCode();
-        BlockPos pos = tileEntity.getPos();
         signature = 31 * signature + tileEntity.getWorld().getCombinedLight(pos, state.getLightValue(tileEntity.getWorld(), pos));
         for (EnumFacing facing : EnumFacing.values()) {
             BlockPos sidePos = pos.offset(facing);
@@ -515,7 +539,38 @@ public final class RotatingModelRenderHelper {
         }
     }
 
+    private static final class CachedLightSignature {
+        private final long worldTime;
+        private final int stateHash;
+        private final int signature;
+
+        private CachedLightSignature(long worldTime, int stateHash, int signature) {
+            this.worldTime = worldTime;
+            this.stateHash = stateHash;
+            this.signature = signature;
+        }
+    }
+
+    private static void removeDisplayLists(Map<NoDiffuseDisplayListKey, CachedDisplayList> cache, int worldId, BlockPos pos) {
+        var iter = cache.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            NoDiffuseDisplayListKey key = entry.getKey();
+            if (key.worldId == worldId && key.pos.equals(pos)) {
+                CachedDisplayList cached = entry.getValue();
+                if (cached != null && cached.id > 0) {
+                    GLAllocation.deleteDisplayLists(cached.id);
+                }
+                iter.remove();
+            }
+        }
+    }
+
     @Desugar
     private record NoDiffuseDisplayListKey(int worldId, BlockPos pos, ResourceLocation modelLocation) {
+    }
+
+    @Desugar
+    private record LightSignatureKey(int worldId, BlockPos pos) {
     }
 }

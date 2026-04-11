@@ -19,6 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -34,9 +35,27 @@ public final class RotatingModelVBORenderer {
 
     private static final Map<ResourceLocation, VertexBuffer> FULL_BRIGHT_VBOS = new IdentityHashMap<>();
     private static final Map<AmbientVBOKey, CachedVBO> AMBIENT_VBOS = new Object2ObjectOpenHashMap<>();
+    private static final Map<AmbientLightKey, CachedLightSignature> AMBIENT_LIGHT_SIGNATURES = new Object2ObjectOpenHashMap<>();
     private static final Quaternionf ROTATION = new Quaternionf();
+    private static final Matrix4f RENDER_SESSION_MODEL_VIEW = new Matrix4f();
+    private static final Matrix4f DRAW_MODEL_VIEW = new Matrix4f();
+    private static int renderSessionDepth;
+    private static ShaderInstance renderSessionShader;
 
     private RotatingModelVBORenderer() {
+    }
+
+    public static RenderSession beginRenderSession() {
+        ShaderInstance shader = GameRenderer.getRendertypeCutoutShader();
+        if (shader == null) {
+            return RenderSession.NOOP;
+        }
+        if (renderSessionDepth++ == 0) {
+            renderSessionShader = shader;
+            RENDER_SESSION_MODEL_VIEW.set(RenderSystem.getModelViewMatrix());
+            prepareDrawState(shader);
+        }
+        return new RenderSession(true);
     }
 
     public static void renderFullBrightYAxis(
@@ -66,7 +85,7 @@ public final class RotatingModelVBORenderer {
         float axisX, float axisY, float axisZ
     ) {
         AmbientVBOKey key = new AmbientVBOKey(System.identityHashCode(level), pos.immutable(), modelLocation);
-        int lightSig = computeLightSignature(level, pos, state);
+        int lightSig = resolveLightSignature(level, pos, state);
         CachedVBO cached = AMBIENT_VBOS.get(key);
         if (cached == null || cached.lightSignature != lightSig) {
             if (cached != null) {
@@ -89,6 +108,7 @@ public final class RotatingModelVBORenderer {
                 iter.remove();
             }
         }
+        AMBIENT_LIGHT_SIGNATURES.remove(new AmbientLightKey(worldId, pos));
     }
 
     public static void clearAll() {
@@ -100,6 +120,7 @@ public final class RotatingModelVBORenderer {
             cached.vbo.close();
         }
         AMBIENT_VBOS.clear();
+        AMBIENT_LIGHT_SIGNATURES.clear();
     }
 
     private static void drawVBO(
@@ -107,8 +128,13 @@ public final class RotatingModelVBORenderer {
         float angle, float pivotX, float pivotY, float pivotZ,
         float axisX, float axisY, float axisZ
     ) {
-        ShaderInstance shader = GameRenderer.getRendertypeCutoutShader();
-        if (shader == null) return;
+        ShaderInstance shader = renderSessionShader;
+        boolean standaloneDraw = shader == null;
+        if (standaloneDraw) {
+            shader = GameRenderer.getRendertypeCutoutShader();
+            if (shader == null) return;
+            prepareDrawState(shader);
+        }
 
         poseStack.pushPose();
         poseStack.translate(pivotX, pivotY, pivotZ);
@@ -116,7 +142,22 @@ public final class RotatingModelVBORenderer {
         poseStack.mulPose(ROTATION);
         poseStack.translate(-pivotX, -pivotY, -pivotZ);
 
-        RenderSystem.setShader(GameRenderer::getRendertypeCutoutShader);
+        Matrix4f modelView = standaloneDraw
+            ? DRAW_MODEL_VIEW.set(RenderSystem.getModelViewMatrix())
+            : DRAW_MODEL_VIEW.set(RENDER_SESSION_MODEL_VIEW);
+        modelView.mul(poseStack.last().pose());
+
+        vbo.bind();
+        vbo.drawWithShader(modelView, RenderSystem.getProjectionMatrix(), shader);
+
+        if (standaloneDraw) {
+            finishStandaloneDraw();
+        }
+        poseStack.popPose();
+    }
+
+    private static void prepareDrawState(ShaderInstance shader) {
+        RenderSystem.setShader(() -> shader);
         RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
@@ -124,16 +165,23 @@ public final class RotatingModelVBORenderer {
         RenderSystem.depthFunc(515);
         RenderSystem.depthMask(true);
         RenderSystem.disableCull();
+    }
 
-        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
-        modelView.mul(poseStack.last().pose());
-
-        vbo.bind();
-        vbo.drawWithShader(modelView, RenderSystem.getProjectionMatrix(), shader);
+    private static void finishStandaloneDraw() {
         VertexBuffer.unbind();
-
         RenderSystem.enableCull();
-        poseStack.popPose();
+    }
+
+    private static void endRenderSession() {
+        if (renderSessionDepth <= 0) {
+            return;
+        }
+        if (--renderSessionDepth > 0) {
+            return;
+        }
+        renderSessionShader = null;
+        VertexBuffer.unbind();
+        RenderSystem.enableCull();
     }
 
     private static VertexBuffer buildFullBrightVBO(BlockState state, ResourceLocation modelLocation) {
@@ -176,6 +224,24 @@ public final class RotatingModelVBORenderer {
         return vbo;
     }
 
+    private static int resolveLightSignature(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+        if (!(level instanceof Level worldLevel)) {
+            return computeLightSignature(level, pos, state);
+        }
+
+        AmbientLightKey key = new AmbientLightKey(System.identityHashCode(level), pos.immutable());
+        long gameTime = worldLevel.getGameTime();
+        int stateHash = state.hashCode();
+        CachedLightSignature cached = AMBIENT_LIGHT_SIGNATURES.get(key);
+        if (cached != null && cached.gameTime == gameTime && cached.stateHash == stateHash) {
+            return cached.signature;
+        }
+
+        int signature = computeLightSignature(level, pos, state);
+        AMBIENT_LIGHT_SIGNATURES.put(key, new CachedLightSignature(gameTime, stateHash, signature));
+        return signature;
+    }
+
     private static int computeLightSignature(BlockAndTintGetter level, BlockPos pos, BlockState state) {
         int signature = state.hashCode();
         signature = 31 * signature + level.getRawBrightness(pos, 0);
@@ -192,5 +258,32 @@ public final class RotatingModelVBORenderer {
     }
 
     private record CachedVBO(VertexBuffer vbo, int lightSignature) {
+    }
+
+    private record AmbientLightKey(int worldId, BlockPos pos) {
+    }
+
+    private record CachedLightSignature(long gameTime, int stateHash, int signature) {
+    }
+
+    public static final class RenderSession implements AutoCloseable {
+
+        private static final RenderSession NOOP = new RenderSession(false);
+
+        private final boolean active;
+        private boolean closed;
+
+        private RenderSession(boolean active) {
+            this.active = active;
+        }
+
+        @Override
+        public void close() {
+            if (closed || !active) {
+                return;
+            }
+            closed = true;
+            endRenderSession();
+        }
     }
 }

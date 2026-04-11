@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.client.render.RelayNodeRotatingRende
 import com.circulation.circulation_networks.client.render.AnimatedNodeItemStackRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
 import com.circulation.circulation_networks.client.render.RotatingModelRenderHelper;
+import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
@@ -167,6 +168,15 @@ public final class ClientProxy extends CommonProxy {
             NodeHighlightRenderingHandler.INSTANCE.clear();
             SpoceRenderingHandler.INSTANCE.clear();
         });
+    }
+
+    @SubscribeEvent
+    public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
+        super.onBlockEntityInvalidate(event);
+        if (!event.getWorld().isRemote) {
+            return;
+        }
+        RotatingModelRenderHelper.removeDisplayLists(System.identityHashCode(event.getWorld()), event.getPos());
     }
 
     @SubscribeEvent

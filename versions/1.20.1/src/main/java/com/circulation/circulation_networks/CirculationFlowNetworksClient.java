@@ -5,6 +5,8 @@ import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
+import com.circulation.circulation_networks.client.render.RotatingModelVBORenderer;
+import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
@@ -59,6 +61,7 @@ final class CirculationFlowNetworksClient {
         MinecraftForge.EVENT_BUS.register(NodeHighlightRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onBlockEntityInvalidate);
         MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
 
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
@@ -155,10 +158,18 @@ final class CirculationFlowNetworksClient {
             PocketNodeRenderingHandler.INSTANCE.clear();
             NodeHighlightRenderingHandler.INSTANCE.clear();
             CirculationShielderRenderingHandler.INSTANCE.clear();
+            RotatingModelVBORenderer.clearAll();
             if (SpoceRenderingHandler.INSTANCE != null) {
                 SpoceRenderingHandler.INSTANCE.clear();
             }
         });
+    }
+
+    private static void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
+        if (!event.getWorld().isClientSide()) {
+            return;
+        }
+        RotatingModelVBORenderer.removePosition(System.identityHashCode(event.getWorld()), event.getPos());
     }
 
     private enum OpenGLLevel {
