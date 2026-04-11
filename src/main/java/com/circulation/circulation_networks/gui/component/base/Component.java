@@ -442,12 +442,14 @@ public class Component extends Rectangle {
 
         int ax = getAbsoluteX();
         int ay = getAbsoluteY();
+        AtlasRenderHelper.beginBatch(atlas);
         for (String name : layers) {
             if (name == null) continue;
             AtlasRegion region = atlas.getRegion(name);
             if (region == null) continue;
             AtlasRenderHelper.drawRegion(atlas, region, ax, ay, width, height);
         }
+        AtlasRenderHelper.endBatch();
     }
 
     @Nonnull
