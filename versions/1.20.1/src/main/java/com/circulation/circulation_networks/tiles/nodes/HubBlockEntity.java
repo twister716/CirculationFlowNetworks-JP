@@ -27,9 +27,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
 public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHubNodeBlockEntity, CFNInternalInventoryHost, MenuProvider {
 
     private final CFNInternalInventory plugins = new CFNInternalInventory(this, 5, 1).setInputFilter((inventory, slot, itemStack) -> {
@@ -51,11 +48,11 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     private boolean init;
     private transient CompoundTag initNbt;
 
-    public HubBlockEntity(BlockPos pos, BlockState state) {
+    public HubBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         super(CFNBlockEntityTypes.HUB, pos, state);
     }
 
-    static boolean isUniquePluginCapability(CFNInternalInventory inventory, int slot, HubPluginCapability<?> capability) {
+    static boolean isUniquePluginCapability(@NotNull CFNInternalInventory inventory, int slot, @NotNull HubPluginCapability<?> capability) {
         for (int i = 0; i < inventory.getSlots(); i++) {
             if (i == slot) {
                 continue;
@@ -79,7 +76,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     }
 
     @Override
-    protected void onNodeBound(IHubNode node) {
+    protected void onNodeBound(@NotNull IHubNode node) {
         if (node instanceof HubNode hubNode) {
             hubNode.bindPlugins(getPlugins());
         }
@@ -92,13 +89,13 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound) {
+    public void saveAdditional(@NotNull CompoundTag compound) {
         super.saveAdditional(compound);
         plugins.writeToNBT(compound, "plugins");
     }
 
     @Override
-    public void load(CompoundTag nbt) {
+    public void load(@NotNull CompoundTag nbt) {
         super.load(nbt);
         plugins.readFromNBT(nbt, "plugins");
 
@@ -129,7 +126,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     }
 
     @Override
-    public void onChangeInventory(CFNInternalInventory inventory, int slot, CFNInventoryChangeOperation operation, ItemStack oldStack, ItemStack newStack) {
+    public void onChangeInventory(@NotNull CFNInternalInventory inventory, int slot, @NotNull CFNInventoryChangeOperation operation, @NotNull ItemStack oldStack, @NotNull ItemStack newStack) {
         if (init && level != null && !level.isClientSide()) {
             HubPluginStateTracker.saveAllPluginData(getNode(), plugins);
             HubPluginStateTracker.savePluginData(getNode(), oldStack);
@@ -144,7 +141,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+    public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         syncNodeAfterNetworkInit();
         return new ContainerHub(CFNMenuTypes.HUB_MENU, containerId, player, getNode());
     }

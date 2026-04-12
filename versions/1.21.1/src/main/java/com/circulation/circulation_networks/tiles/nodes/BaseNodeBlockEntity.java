@@ -12,9 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockEntity implements INodeBlockEntity, BlockEntityLifecycleAware {
 
@@ -29,7 +28,7 @@ public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockE
         return node;
     }
 
-    @Nonnull
+    @NotNull
     protected abstract NodeType<? extends N> getNodeType();
 
     protected @NotNull NodeContext createNodeContext() {

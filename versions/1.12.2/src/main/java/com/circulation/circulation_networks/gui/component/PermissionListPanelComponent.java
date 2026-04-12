@@ -13,21 +13,22 @@ import com.circulation.circulation_networks.gui.component.base.DraggableComponen
 import com.circulation.circulation_networks.packets.UpdateHubChannelPermission;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
-//? <1.20
 import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+
+//? <1.20
 
 public final class PermissionListPanelComponent extends DraggableComponent implements SliderParent {
 
@@ -103,7 +104,7 @@ public final class PermissionListPanelComponent extends DraggableComponent imple
             }
 
             @Override
-            protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+            protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
                 EntryHit hit = getEntryHit(mouseX, mouseY);
                 if (hit == null) {
                     return Collections.emptyList();

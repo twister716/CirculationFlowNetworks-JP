@@ -13,7 +13,7 @@ import net.minecraft.util.EnumFacing;
 /*import net.minecraft.core.Direction;
  *///?}
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 //? if <1.20 {
 import com.github.bsideup.jabel.Desugar;

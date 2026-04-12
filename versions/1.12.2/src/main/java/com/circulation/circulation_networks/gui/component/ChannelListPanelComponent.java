@@ -16,10 +16,10 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -93,7 +93,7 @@ public final class ChannelListPanelComponent extends DraggableComponent implemen
             }
 
             @Override
-            protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+            protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
                 ChannelSnapshotEntry entry = getEntryAt(mouseX, mouseY);
                 if (entry == null) {
                     return Collections.emptyList();
@@ -323,7 +323,7 @@ public final class ChannelListPanelComponent extends DraggableComponent implemen
         }
 
         @Override
-        protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+        protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
             return Collections.singletonList(() -> switch (permissionMode) {
                 case PUBLIC ->
                     active ? CI18n.format("gui.channel_list.tooltip.filter.public.hide") : CI18n.format("gui.channel_list.tooltip.filter.public.show");

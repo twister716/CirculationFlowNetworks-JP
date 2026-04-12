@@ -4,15 +4,14 @@ import com.circulation.circulation_networks.api.node.INode;
 //~ mc_imports
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface INodeBlockEntity {
 
-    @Nonnull
+    @NotNull
     INode getNode();
 
-    @Nonnull
+    @NotNull
     BlockPos getNodePos();
 
     //~ if >=1.20 'World ' -> 'Level ' {

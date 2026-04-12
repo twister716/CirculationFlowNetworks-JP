@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
 /*import net.minecraftforge.fml.common.eventhandler.Cancelable;
  *///?}
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 // Shared node-add event whose attached world object may come from a block entity or a virtual host.
 public class AddNodeEvent extends NodeEvent {

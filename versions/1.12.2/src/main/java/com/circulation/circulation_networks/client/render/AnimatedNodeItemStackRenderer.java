@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.client.render;
 import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
+import com.github.bsideup.jabel.Desugar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
@@ -63,35 +64,6 @@ public final class AnimatedNodeItemStackRenderer extends TileEntityItemStackRend
     private static void bind(Item item, TileEntityItemStackRenderer renderer) {
         if (item != null && item != Items.AIR) {
             item.setTileEntityItemStackRenderer(renderer);
-        }
-    }
-
-    @Override
-    public void renderByItem(ItemStack stack, float partialTicks) {
-        if (stack.isEmpty()) {
-            return;
-        }
-
-        AnimationTick tick = resolveAnimationTick(partialTicks);
-        Item item = stack.getItem();
-
-        if (item == Item.getItemFromBlock(RegistryBlocks.blockRelayNode)) {
-            renderRelayNode(stack, tick.worldTime, tick.partialTicks);
-            return;
-        }
-
-        if (item == Item.getItemFromBlock(RegistryBlocks.blockChargingNode)) {
-            renderChargingNode(stack, tick.worldTime, tick.partialTicks);
-            return;
-        }
-
-        if (item == Item.getItemFromBlock(RegistryBlocks.blockPortNode)) {
-            renderPortNode(stack, tick.worldTime, tick.partialTicks);
-            return;
-        }
-
-        if (item == Item.getItemFromBlock(RegistryBlocks.blockNodePedestal)) {
-            renderNodePedestal(stack, tick.worldTime, tick.partialTicks);
         }
     }
 
@@ -191,13 +163,36 @@ public final class AnimatedNodeItemStackRenderer extends TileEntityItemStackRend
         return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
     }
 
-    private static final class AnimationTick {
-        private final long worldTime;
-        private final float partialTicks;
-
-        private AnimationTick(long worldTime, float partialTicks) {
-            this.worldTime = worldTime;
-            this.partialTicks = partialTicks;
+    @Override
+    public void renderByItem(ItemStack stack, float partialTicks) {
+        if (stack.isEmpty()) {
+            return;
         }
+
+        AnimationTick tick = resolveAnimationTick(partialTicks);
+        Item item = stack.getItem();
+
+        if (item == Item.getItemFromBlock(RegistryBlocks.blockRelayNode)) {
+            renderRelayNode(stack, tick.worldTime, tick.partialTicks);
+            return;
+        }
+
+        if (item == Item.getItemFromBlock(RegistryBlocks.blockChargingNode)) {
+            renderChargingNode(stack, tick.worldTime, tick.partialTicks);
+            return;
+        }
+
+        if (item == Item.getItemFromBlock(RegistryBlocks.blockPortNode)) {
+            renderPortNode(stack, tick.worldTime, tick.partialTicks);
+            return;
+        }
+
+        if (item == Item.getItemFromBlock(RegistryBlocks.blockNodePedestal)) {
+            renderNodePedestal(stack, tick.worldTime, tick.partialTicks);
+        }
+    }
+
+    @Desugar
+    private record AnimationTick(long worldTime, float partialTicks) {
     }
 }

@@ -16,8 +16,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +50,7 @@ public final class API {
      * @return 该位置的节点，若不存在则为 {@code null} / the node at that position, or {@code null} if absent
      */
     @Nullable
-    public static INode getNodeAt(@Nonnull World world, @Nonnull BlockPos pos) {
+    public static INode getNodeAt(@NotNull World world, @NotNull BlockPos pos) {
         return NetworkManager.INSTANCE.getNodeFromPos(world, pos);
     }
 
@@ -61,7 +61,7 @@ public final class API {
      *
      * @return 全部活跃节点 / all active nodes
      */
-    @Nonnull
+    @NotNull
     public static ReferenceSet<INode> getAllNodes() {
         return NetworkManager.INSTANCE.getActiveNodes();
     }
@@ -73,7 +73,7 @@ public final class API {
      *
      * @return 全部活跃网格 / all active grids
      */
-    @Nonnull
+    @NotNull
     public static Collection<IGrid> getAllGrids() {
         return NetworkManager.INSTANCE.getAllGrids();
     }
@@ -87,8 +87,8 @@ public final class API {
      * @param pos   被检查的位置 / the position to check
      * @return 可能可以链接该位置上节点的所有节点 / all nodes that may link to nodes at that position
      */
-    @Nonnull
-    public static ReferenceSet<INode> getNodesCoveringPos(@Nonnull World world, @Nonnull BlockPos pos) {
+    @NotNull
+    public static ReferenceSet<INode> getNodesCoveringPos(@NotNull World world, @NotNull BlockPos pos) {
         return NetworkManager.INSTANCE.getNodesCoveringPosition(world, pos);
     }
 
@@ -102,8 +102,8 @@ public final class API {
      * @param chunkZ 被检查的区块 Z 坐标 / the chunk Z coordinate
      * @return 可能可以链接该区块中节点的所有节点 / all nodes that may link to nodes in that chunk
      */
-    @Nonnull
-    public static ReferenceSet<INode> getNodesCoveringChunk(@Nonnull World world, int chunkX, int chunkZ) {
+    @NotNull
+    public static ReferenceSet<INode> getNodesCoveringChunk(@NotNull World world, int chunkX, int chunkZ) {
         return NetworkManager.INSTANCE.getNodesCoveringPosition(world, chunkX, chunkZ);
     }
 
@@ -117,8 +117,8 @@ public final class API {
      * @param chunkZ 节点所在区块的 Z 坐标 / the chunk Z coordinate
      * @return 区块中所有的生效节点 / all active nodes inside that chunk
      */
-    @Nonnull
-    public static ReferenceSet<INode> getNodesInChunk(@Nonnull World world, int chunkX, int chunkZ) {
+    @NotNull
+    public static ReferenceSet<INode> getNodesInChunk(@NotNull World world, int chunkX, int chunkZ) {
         return NetworkManager.INSTANCE.getNodesInChunk(world, chunkX, chunkZ);
     }
 
@@ -135,8 +135,8 @@ public final class API {
      * @param pos   目标位置 / the position to query
      * @return 可能为此位置的机器供能的所有节点 / all nodes that may supply energy to machines at that position
      */
-    @Nonnull
-    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull BlockPos pos) {
+    @NotNull
+    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@NotNull World world, @NotNull BlockPos pos) {
         return EnergyMachineManager.INSTANCE.getEnergyNodes(world, pos);
     }
 
@@ -150,8 +150,8 @@ public final class API {
      * @param chunkZ 目标区块的 Z 坐标 / the chunk Z coordinate
      * @return 可能为此区块供能的所有节点 / all nodes that may supply energy to machines in that chunk
      */
-    @Nonnull
-    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, int chunkX, int chunkZ) {
+    @NotNull
+    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@NotNull World world, int chunkX, int chunkZ) {
         return EnergyMachineManager.INSTANCE.getEnergyNodes(world, chunkX, chunkZ);
     }
 
@@ -166,9 +166,9 @@ public final class API {
      * @deprecated 使用 chunk 坐标或 BlockPos 重载代替
      * / use the chunk-coordinate or BlockPos overload instead
      */
-    @Nonnull
+    @NotNull
     @Deprecated
-    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull ChunkPos pos) {
+    public static ReferenceSet<IEnergySupplyNode> getEnergyNodes(@NotNull World world, @NotNull ChunkPos pos) {
         return EnergyMachineManager.INSTANCE.getEnergyNodes(world, pos.x, pos.z);
     }
 
@@ -182,8 +182,8 @@ public final class API {
      * @param node 节点，不应该是 {@code IMachineNode} / the supply node (should not be an IMachineNode)
      * @return 节点所供能的所有设备 / all machines supplied by this node
      */
-    @Nonnull
-    public static Set<TileEntity> getMachinesSuppliedBy(@Nonnull IEnergySupplyNode node) {
+    @NotNull
+    public static Set<TileEntity> getMachinesSuppliedBy(@NotNull IEnergySupplyNode node) {
         return EnergyMachineManager.INSTANCE.getMachinesSuppliedBy(node);
     }
 
@@ -204,8 +204,8 @@ public final class API {
      * @return 属于该频道的所有网格，若频道不存在则为 {@code null}
      * / all grids in this channel, or {@code null} if the channel does not exist
      */
-    @Nonnull
-    public static ReferenceSet<IGrid> getChannelGrids(@Nonnull UUID channelId) {
+    @NotNull
+    public static ReferenceSet<IGrid> getChannelGrids(@NotNull UUID channelId) {
         return HubChannelManager.INSTANCE.getChannelGrids(channelId);
     }
 
@@ -225,7 +225,7 @@ public final class API {
      * @param blockEntity 目标方块实体 / the block entity to check
      * @return 是否在黑名单中 / {@code true} if blacklisted
      */
-    public static boolean isEnergyBlacklisted(@Nonnull TileEntity blockEntity) {
+    public static boolean isEnergyBlacklisted(@NotNull TileEntity blockEntity) {
         return RegistryEnergyHandler.isBlack(blockEntity);
     }
 
@@ -242,7 +242,7 @@ public final class API {
      * @param blockEntity 目标方块实体 / the block entity to check
      * @return 是否在供应黑名单中 / {@code true} if on the supply blacklist
      */
-    public static boolean isSupplyBlacklisted(@Nonnull TileEntity blockEntity) {
+    public static boolean isSupplyBlacklisted(@NotNull TileEntity blockEntity) {
         return RegistryEnergyHandler.isSupplyBlack(blockEntity);
     }
 
@@ -254,7 +254,7 @@ public final class API {
      * @param stack 目标物品堆 / the item stack to check
      * @return 是否为能源物品 / {@code true} if the item is an energy item
      */
-    public static boolean isEnergyItem(@Nonnull ItemStack stack) {
+    public static boolean isEnergyItem(@NotNull ItemStack stack) {
         return RegistryEnergyHandler.isEnergyItemStack(stack);
     }
 
@@ -267,7 +267,7 @@ public final class API {
      * @param blockEntity 目标方块实体 / the block entity to check
      * @return 是否为能源容器 / {@code true} if the block entity is an energy container
      */
-    public static boolean isEnergyTileEntity(@Nonnull TileEntity blockEntity) {
+    public static boolean isEnergyTileEntity(@NotNull TileEntity blockEntity) {
         return RegistryEnergyHandler.isEnergyTileEntity(blockEntity);
     }
 
@@ -283,7 +283,7 @@ public final class API {
      * @return 匹配的能量管理器，若无匹配则为 {@code null} / a matching manager, or {@code null} if none applies
      */
     @Nullable
-    public static IEnergyHandlerManager getEnergyManager(@Nonnull TileEntity blockEntity) {
+    public static IEnergyHandlerManager getEnergyManager(@NotNull TileEntity blockEntity) {
         return RegistryEnergyHandler.getEnergyManager(blockEntity);
     }
 
@@ -297,7 +297,7 @@ public final class API {
      * @return 匹配的能量管理器，若无匹配则为 {@code null} / a matching manager, or {@code null} if none applies
      */
     @Nullable
-    public static IEnergyHandlerManager getEnergyManager(@Nonnull ItemStack stack) {
+    public static IEnergyHandlerManager getEnergyManager(@NotNull ItemStack stack) {
         return RegistryEnergyHandler.getEnergyManager(stack);
     }
 
@@ -314,7 +314,7 @@ public final class API {
      *
      * @param manager 要注册的能量管理器 / the manager to register
      */
-    public static void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager) {
+    public static void registerEnergyHandler(@NotNull IEnergyHandlerManager manager) {
         RegistryEnergyHandler.registerEnergyHandler(manager);
     }
 
@@ -327,7 +327,7 @@ public final class API {
      * @param function 从 NBT 中反序列化回节点的方法 / function to deserialize a node from NBT
      * @param creator  运行时创建节点的方法 / function to create a new node at runtime
      */
-    public static void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nonnull NodeCreator creator) {
+    public static void registerNodeType(@NotNull NodeType<? extends INode> nodeType, @NotNull NodeDeserializer function, @NotNull NodeCreator creator) {
         NodeTypes.register(nodeType, function, creator);
     }
     //~}

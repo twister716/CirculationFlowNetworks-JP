@@ -13,10 +13,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 *///?}
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -117,7 +116,7 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     @Override
-    public void setStackInSlot(int slot, @Nonnull ItemStack stack) {
+    public void setStackInSlot(int slot, @NotNull ItemStack stack) {
         if (stack != getStackInSlot(slot)) {
             previousStack = getStackInSlot(slot).copy();
         }
@@ -132,7 +131,7 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     @Override
-    public boolean isItemValid(int slot, @Nonnull ItemStack stack) {
+    public boolean isItemValid(int slot, @NotNull ItemStack stack) {
         if (maxStack[slot] == 0) {
             return false;
         }
@@ -140,8 +139,8 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     @Override
-    @Nonnull
-    public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate) {
+    @NotNull
+    public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
@@ -185,7 +184,7 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
         if (amount == 0) {
             return ItemStack.EMPTY;
@@ -332,7 +331,7 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         return Collections.unmodifiableList(stacks).iterator();
     }
 
-    private int getEffectiveStackLimit(int slot, @Nonnull ItemStack stack) {
+    private int getEffectiveStackLimit(int slot, @NotNull ItemStack stack) {
         return ignoreItemStackLimit ? getSlotLimit(slot) : Math.min(getSlotLimit(slot), stack.getMaxStackSize());
     }
 

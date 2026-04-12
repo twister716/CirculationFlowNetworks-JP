@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkEvent;
 
-import javax.annotation.Nonnull;
 import java.util.function.Supplier;
 
 public final class ConfigOverrideRendering implements Packet<ConfigOverrideRendering> {
@@ -28,9 +27,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
     private int mode;
     private long pos;
     private int energyTypeOrdinal;
-    @Nonnull
     private long[] positions = EMPTY_LONGS;
-    @Nonnull
     private int[] types = EMPTY_INTS;
 
     public ConfigOverrideRendering(int dim) {

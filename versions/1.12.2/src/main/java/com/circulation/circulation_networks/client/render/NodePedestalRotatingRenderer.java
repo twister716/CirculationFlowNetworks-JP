@@ -27,6 +27,10 @@ public final class NodePedestalRotatingRenderer extends TileEntitySpecialRendere
     private static final float COUNTER_CLOCKWISE_PIVOT_Y = 5.0F / 16.0F;
     private static final float COUNTER_CLOCKWISE_PIVOT_Z = 8.0F / 16.0F;
 
+    private static ResourceLocation model(String path) {
+        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
+    }
+
     @Override
     public void render(@NotNull TileEntityNodePedestal te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         if (te == null || !te.hasWorld() || !CFNConfig.NODE.rendering.animatedSpecialModels) {
@@ -70,9 +74,5 @@ public final class NodePedestalRotatingRenderer extends TileEntitySpecialRendere
             batch.end();
         }
         super.render(te, x, y, z, partialTicks, destroyStage, alpha);
-    }
-
-    private static ResourceLocation model(String path) {
-        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
     }
 }

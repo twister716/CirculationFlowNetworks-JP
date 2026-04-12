@@ -15,9 +15,9 @@ import com.circulation.circulation_networks.utils.CI18n;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -91,7 +91,7 @@ public final class ChannelListPanelComponent extends DraggableComponent implemen
             }
 
             @Override
-            protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+            protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
                 ChannelSnapshotEntry entry = getEntryAt(mouseX, mouseY);
                 if (entry == null) {
                     return Collections.emptyList();
@@ -326,7 +326,7 @@ public final class ChannelListPanelComponent extends DraggableComponent implemen
         }
 
         @Override
-        protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+        protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
             return Collections.singletonList(() -> switch (permissionMode) {
                 case PUBLIC ->
                     active ? CI18n.format("gui.channel_list.tooltip.filter.public.hide") : CI18n.format("gui.channel_list.tooltip.filter.public.show");

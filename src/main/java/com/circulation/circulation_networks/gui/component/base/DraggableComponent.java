@@ -2,15 +2,12 @@ package com.circulation.circulation_networks.gui.component.base;
 
 import com.circulation.circulation_networks.gui.CFNBaseGui;
 
-import javax.annotation.Nullable;
-
 @SuppressWarnings("unused")
 public class DraggableComponent extends Component {
 
     private boolean draggable = true;
     private boolean dragging = false;
 
-    @Nullable
     private int[] dragBounds = null;
 
     private int dragOffsetX;
@@ -32,12 +29,11 @@ public class DraggableComponent extends Component {
         return dragging;
     }
 
-    @Nullable
     public int[] getDragBounds() {
         return dragBounds;
     }
 
-    public void setDragBounds(@Nullable int[] dragBounds) {
+    public void setDragBounds(int[] dragBounds) {
         this.dragBounds = dragBounds;
     }
 

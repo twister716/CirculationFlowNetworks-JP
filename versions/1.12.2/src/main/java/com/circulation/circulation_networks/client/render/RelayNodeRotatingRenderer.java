@@ -21,6 +21,10 @@ public final class RelayNodeRotatingRenderer extends TileEntitySpecialRenderer<T
     private static final ResourceLocation BOTTOM_SPIRAL_BASE = model("relay_node/relay_node_bottom_spiral_base");
     private static final ResourceLocation BOTTOM_SPIRAL_EMISSIVE = model("relay_node/relay_node_bottom_spiral_emissive");
 
+    private static ResourceLocation model(String path) {
+        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
+    }
+
     @Override
     public void render(@NotNull TileEntityRelayNode te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         if (!te.hasWorld() || !CFNConfig.NODE.rendering.animatedSpecialModels) {
@@ -46,9 +50,5 @@ public final class RelayNodeRotatingRenderer extends TileEntitySpecialRenderer<T
             batch.end();
         }
         super.render(te, x, y, z, partialTicks, destroyStage, alpha);
-    }
-
-    private static ResourceLocation model(String path) {
-        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
     }
 }

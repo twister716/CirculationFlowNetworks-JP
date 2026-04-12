@@ -19,9 +19,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 //? if <1.20
 import net.minecraftforge.common.DimensionManager;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 

@@ -11,9 +11,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public final class ConfigOverrideRendering implements Packet<ConfigOverrideRendering> {
 
@@ -29,9 +28,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
     private int mode;
     private long pos;
     private int energyTypeOrdinal;
-    @Nonnull
     private long[] positions = EMPTY_LONGS;
-    @Nonnull
     private int[] types = EMPTY_INTS;
 
     public ConfigOverrideRendering(int dim) {

@@ -48,7 +48,7 @@ import top.theillusivec4.curios.api.CuriosApi;
 
 import net.minecraft.server.MinecraftServer;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;

@@ -17,7 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -331,7 +331,7 @@ public final class ChannelSettingsDialogComponent extends DraggableComponent {
         }
 
         @Override
-        protected @Nonnull java.util.List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+        protected @NotNull java.util.List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
             if (mode == DialogMode.CREATE) {
                 return Collections.singletonList(() -> CI18n.format("gui.channel_settings.tooltip.create"));
             }

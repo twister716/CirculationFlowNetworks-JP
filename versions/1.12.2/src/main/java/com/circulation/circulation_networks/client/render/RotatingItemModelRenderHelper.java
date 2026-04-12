@@ -14,9 +14,9 @@ import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -198,15 +198,6 @@ public final class RotatingItemModelRenderHelper {
             super(originalModel);
         }
 
-        @Override
-        public @NotNull List<BakedQuad> getQuads(@Nullable net.minecraft.block.state.IBlockState state, @Nullable EnumFacing side, long rand) {
-            List<BakedQuad> quads = originalModel.getQuads(state, side, rand);
-            if (quads.isEmpty()) {
-                return quads;
-            }
-            return NO_DIFFUSE_QUAD_LISTS.computeIfAbsent(quads, NoDiffuseBakedModel::wrapQuads);
-        }
-
         private static List<BakedQuad> wrapQuads(List<BakedQuad> quads) {
             List<BakedQuad> wrapped = new ArrayList<>(quads.size());
             for (BakedQuad quad : quads) {
@@ -217,6 +208,15 @@ public final class RotatingItemModelRenderHelper {
 
         private static BakedQuad wrapQuad(BakedQuad quad) {
             return new BakedQuad(quad.getVertexData(), quad.getTintIndex(), quad.getFace(), quad.getSprite(), false, quad.getFormat());
+        }
+
+        @Override
+        public @NotNull List<BakedQuad> getQuads(@Nullable net.minecraft.block.state.IBlockState state, @Nullable EnumFacing side, long rand) {
+            List<BakedQuad> quads = originalModel.getQuads(state, side, rand);
+            if (quads.isEmpty()) {
+                return quads;
+            }
+            return NO_DIFFUSE_QUAD_LISTS.computeIfAbsent(quads, NoDiffuseBakedModel::wrapQuads);
         }
     }
 }

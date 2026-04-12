@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.utils;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class CI18n {
 
@@ -10,7 +10,7 @@ public abstract class CI18n {
         CI18n.INSTANCE = INSTANCE;
     }
 
-    @Nonnull
+    @NotNull
     public static String format(String key, Object... params) {
         return INSTANCE == null ? "" : INSTANCE.formatInternal(key, params);
     }

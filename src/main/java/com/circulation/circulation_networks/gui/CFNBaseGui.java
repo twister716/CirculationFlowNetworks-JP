@@ -50,8 +50,8 @@ import java.util.Optional;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.EnumMap;
@@ -96,12 +96,12 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContaine
     // -------------------------------------------------------------------------
 
     //? if <1.20 {
-    protected CFNBaseGui(@Nonnull T container) {
+    protected CFNBaseGui(@NotNull T container) {
         super(container);
         this.container = container;
     }
     //?} else {
-    /*protected CFNBaseGui(@Nonnull T container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
+    /*protected CFNBaseGui(@NotNull T container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
         super(container, playerInventory, title);
         this.container = container;
     }

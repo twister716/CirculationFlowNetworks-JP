@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.tiles;
 
-import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.CFNConfig;
+import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.container.CFNBaseContainer;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
@@ -26,17 +26,17 @@ public class TileEntityCirculationShielder extends BaseTileEntity implements ICi
         return scope;
     }
 
-    @Override
-    public int getMaxScope() {
-        return CFNConfig.SHIELDER.maxScope;
-    }
-
     public void setScope(int scope) {
         int maxScope = Math.max(0, getMaxScope());
         int clamped = Math.max(0, Math.min(maxScope, scope));
         this.min.setPos(this.getPos().getX() - clamped, this.getPos().getY() - clamped, this.getPos().getZ() - clamped);
         this.max.setPos(this.getPos().getX() + clamped, this.getPos().getY() + clamped, this.getPos().getZ() + clamped);
         this.scope = clamped;
+    }
+
+    @Override
+    public int getMaxScope() {
+        return CFNConfig.SHIELDER.maxScope;
     }
 
     public boolean isShowingRange() {

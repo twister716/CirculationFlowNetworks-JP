@@ -46,8 +46,8 @@ import net.minecraft.entity.player.EntityPlayerMP;
 /*import net.minecraft.server.level.ServerPlayer;
  *///?}
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -276,12 +276,10 @@ public final class EnergyMachineManager {
         for (var entry : machineGridMap.entrySet()) {
             var te = entry.getKey();
             //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
-            //~ if >=1.20 '.isBlockLoaded(' -> '.isLoaded(' {
             //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
             var world = te.getWorld();
             var pos = te.getPos();
-            if (!world.isBlockLoaded(pos)) continue;
-            //~}
+            if (!Functions.isChunkLoaded(world, pos)) continue;
             //~}
             //~}
             if (CirculationShielderManager.INSTANCE.isBlockedByShielder(pos, world)) continue;
@@ -667,13 +665,13 @@ public final class EnergyMachineManager {
     }
 
     //~ if >=1.20 '(World ' -> '(Level ' {
-    public @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, BlockPos pos) {
+    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, BlockPos pos) {
         return getEnergyNodes(world, pos.getX() >> 4, pos.getZ() >> 4);
     }
     //~}
 
     //~ if >=1.20 '(World ' -> '(Level ' {
-    public @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, int chunkX, int chunkZ) {
+    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, int chunkX, int chunkZ) {
         var map = scopeNode.get(getDimensionId(world));
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
@@ -685,7 +683,7 @@ public final class EnergyMachineManager {
     *///?}
 
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public @Nonnull Set<TileEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
+    public @NotNull Set<TileEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
         return gridMachineMap.getOrDefault(node, Collections.emptySet());
     }
 
@@ -790,7 +788,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    private @Nonnull Long2LongMap getWarningTicksForDimension(int dimId) {
+    private @NotNull Long2LongMap getWarningTicksForDimension(int dimId) {
         Long2LongMap dimWarnings = lastWarningTicks.get(dimId);
         if (dimWarnings == null) {
             dimWarnings = new Long2LongOpenHashMap();

@@ -7,7 +7,7 @@ import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 

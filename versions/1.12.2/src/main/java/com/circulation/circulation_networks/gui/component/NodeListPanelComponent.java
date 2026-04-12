@@ -26,6 +26,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Collections;
@@ -132,7 +133,7 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
             }
 
             @Override
-            protected @javax.annotation.Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+            protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
                 int hitSlot = getIconVisibleSlot(mouseX, mouseY);
                 if (hitSlot >= 0) {
                     return Collections.singletonList(

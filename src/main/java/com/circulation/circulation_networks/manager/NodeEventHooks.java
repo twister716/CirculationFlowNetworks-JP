@@ -18,7 +18,7 @@ import net.minecraftforge.fml.common.eventhandler.EventBus;
 /*import net.neoforged.bus.api.IEventBus;
  *///?}
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 final class NodeEventHooks {
 

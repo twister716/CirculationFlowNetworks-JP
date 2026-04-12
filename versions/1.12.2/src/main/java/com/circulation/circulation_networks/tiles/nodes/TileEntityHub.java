@@ -22,9 +22,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
 public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubNodeBlockEntity, CFNInternalInventoryHost {
 
     private final CFNInternalInventory plugins = new CFNInternalInventory(this, 5, 1).setInputFilter((inventory, slot, itemStack) -> {
@@ -46,7 +43,7 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
     private boolean init;
     private transient NBTTagCompound initNbt;
 
-    private static boolean isUniquePluginCapability(CFNInternalInventory inventory, int slot, HubPluginCapability<?> capability) {
+    private static boolean isUniquePluginCapability(@NotNull CFNInternalInventory inventory, int slot, @NotNull HubPluginCapability<?> capability) {
         for (int i = 0; i < inventory.getSlots(); i++) {
             if (i == slot) {
                 continue;
@@ -70,13 +67,13 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
     }
 
     @Override
-    public @NotNull ContainerHub getContainer(EntityPlayer player) {
+    public @NotNull ContainerHub getContainer(@NotNull EntityPlayer player) {
         return new ContainerHub(player, getNode());
     }
 
     @Override
     @SideOnly(Side.CLIENT)
-    public GuiContainer getGui(EntityPlayer player) {
+    public GuiContainer getGui(@NotNull EntityPlayer player) {
         return new GuiHub(player, getNode());
     }
 
@@ -86,7 +83,7 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
     }
 
     @Override
-    protected void onNodeBound(IHubNode node) {
+    protected void onNodeBound(@NotNull IHubNode node) {
         if (node instanceof HubNode hubNode) {
             hubNode.bindPlugins(getPlugins());
         }
@@ -107,14 +104,14 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
     }
 
     @Override
-    public @NotNull NBTTagCompound writeToNBT(NBTTagCompound compound) {
+    public @NotNull NBTTagCompound writeToNBT(@NotNull NBTTagCompound compound) {
         super.writeToNBT(compound);
         plugins.writeToNBT(compound, "plugins");
         return compound;
     }
 
     @Override
-    public final void readFromNBT(NBTTagCompound nbt) {
+    public final void readFromNBT(@NotNull NBTTagCompound nbt) {
         super.readFromNBT(nbt);
         plugins.readFromNBT(nbt, "plugins");
 
@@ -145,7 +142,7 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
     }
 
     @Override
-    public void onChangeInventory(CFNInternalInventory inventory, int slot, CFNInventoryChangeOperation operation, ItemStack oldStack, ItemStack newStack) {
+    public void onChangeInventory(@NotNull CFNInternalInventory inventory, int slot, @NotNull CFNInventoryChangeOperation operation, @NotNull ItemStack oldStack, @NotNull ItemStack newStack) {
         if (init && world != null && !world.isRemote) {
             HubPluginStateTracker.saveAllPluginData(getNode(), plugins);
             HubPluginStateTracker.savePluginData(getNode(), oldStack);

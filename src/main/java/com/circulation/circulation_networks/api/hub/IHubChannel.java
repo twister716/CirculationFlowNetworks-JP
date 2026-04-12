@@ -3,7 +3,7 @@ package com.circulation.circulation_networks.api.hub;
 import com.circulation.circulation_networks.api.IGrid;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.UUID;
 

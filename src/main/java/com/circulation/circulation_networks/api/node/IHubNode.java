@@ -11,9 +11,8 @@ import net.minecraftforge.items.IItemHandler;
 //?} else {
 /*import net.neoforged.neoforge.items.IItemHandler;
  *///?}
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,17 +43,17 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
         return getHubData().get(capability);
     }
 
-    @Nonnull
+    @NotNull
     UUID getChannelId();
 
-    void setChannelId(@Nonnull UUID channelId);
+    void setChannelId(@NotNull UUID channelId);
 
-    @Nonnull
+    @NotNull
     String getChannelName();
 
-    void setChannelName(@Nonnull String channelName);
+    void setChannelName(@NotNull String channelName);
 
-    @Nonnull
+    @NotNull
     ChargingPreference getChargingPreference(UUID playerId);
 
     void setChargingPreference(UUID playerId, ChargingPreference preference);

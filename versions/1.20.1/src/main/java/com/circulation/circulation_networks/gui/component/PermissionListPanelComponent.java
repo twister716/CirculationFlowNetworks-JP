@@ -19,7 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -99,7 +99,7 @@ public final class PermissionListPanelComponent extends DraggableComponent imple
             }
 
             @Override
-            protected @Nonnull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
+            protected @NotNull List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
                 EntryHit hit = getEntryHit(mouseX, mouseY);
                 if (hit == null) {
                     return Collections.emptyList();

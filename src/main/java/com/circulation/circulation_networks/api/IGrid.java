@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceSet;
 //~ mc_imports
 import net.minecraft.nbt.NBTTagCompound;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public interface IGrid {

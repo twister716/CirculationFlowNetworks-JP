@@ -4,9 +4,9 @@ import com.circulation.circulation_networks.blocks.BaseBlock;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

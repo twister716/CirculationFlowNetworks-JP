@@ -22,13 +22,14 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.WorldType;
 import net.minecraft.world.biome.Biome;
-import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 @SideOnly(Side.CLIENT)
-@ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public final class RotatingModelRenderHelper {
 
@@ -79,7 +79,7 @@ public final class RotatingModelRenderHelper {
         LIGHT_SIGNATURES.clear();
     }
 
-    public static void removeDisplayLists(int worldId, BlockPos pos) {
+    public static void removeDisplayLists(int worldId, @NotNull BlockPos pos) {
         BlockPos immutablePos = pos.toImmutable();
         removeDisplayLists(NO_DIFFUSE_DISPLAY_LISTS, worldId, immutablePos);
         removeDisplayLists(NORMAL_DISPLAY_LISTS, worldId, immutablePos);
@@ -90,11 +90,262 @@ public final class RotatingModelRenderHelper {
      * Begins a batched render session for a single TileEntity, performing GL state setup once
      * instead of per-part. Call {@link RenderBatch#end()} when done.
      */
-    public static @Nullable RenderBatch beginBatch(TileEntity tileEntity, double x, double y, double z, int destroyStage) {
+    public static @Nullable RenderBatch beginBatch(@NotNull TileEntity tileEntity, double x, double y, double z, int destroyStage) {
         if (tileEntity == null || !tileEntity.hasWorld()) {
             return null;
         }
         return new RenderBatch(tileEntity, x, y, z, destroyStage);
+    }
+
+    private static void renderNoDiffuseDisplayList(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull ResourceLocation modelLocation,
+        @NotNull IBakedModel model,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
+        CachedDisplayList cached = NO_DIFFUSE_DISPLAY_LISTS.get(key);
+        if (cached == null || cached.lightSignature != lightSignature) {
+            if (cached != null && cached.id > 0) {
+                GLAllocation.deleteDisplayLists(cached.id);
+            }
+            int displayList = compileFullBrightDisplayList(
+                minecraft,
+                tessellator,
+                buffer,
+                tileEntity.getWorld(),
+                model,
+                state,
+                tileEntity,
+                renderLayer,
+                blockX,
+                blockY,
+                blockZ
+            );
+            cached = new CachedDisplayList(displayList, lightSignature);
+            NO_DIFFUSE_DISPLAY_LISTS.put(key, cached);
+        }
+        GlStateManager.callList(cached.id);
+    }
+
+    private static void renderNormalDisplayList(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull IBlockAccess lightAccess,
+        @NotNull ResourceLocation modelLocation,
+        @NotNull IBakedModel model,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
+        CachedDisplayList cached = NORMAL_DISPLAY_LISTS.get(key);
+        if (cached == null || cached.lightSignature != lightSignature) {
+            if (cached != null && cached.id > 0) {
+                GLAllocation.deleteDisplayLists(cached.id);
+            }
+            int displayList = compileFullBrightDisplayList(
+                minecraft,
+                tessellator,
+                buffer,
+                lightAccess,
+                model,
+                state,
+                tileEntity,
+                renderLayer,
+                blockX,
+                blockY,
+                blockZ
+            );
+            cached = new CachedDisplayList(displayList, lightSignature);
+            NORMAL_DISPLAY_LISTS.put(key, cached);
+        }
+        GlStateManager.callList(cached.id);
+    }
+
+    private static void renderFullBrightDisplayList(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull IBlockAccess lightAccess,
+        @NotNull ResourceLocation modelLocation,
+        @NotNull IBakedModel model,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        int displayList = FULL_BRIGHT_DISPLAY_LISTS.computeIfAbsent(
+            modelLocation,
+            ignored -> compileFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ)
+        );
+        GlStateManager.callList(displayList);
+    }
+
+    private static int compileFullBrightDisplayList(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull IBlockAccess lightAccess,
+        @NotNull IBakedModel model,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        int displayList = GLAllocation.generateDisplayLists(1);
+        GlStateManager.glNewList(displayList, GL11.GL_COMPILE);
+        try {
+            renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+        } finally {
+            GlStateManager.glEndList();
+        }
+        return displayList;
+    }
+
+    private static int resolveNoDiffuseLightSignature(@NotNull TileEntity tileEntity, @NotNull IBlockState state) {
+        BlockPos pos = tileEntity.getPos().toImmutable();
+        int worldId = System.identityHashCode(tileEntity.getWorld());
+        long worldTime = tileEntity.getWorld().getTotalWorldTime();
+        int stateHash = state.hashCode();
+        LightSignatureKey key = new LightSignatureKey(worldId, pos);
+        CachedLightSignature cached = LIGHT_SIGNATURES.get(key);
+        if (cached != null && cached.worldTime == worldTime && cached.stateHash == stateHash) {
+            return cached.signature;
+        }
+
+        int signature = computeNoDiffuseLightSignature(tileEntity, state, pos);
+        LIGHT_SIGNATURES.put(key, new CachedLightSignature(worldTime, stateHash, signature));
+        return signature;
+    }
+
+    private static int computeNoDiffuseLightSignature(@NotNull TileEntity tileEntity, @NotNull IBlockState state, @NotNull BlockPos pos) {
+        int signature = state.hashCode();
+        signature = 31 * signature + tileEntity.getWorld().getCombinedLight(pos, state.getLightValue(tileEntity.getWorld(), pos));
+        for (EnumFacing facing : EnumFacing.values()) {
+            BlockPos sidePos = pos.offset(facing);
+            IBlockState sideState = tileEntity.getWorld().getBlockState(sidePos);
+            signature = 31 * signature + tileEntity.getWorld().getCombinedLight(sidePos, sideState.getLightValue(tileEntity.getWorld(), sidePos));
+            signature = 31 * signature + sideState.getLightOpacity(tileEntity.getWorld(), sidePos);
+            signature = 31 * signature + (sideState.isOpaqueCube() ? 1 : 0);
+        }
+        return signature;
+    }
+
+    private static void renderModelPass(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull IBlockAccess lightAccess,
+        @NotNull IBakedModel model,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+        buffer.setTranslation(-blockX, -blockY, -blockZ);
+        try {
+            ForgeHooksClient.setRenderLayer(renderLayer);
+            minecraft.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
+                lightAccess,
+                model,
+                state,
+                tileEntity.getPos(),
+                buffer,
+                false
+            );
+            tessellator.draw();
+        } finally {
+            buffer.setTranslation(0.0D, 0.0D, 0.0D);
+            ForgeHooksClient.setRenderLayer(null);
+        }
+    }
+
+    private static void renderDamagePass(
+        @NotNull Minecraft minecraft,
+        @NotNull Tessellator tessellator,
+        @NotNull BufferBuilder buffer,
+        @NotNull IBlockAccess lightAccess,
+        @NotNull IBakedModel damageModel,
+        @NotNull IBlockState state,
+        @NotNull TileEntity tileEntity,
+        @NotNull BlockRenderLayer renderLayer,
+        double blockX,
+        double blockY,
+        double blockZ
+    ) {
+        try {
+            minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+            buffer.setTranslation(-blockX, -blockY, -blockZ);
+            buffer.noColor();
+            ForgeHooksClient.setRenderLayer(renderLayer);
+            minecraft.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
+                lightAccess,
+                damageModel,
+                state,
+                tileEntity.getPos(),
+                buffer,
+                false
+            );
+            tessellator.draw();
+        } finally {
+            buffer.setTranslation(0.0D, 0.0D, 0.0D);
+            ForgeHooksClient.setRenderLayer(null);
+        }
+    }
+
+    private static @Nullable IBakedModel createDamageModel(@NotNull IBakedModel model, @NotNull IBlockState state, @NotNull TileEntity tileEntity, int destroyStage) {
+        if (destroyStage < 0 || destroyStage >= DESTROY_STAGE_COUNT) {
+            return null;
+        }
+        TextureAtlasSprite damageSprite = Minecraft.getMinecraft()
+                                                   .getTextureMapBlocks()
+                                                   .getAtlasSprite("minecraft:blocks/destroy_stage_" + destroyStage);
+        return ForgeHooksClient.getDamageModel(model, damageSprite, state, tileEntity.getWorld(), tileEntity.getPos());
+    }
+
+    private static IBakedModel toFullBrightModel(@NotNull IBakedModel model) {
+        return FULL_BRIGHT_MODELS.computeIfAbsent(model, FullBrightBakedModel::new);
+    }
+
+    private static IBakedModel toNoDiffuseModel(@NotNull IBakedModel model) {
+        return NO_DIFFUSE_MODELS.computeIfAbsent(model, NoDiffuseBakedModel::new);
+    }
+
+    private static void removeDisplayLists(@NotNull Map<NoDiffuseDisplayListKey, CachedDisplayList> cache, int worldId, @NotNull BlockPos pos) {
+        var iter = cache.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            NoDiffuseDisplayListKey key = entry.getKey();
+            if (key.worldId == worldId && key.pos.equals(pos)) {
+                CachedDisplayList cached = entry.getValue();
+                if (cached != null && cached.id > 0) {
+                    GLAllocation.deleteDisplayLists(cached.id);
+                }
+                iter.remove();
+            }
+        }
     }
 
     public static final class RenderBatch {
@@ -110,7 +361,7 @@ public final class RotatingModelRenderHelper {
         private final double blockX, blockY, blockZ;
         private final FullBrightBlockAccess fullBrightAccess;
 
-        private RenderBatch(TileEntity tileEntity, double x, double y, double z, int destroyStage) {
+        private RenderBatch(@NotNull TileEntity tileEntity, double x, double y, double z, int destroyStage) {
             this.tileEntity = tileEntity;
             this.state = tileEntity.getWorld().getBlockState(tileEntity.getPos());
             this.x = x;
@@ -139,12 +390,12 @@ public final class RotatingModelRenderHelper {
             minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         }
 
-        public void renderAroundYAxisFullBright(ResourceLocation modelLocation, float angle, float pivotX, float pivotY, float pivotZ) {
+        public void renderAroundYAxisFullBright(@NotNull ResourceLocation modelLocation, float angle, float pivotX, float pivotY, float pivotZ) {
             renderAroundAxis(modelLocation, angle, pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F, true, false);
         }
 
         public void renderAroundAxis(
-            ResourceLocation modelLocation,
+            @NotNull ResourceLocation modelLocation,
             float angle,
             float pivotX,
             float pivotY,
@@ -193,290 +444,67 @@ public final class RotatingModelRenderHelper {
         }
     }
 
-    private static void renderNoDiffuseDisplayList(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        ResourceLocation modelLocation,
-        IBakedModel model,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
-        CachedDisplayList cached = NO_DIFFUSE_DISPLAY_LISTS.get(key);
-        if (cached == null || cached.lightSignature != lightSignature) {
-            if (cached != null && cached.id > 0) {
-                GLAllocation.deleteDisplayLists(cached.id);
-            }
-            int displayList = compileFullBrightDisplayList(
-                minecraft,
-                tessellator,
-                buffer,
-                tileEntity.getWorld(),
-                model,
-                state,
-                tileEntity,
-                renderLayer,
-                blockX,
-                blockY,
-                blockZ
-            );
-            cached = new CachedDisplayList(displayList, lightSignature);
-            NO_DIFFUSE_DISPLAY_LISTS.put(key, cached);
-        }
-        GlStateManager.callList(cached.id);
-    }
-
-    private static void renderNormalDisplayList(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        IBlockAccess lightAccess,
-        ResourceLocation modelLocation,
-        IBakedModel model,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
-        CachedDisplayList cached = NORMAL_DISPLAY_LISTS.get(key);
-        if (cached == null || cached.lightSignature != lightSignature) {
-            if (cached != null && cached.id > 0) {
-                GLAllocation.deleteDisplayLists(cached.id);
-            }
-            int displayList = compileFullBrightDisplayList(
-                minecraft,
-                tessellator,
-                buffer,
-                lightAccess,
-                model,
-                state,
-                tileEntity,
-                renderLayer,
-                blockX,
-                blockY,
-                blockZ
-            );
-            cached = new CachedDisplayList(displayList, lightSignature);
-            NORMAL_DISPLAY_LISTS.put(key, cached);
-        }
-        GlStateManager.callList(cached.id);
-    }
-
-    private static void renderFullBrightDisplayList(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        IBlockAccess lightAccess,
-        ResourceLocation modelLocation,
-        IBakedModel model,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        int displayList = FULL_BRIGHT_DISPLAY_LISTS.computeIfAbsent(
-            modelLocation,
-            ignored -> compileFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ)
-        );
-        GlStateManager.callList(displayList);
-    }
-
-    private static int compileFullBrightDisplayList(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        IBlockAccess lightAccess,
-        IBakedModel model,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        int displayList = GLAllocation.generateDisplayLists(1);
-        GlStateManager.glNewList(displayList, GL11.GL_COMPILE);
-        try {
-            renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
-        } finally {
-            GlStateManager.glEndList();
-        }
-        return displayList;
-    }
-
-    private static int resolveNoDiffuseLightSignature(TileEntity tileEntity, IBlockState state) {
-        BlockPos pos = tileEntity.getPos().toImmutable();
-        int worldId = System.identityHashCode(tileEntity.getWorld());
-        long worldTime = tileEntity.getWorld().getTotalWorldTime();
-        int stateHash = state.hashCode();
-        LightSignatureKey key = new LightSignatureKey(worldId, pos);
-        CachedLightSignature cached = LIGHT_SIGNATURES.get(key);
-        if (cached != null && cached.worldTime == worldTime && cached.stateHash == stateHash) {
-            return cached.signature;
-        }
-
-        int signature = computeNoDiffuseLightSignature(tileEntity, state, pos);
-        LIGHT_SIGNATURES.put(key, new CachedLightSignature(worldTime, stateHash, signature));
-        return signature;
-    }
-
-    private static int computeNoDiffuseLightSignature(TileEntity tileEntity, IBlockState state, BlockPos pos) {
-        int signature = state.hashCode();
-        signature = 31 * signature + tileEntity.getWorld().getCombinedLight(pos, state.getLightValue(tileEntity.getWorld(), pos));
-        for (EnumFacing facing : EnumFacing.values()) {
-            BlockPos sidePos = pos.offset(facing);
-            IBlockState sideState = tileEntity.getWorld().getBlockState(sidePos);
-            signature = 31 * signature + tileEntity.getWorld().getCombinedLight(sidePos, sideState.getLightValue(tileEntity.getWorld(), sidePos));
-            signature = 31 * signature + sideState.getLightOpacity(tileEntity.getWorld(), sidePos);
-            signature = 31 * signature + (sideState.isOpaqueCube() ? 1 : 0);
-        }
-        return signature;
-    }
-
-    private static void renderModelPass(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        IBlockAccess lightAccess,
-        IBakedModel model,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-        buffer.setTranslation(-blockX, -blockY, -blockZ);
-        try {
-            ForgeHooksClient.setRenderLayer(renderLayer);
-            minecraft.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
-                lightAccess,
-                model,
-                state,
-                tileEntity.getPos(),
-                buffer,
-                false
-            );
-            tessellator.draw();
-        } finally {
-            buffer.setTranslation(0.0D, 0.0D, 0.0D);
-            ForgeHooksClient.setRenderLayer(null);
-        }
-    }
-
-    private static void renderDamagePass(
-        Minecraft minecraft,
-        Tessellator tessellator,
-        BufferBuilder buffer,
-        IBlockAccess lightAccess,
-        IBakedModel damageModel,
-        IBlockState state,
-        TileEntity tileEntity,
-        BlockRenderLayer renderLayer,
-        double blockX,
-        double blockY,
-        double blockZ
-    ) {
-        try {
-            minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-            buffer.setTranslation(-blockX, -blockY, -blockZ);
-            buffer.noColor();
-            ForgeHooksClient.setRenderLayer(renderLayer);
-            minecraft.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(
-                lightAccess,
-                damageModel,
-                state,
-                tileEntity.getPos(),
-                buffer,
-                false
-            );
-            tessellator.draw();
-        } finally {
-            buffer.setTranslation(0.0D, 0.0D, 0.0D);
-            ForgeHooksClient.setRenderLayer(null);
-        }
-    }
-
-    private static @Nullable IBakedModel createDamageModel(IBakedModel model, IBlockState state, TileEntity tileEntity, int destroyStage) {
-        if (destroyStage < 0 || destroyStage >= DESTROY_STAGE_COUNT) {
-            return null;
-        }
-        TextureAtlasSprite damageSprite = Minecraft.getMinecraft()
-            .getTextureMapBlocks()
-            .getAtlasSprite("minecraft:blocks/destroy_stage_" + destroyStage);
-        return ForgeHooksClient.getDamageModel(model, damageSprite, state, tileEntity.getWorld(), tileEntity.getPos());
-    }
-
-    private static IBakedModel toFullBrightModel(IBakedModel model) {
-        return FULL_BRIGHT_MODELS.computeIfAbsent(model, FullBrightBakedModel::new);
-    }
-
-    private static IBakedModel toNoDiffuseModel(IBakedModel model) {
-        return NO_DIFFUSE_MODELS.computeIfAbsent(model, NoDiffuseBakedModel::new);
-    }
-
     @Desugar
+    @ParametersAreNonnullByDefault
     private record FullBrightBlockAccess(IBlockAccess delegate) implements IBlockAccess {
 
         @Override
-            public @Nullable TileEntity getTileEntity(BlockPos pos) {
-                return delegate.getTileEntity(pos);
-            }
-
-            @Override
-            public int getCombinedLight(BlockPos pos, int lightValue) {
-                return FULL_BRIGHT_LIGHTMAP;
-            }
-
-            @Override
-            public IBlockState getBlockState(BlockPos pos) {
-                return delegate.getBlockState(pos);
-            }
-
-            @Override
-            public boolean isAirBlock(BlockPos pos) {
-                return delegate.isAirBlock(pos);
-            }
-
-            @Override
-            public Biome getBiome(BlockPos pos) {
-                return delegate.getBiome(pos);
-            }
-
-            @Override
-            public int getStrongPower(BlockPos pos, EnumFacing direction) {
-                return delegate.getStrongPower(pos, direction);
-            }
-
-            @Override
-            public WorldType getWorldType() {
-                return delegate.getWorldType();
-            }
-
-            @Override
-            public boolean isSideSolid(BlockPos pos, EnumFacing side, boolean _default) {
-                return delegate.isSideSolid(pos, side, _default);
-            }
+        public @Nullable TileEntity getTileEntity(BlockPos pos) {
+            return delegate.getTileEntity(pos);
         }
+
+        @Override
+        public int getCombinedLight(BlockPos pos, int lightValue) {
+            return FULL_BRIGHT_LIGHTMAP;
+        }
+
+        @Override
+        public IBlockState getBlockState(BlockPos pos) {
+            return delegate.getBlockState(pos);
+        }
+
+        @Override
+        public boolean isAirBlock(BlockPos pos) {
+            return delegate.isAirBlock(pos);
+        }
+
+        @Override
+        public Biome getBiome(BlockPos pos) {
+            return delegate.getBiome(pos);
+        }
+
+        @Override
+        public int getStrongPower(BlockPos pos, EnumFacing direction) {
+            return delegate.getStrongPower(pos, direction);
+        }
+
+        @Override
+        public WorldType getWorldType() {
+            return delegate.getWorldType();
+        }
+
+        @Override
+        public boolean isSideSolid(BlockPos pos, EnumFacing side, boolean _default) {
+            return delegate.isSideSolid(pos, side, _default);
+        }
+    }
 
     private static final class FullBrightBakedModel extends BakedModelWrapper<IBakedModel> {
 
-        private FullBrightBakedModel(IBakedModel originalModel) {
+        private FullBrightBakedModel(@NotNull IBakedModel originalModel) {
             super(originalModel);
+        }
+
+        private static List<BakedQuad> wrapQuads(@NotNull List<BakedQuad> quads) {
+            List<BakedQuad> wrapped = new ArrayList<>(quads.size());
+            for (BakedQuad quad : quads) {
+                wrapped.add(FULL_BRIGHT_QUADS.computeIfAbsent(quad, FullBrightBakedModel::wrapQuad));
+            }
+            return wrapped;
+        }
+
+        private static BakedQuad wrapQuad(@NotNull BakedQuad quad) {
+            return new BakedQuad(quad.getVertexData(), quad.getTintIndex(), quad.getFace(), quad.getSprite(), false, quad.getFormat());
         }
 
         @Override
@@ -487,24 +515,24 @@ public final class RotatingModelRenderHelper {
             }
             return FULL_BRIGHT_QUAD_LISTS.computeIfAbsent(quads, FullBrightBakedModel::wrapQuads);
         }
-
-        private static List<BakedQuad> wrapQuads(List<BakedQuad> quads) {
-            List<BakedQuad> wrapped = new ArrayList<>(quads.size());
-            for (BakedQuad quad : quads) {
-                wrapped.add(FULL_BRIGHT_QUADS.computeIfAbsent(quad, FullBrightBakedModel::wrapQuad));
-            }
-            return wrapped;
-        }
-
-        private static BakedQuad wrapQuad(BakedQuad quad) {
-            return new BakedQuad(quad.getVertexData(), quad.getTintIndex(), quad.getFace(), quad.getSprite(), false, quad.getFormat());
-        }
     }
 
     private static final class NoDiffuseBakedModel extends BakedModelWrapper<IBakedModel> {
 
-        private NoDiffuseBakedModel(IBakedModel originalModel) {
+        private NoDiffuseBakedModel(@NotNull IBakedModel originalModel) {
             super(originalModel);
+        }
+
+        private static List<BakedQuad> wrapQuads(@NotNull List<BakedQuad> quads) {
+            List<BakedQuad> wrapped = new ArrayList<>(quads.size());
+            for (BakedQuad quad : quads) {
+                wrapped.add(NO_DIFFUSE_QUADS.computeIfAbsent(quad, NoDiffuseBakedModel::wrapQuad));
+            }
+            return wrapped;
+        }
+
+        private static BakedQuad wrapQuad(@NotNull BakedQuad quad) {
+            return new BakedQuad(quad.getVertexData(), quad.getTintIndex(), quad.getFace(), quad.getSprite(), false, quad.getFormat());
         }
 
         @Override
@@ -515,59 +543,19 @@ public final class RotatingModelRenderHelper {
             }
             return NO_DIFFUSE_QUAD_LISTS.computeIfAbsent(quads, NoDiffuseBakedModel::wrapQuads);
         }
-
-        private static List<BakedQuad> wrapQuads(List<BakedQuad> quads) {
-            List<BakedQuad> wrapped = new ArrayList<>(quads.size());
-            for (BakedQuad quad : quads) {
-                wrapped.add(NO_DIFFUSE_QUADS.computeIfAbsent(quad, NoDiffuseBakedModel::wrapQuad));
-            }
-            return wrapped;
-        }
-
-        private static BakedQuad wrapQuad(BakedQuad quad) {
-            return new BakedQuad(quad.getVertexData(), quad.getTintIndex(), quad.getFace(), quad.getSprite(), false, quad.getFormat());
-        }
-    }
-
-    private static final class CachedDisplayList {
-        private final int id;
-        private final int lightSignature;
-
-        private CachedDisplayList(int id, int lightSignature) {
-            this.id = id;
-            this.lightSignature = lightSignature;
-        }
-    }
-
-    private static final class CachedLightSignature {
-        private final long worldTime;
-        private final int stateHash;
-        private final int signature;
-
-        private CachedLightSignature(long worldTime, int stateHash, int signature) {
-            this.worldTime = worldTime;
-            this.stateHash = stateHash;
-            this.signature = signature;
-        }
-    }
-
-    private static void removeDisplayLists(Map<NoDiffuseDisplayListKey, CachedDisplayList> cache, int worldId, BlockPos pos) {
-        var iter = cache.entrySet().iterator();
-        while (iter.hasNext()) {
-            var entry = iter.next();
-            NoDiffuseDisplayListKey key = entry.getKey();
-            if (key.worldId == worldId && key.pos.equals(pos)) {
-                CachedDisplayList cached = entry.getValue();
-                if (cached != null && cached.id > 0) {
-                    GLAllocation.deleteDisplayLists(cached.id);
-                }
-                iter.remove();
-            }
-        }
     }
 
     @Desugar
-    private record NoDiffuseDisplayListKey(int worldId, BlockPos pos, ResourceLocation modelLocation) {
+    private record CachedDisplayList(int id, int lightSignature) {
+    }
+
+    @Desugar
+    private record CachedLightSignature(long worldTime, int stateHash, int signature) {
+    }
+
+    @Desugar
+    private record NoDiffuseDisplayListKey(int worldId, BlockPos pos,
+                                           ResourceLocation modelLocation) {
     }
 
     @Desugar

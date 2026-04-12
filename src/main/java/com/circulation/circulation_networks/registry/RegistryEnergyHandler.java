@@ -16,7 +16,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayDeque;
@@ -209,7 +209,7 @@ public final class RegistryEnergyHandler {
     public record Pair(double multiplying, String unit, int p) implements Comparable<Pair> {
 
         @Override
-        public int compareTo(@Nonnull RegistryEnergyHandler.Pair o) {
+        public int compareTo(@NotNull RegistryEnergyHandler.Pair o) {
             return Integer.compare(p, o.p);
         }
     }

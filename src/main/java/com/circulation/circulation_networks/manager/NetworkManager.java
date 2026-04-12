@@ -50,8 +50,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 *///?}
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -96,11 +96,7 @@ public final class NetworkManager {
     public static File getSaveFile() {
         if (saveFile == null) {
             var path = getGridSavePath();
-            //? if <1.20 {
             tryCreateDirectories(path);
-            //?} else {
-            /*tryCreateDirectories(path, "grid save directory");
-            *///?}
             saveFile = path.toFile();
         }
         return saveFile;
@@ -134,25 +130,29 @@ public final class NetworkManager {
         }
     }
 
-    //? if <1.20 {
     private static Path getGridSavePath() {
+        //? if <1.20 {
         return DimensionManager.getWorld(0)
                                .getSaveHandler()
                                .getWorldDirectory()
                                .toPath()
                                .resolve("circulation_grids");
+        //?} else {
+        /*return getCurrentServer()
+                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("circulation_grids");
+        *///?}
     }
-    //?}
 
-    //? if <1.20 {
     static void tryCreateDirectories(Path path) {
         try {
             Files.createDirectories(path);
         } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to create {} at {}", "grid save directory", path, e);
+            CirculationFlowNetworks.LOGGER.warn("Failed to create grid save directory at {}", path, e);
         }
     }
 
+    //? if <1.20 {
     static @Nullable NBTTagCompound tryReadCompressedNbt(File file, String context) {
         try {
             return readCompressedNbt(file);
@@ -181,18 +181,8 @@ public final class NetworkManager {
             CompressedStreamTools.safeWrite(nbt, file);
         }
     }
-    //?} else if <1.21 {
-    /*static boolean tryCreateDirectories(Path path, String context) {
-        try {
-            Files.createDirectories(path);
-            return true;
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to create {} at {}", context, path, e);
-            return false;
-        }
-    }
-
-    static @Nullable CompoundTag tryReadCompressedNbt(File file, String context) {
+    //?} else {
+    /*static @Nullable CompoundTag tryReadCompressedNbt(File file, String context) {
         try {
             return readCompressedNbt(file);
         } catch (IOException e) {
@@ -212,52 +202,31 @@ public final class NetworkManager {
     }
 
     static CompoundTag readCompressedNbt(File file) throws IOException {
+        //~ if >=1.21 'NbtIo.readCompressed(file)' -> 'NbtIo.readCompressed(file.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap())' {
         return NbtIo.readCompressed(file);
+        //~}
     }
 
     static void writeCompressedNbt(CompoundTag nbt, File file) throws IOException {
         synchronized (FILE_IO_LOCK) {
+            //~ if >=1.21 'NbtIo.writeCompressed(nbt, file)' -> 'NbtIo.writeCompressed(nbt, file.toPath())' {
             NbtIo.writeCompressed(nbt, file);
+            //~}
         }
     }
-    *///?} else {
-    /*static boolean tryCreateDirectories(Path path, String context) {
-        try {
-            Files.createDirectories(path);
-            return true;
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to create {} at {}", context, path, e);
-            return false;
-        }
+    *///?}
+
+    //? if >=1.20 {
+    /*private static @Nullable net.minecraft.server.MinecraftServer getCurrentServer() {
+        //~ if >=1.21 'net.minecraftforge.server.ServerLifecycleHooks' -> 'net.neoforged.neoforge.server.ServerLifecycleHooks' {
+        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        //~}
     }
 
-    static @Nullable CompoundTag tryReadCompressedNbt(File file, String context) {
-        try {
-            return readCompressedNbt(file);
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to read {} from {}", context, file.getAbsolutePath(), e);
-            return null;
-        }
-    }
-
-    static boolean tryWriteCompressedNbt(CompoundTag nbt, File file, String context) {
-        try {
-            writeCompressedNbt(nbt, file);
-            return true;
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to write {} to {}", context, file.getAbsolutePath(), e);
-            return false;
-        }
-    }
-
-    static CompoundTag readCompressedNbt(File file) throws IOException {
-        return NbtIo.readCompressed(file.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-    }
-
-    static void writeCompressedNbt(CompoundTag nbt, File file) throws IOException {
-        synchronized (FILE_IO_LOCK) {
-            NbtIo.writeCompressed(nbt, file.toPath());
-        }
+    private static net.minecraft.resources.ResourceLocation parseDimensionLocation(String dimensionKey) {
+        //~ if >=1.21 'new net.minecraft.resources.ResourceLocation(dimensionKey)' -> 'net.minecraft.resources.ResourceLocation.parse(dimensionKey)' {
+        return new net.minecraft.resources.ResourceLocation(dimensionKey);
+        //~}
     }
     *///?}
 
@@ -295,14 +264,10 @@ public final class NetworkManager {
         world.destroyBlock(pos, true);
     }
 
-    private static boolean isChunkLoaded(World world, int chunkX, int chunkZ) {
-        return world.isBlockLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
-    }
-
     private static boolean isRegisteredDimension(int dimId) {
         return DimensionManager.isDimensionRegistered(dimId);
     }
-    //?} else if <1.21 {
+    //?} else {
     /*private static int getDimensionId(Level world) {
         return world.dimension().location().hashCode();
     }
@@ -312,7 +277,7 @@ public final class NetworkManager {
     }
 
     private @Nullable Level resolveWorld(int dimId) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = getCurrentServer();
         if (server == null) {
             return null;
         }
@@ -322,7 +287,7 @@ public final class NetworkManager {
             var level = server.getLevel(
                 net.minecraft.resources.ResourceKey.create(
                     net.minecraft.core.registries.Registries.DIMENSION,
-                    new net.minecraft.resources.ResourceLocation(dimensionKey)
+                    parseDimensionLocation(dimensionKey)
                 )
             );
             if (level != null) {
@@ -357,74 +322,6 @@ public final class NetworkManager {
 
     private static void destroyBlock(Level world, BlockPos pos) {
         world.destroyBlock(pos, true, null);
-    }
-
-    private static boolean isChunkLoaded(Level world, int chunkX, int chunkZ) {
-        return world.isLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
-    }
-
-    private static boolean isRegisteredDimension(int dimId) {
-        return true;
-    }
-    *///?} else {
-    /*private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
-    }
-
-    private static int getDimensionId(INode node) {
-        return node.getDimensionId();
-    }
-
-    private @Nullable Level resolveWorld(int dimId) {
-        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) {
-            return null;
-        }
-
-        String dimensionKey = serializedDimensionKeys.get(dimId);
-        if (dimensionKey != null && !dimensionKey.isEmpty()) {
-            var level = server.getLevel(
-                net.minecraft.resources.ResourceKey.create(
-                    net.minecraft.core.registries.Registries.DIMENSION,
-                    net.minecraft.resources.ResourceLocation.parse(dimensionKey)
-                )
-            );
-            if (level != null) {
-                return level;
-            }
-        }
-
-        for (Level level : server.getAllLevels()) {
-            if (level.dimension().location().hashCode() == dimId) {
-                return level;
-            }
-        }
-        return null;
-    }
-
-    private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
-    }
-
-    private static List<? extends Player> getPlayers(Level world) {
-        return world.players();
-    }
-
-    private static BlockPos blockPosFromLong(long posLong) {
-        return BlockPos.of(posLong);
-    }
-
-    @Nullable
-    private static BlockEntity getBlockEntity(Level world, BlockPos pos) {
-        return world.getBlockEntity(pos);
-    }
-
-    private static void destroyBlock(Level world, BlockPos pos) {
-        world.destroyBlock(pos, true, null);
-    }
-
-    private static boolean isChunkLoaded(Level world, int chunkX, int chunkZ) {
-        return world.isLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
     }
 
     private static boolean isRegisteredDimension(int dimId) {
@@ -652,7 +549,7 @@ public final class NetworkManager {
             for (long chunkCoord : dimEntry.getValue().keySet()) {
                 int chunkX = (int) (chunkCoord >> 32);
                 int chunkZ = (int) chunkCoord;
-                if (isChunkLoaded(world, chunkX, chunkZ)) {
+                if (Functions.isChunkLoaded(world, chunkX, chunkZ)) {
                     loadedChunkCoords.add(chunkCoord);
                 }
             }
@@ -681,30 +578,15 @@ public final class NetworkManager {
     //~}
 
     //~ if >=1.20 '(World ' -> '(Level ' {
-    public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
+    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
         return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(pos));
     }
-    //~}
-    //? if >=1.20 <1.21 {
-    /*private static Path getGridSavePath() {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer()
-                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
-                .resolve("circulation_grids");
-    }
-    *///?} else if >=1.21 {
-    /*private static Path getGridSavePath() {
-        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
-                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
-                .resolve("circulation_grids");
-    }
-    *///?}
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(World world, int chunkX, int chunkY) {
+    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, int chunkX, int chunkY) {
         return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(chunkX, chunkY));
     }
 
-    public @Nonnull ReferenceSet<INode> getNodesInChunk(World world, int chunkX, int chunkZ) {
+    public @NotNull ReferenceSet<INode> getNodesInChunk(World world, int chunkX, int chunkZ) {
         var map = nodeLocation.get(getDimensionId(world));
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
@@ -863,12 +745,12 @@ public final class NetworkManager {
         return incomingNeighbors;
     }
 
-    public @Nonnull AddNodeResult addNode(INode newNode) {
+    public @NotNull AddNodeResult addNode(INode newNode) {
         return addNode(newNode, null);
     }
 
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public @Nonnull AddNodeResult addNode(INode newNode, TileEntity blockEntity) {
+    public @NotNull AddNodeResult addNode(INode newNode, TileEntity blockEntity) {
         //~}
         if (newNode == null) {
             return AddNodeResult.failure(AddNodeResult.Status.NULL_NODE);
@@ -1091,20 +973,12 @@ public final class NetworkManager {
             }
             //? if <1.20 {
             if (!nbt.hasKey("dim")) continue;
-            //?} else if <1.21 {
+            //?} else {
             /*if (!nbt.contains("dim")) continue;
-            var dimLoc = new net.minecraft.resources.ResourceLocation(nbt.getString("dim"));
+            var dimLoc = parseDimensionLocation(nbt.getString("dim"));
             var dimResKey = net.minecraft.resources.ResourceKey.create(
                 net.minecraft.core.registries.Registries.DIMENSION, dimLoc);
-            var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-            if (server == null || server.getLevel(dimResKey) == null) continue;
-            int dimId = dimLoc.hashCode();
-            *///?} else {
-            /*if (!nbt.contains("dim")) continue;
-            var dimLoc = net.minecraft.resources.ResourceLocation.parse(nbt.getString("dim"));
-            var dimResKey = net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION, dimLoc);
-            var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+            var server = getCurrentServer();
             if (server == null || server.getLevel(dimResKey) == null) continue;
             int dimId = dimLoc.hashCode();
             *///?}
@@ -1248,7 +1122,7 @@ public final class NetworkManager {
             return status == Status.SUCCESS;
         }
 
-        public @Nonnull Status getStatus() {
+        public @NotNull Status getStatus() {
             return status;
         }
 

@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiTextField;
 /*import net.minecraft.client.gui.components.EditBox;
  *///?}
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.function.Predicate;
 
 @SuppressWarnings("unused")

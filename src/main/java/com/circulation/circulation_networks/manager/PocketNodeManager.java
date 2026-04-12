@@ -38,7 +38,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.nbt.Tag;
 *///?}
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 
 public final class PocketNodeManager {
@@ -124,12 +124,12 @@ public final class PocketNodeManager {
     //? if <1.20 {
     @Nullable
     private static net.minecraft.util.EnumFacing inferAttachmentFace(World world, BlockPos pos) {
-        if (world == null || !world.isBlockLoaded(pos)) {
+        if (world == null || !Functions.isChunkLoaded(world, pos)) {
             return null;
         }
         for (net.minecraft.util.EnumFacing face : net.minecraft.util.EnumFacing.values()) {
             BlockPos adjacentPos = pos.offset(face);
-            if (!world.isBlockLoaded(adjacentPos)) {
+            if (!Functions.isChunkLoaded(world, adjacentPos)) {
                 continue;
             }
             var adjacentState = world.getBlockState(adjacentPos);
@@ -142,12 +142,12 @@ public final class PocketNodeManager {
     //?} else {
     /*@Nullable
     private static net.minecraft.core.Direction inferAttachmentFace(Level world, BlockPos pos) {
-        if (world == null || !world.isLoaded(pos)) {
+        if (world == null || !Functions.isChunkLoaded(world, pos)) {
             return null;
         }
         for (net.minecraft.core.Direction face : net.minecraft.core.Direction.values()) {
             BlockPos adjacentPos = pos.relative(face);
-            if (!world.isLoaded(adjacentPos)) {
+            if (!Functions.isChunkLoaded(world, adjacentPos)) {
                 continue;
             }
             var adjacentState = world.getBlockState(adjacentPos);
@@ -156,6 +156,14 @@ public final class PocketNodeManager {
             }
         }
         return net.minecraft.core.Direction.UP;
+    }
+    *///?}
+
+    //? if >=1.20 {
+    /*private static @Nullable MinecraftServer getCurrentServer() {
+        //~ if >=1.21 'net.minecraftforge.server.ServerLifecycleHooks' -> 'net.neoforged.neoforge.server.ServerLifecycleHooks' {
+        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        //~}
     }
     *///?}
 
@@ -173,19 +181,19 @@ public final class PocketNodeManager {
     }
 
     private static boolean isHostChunkLoaded(World world, BlockPos pos) {
-        return world.isBlockLoaded(pos);
+        return Functions.isChunkLoaded(world, pos);
     }
 
     private static boolean hasHostBlock(World world, BlockPos pos) {
-        if (!world.isBlockLoaded(pos)) {
+        if (!Functions.isChunkLoaded(world, pos)) {
             return false;
         }
         var state = world.getBlockState(pos);
         return !state.getBlock().isAir(state, world, pos) && !(world.getTileEntity(pos) instanceof INodeBlockEntity);
     }
-    //?} else if <1.21 {
+    //?} else {
     /*private static @Nullable Level resolveWorld(int dimId) {
-        MinecraftServer server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = getCurrentServer();
         if (server == null) {
             return null;
         }
@@ -206,42 +214,11 @@ public final class PocketNodeManager {
     }
 
     private static boolean isHostChunkLoaded(Level world, BlockPos pos) {
-        return world.hasChunkAt(pos);
+        return Functions.isChunkLoaded(world, pos);
     }
 
     private static boolean hasHostBlock(Level world, BlockPos pos) {
-        return world.hasChunkAt(pos)
-            && !world.getBlockState(pos).isAir()
-            && !(world.getBlockEntity(pos) instanceof INodeBlockEntity);
-    }
-    *///?} else {
-    /*private static @Nullable Level resolveWorld(int dimId) {
-        MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) {
-            return null;
-        }
-        for (Level level : server.getAllLevels()) {
-            if (level.dimension().location().hashCode() == dimId) {
-                return level;
-            }
-        }
-        return null;
-    }
-
-    private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
-    }
-
-    private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
-    }
-
-    private static boolean isHostChunkLoaded(Level world, BlockPos pos) {
-        return world.hasChunkAt(pos);
-    }
-
-    private static boolean hasHostBlock(Level world, BlockPos pos) {
-        return world.hasChunkAt(pos)
+        return Functions.isChunkLoaded(world, pos)
             && !world.getBlockState(pos).isAir()
             && !(world.getBlockEntity(pos) instanceof INodeBlockEntity);
     }

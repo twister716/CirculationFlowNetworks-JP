@@ -36,8 +36,8 @@ import net.minecraftforge.common.util.Constants;
 /*import net.minecraft.nbt.Tag;
  *///?}
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -400,7 +400,7 @@ public final class HubChannelManager {
         return getOnlinePlayerSnapshots(channelId).toJson();
     }
 
-    @Nonnull
+    @NotNull
     public ReferenceSet<IGrid> getChannelGrids(UUID channelId) {
         ensureLoaded();
         HubChannel channel = channels.get(channelId);

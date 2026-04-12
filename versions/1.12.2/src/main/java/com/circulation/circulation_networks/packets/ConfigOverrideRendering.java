@@ -11,8 +11,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
-import javax.annotation.Nonnull;
-
 import static com.circulation.circulation_networks.CirculationFlowNetworks.NET_CHANNEL;
 
 public final class ConfigOverrideRendering implements Packet<ConfigOverrideRendering> {
@@ -26,9 +24,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
     private int mode;
     private long pos;
     private int energyTypeOrdinal;
-    @Nonnull
     private long[] positions = EL;
-    @Nonnull
     private int[] types = EI;
 
     public ConfigOverrideRendering(int dim) {

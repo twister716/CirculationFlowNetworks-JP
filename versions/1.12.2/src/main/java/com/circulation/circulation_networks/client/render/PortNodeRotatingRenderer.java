@@ -21,6 +21,10 @@ public final class PortNodeRotatingRenderer extends TileEntitySpecialRenderer<Ti
     private static final ResourceLocation OUT_BASE = model("port_node/port_node_out_base");
     private static final ResourceLocation OUT_EMISSIVE = model("port_node/port_node_out_emissive");
 
+    private static ResourceLocation model(String path) {
+        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
+    }
+
     @Override
     public void render(@NotNull TileEntityPortNode te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         if (!te.hasWorld() || !CFNConfig.NODE.rendering.animatedSpecialModels) {
@@ -46,9 +50,5 @@ public final class PortNodeRotatingRenderer extends TileEntitySpecialRenderer<Ti
             batch.end();
         }
         super.render(te, x, y, z, partialTicks, destroyStage, alpha);
-    }
-
-    private static ResourceLocation model(String path) {
-        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
     }
 }

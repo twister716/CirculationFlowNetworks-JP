@@ -5,15 +5,13 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.manager.NetworkManager;
-import com.circulation.circulation_networks.utils.Functions;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
+import com.circulation.circulation_networks.utils.Functions;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nonnull;
 
 public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity implements INodeBlockEntity {
 
@@ -24,7 +22,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
         return node;
     }
 
-    @Nonnull
+    @NotNull
     protected abstract NodeType<? extends N> getNodeType();
 
     protected @NotNull NodeContext createNodeContext() {
@@ -152,7 +150,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
     }
 
     private boolean shouldInitializeNode() {
-        return world != null && world.isBlockLoaded(pos);
+        return world != null && Functions.isChunkLoaded(world, pos);
     }
 
 }

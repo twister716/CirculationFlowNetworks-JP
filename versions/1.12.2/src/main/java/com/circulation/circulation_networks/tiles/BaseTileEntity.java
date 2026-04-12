@@ -7,9 +7,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
 
 public class BaseTileEntity extends TileEntity {
 
@@ -17,7 +16,7 @@ public class BaseTileEntity extends TileEntity {
         return false;
     }
 
-    @Nonnull
+    @NotNull
     public CFNBaseContainer getContainer(EntityPlayer player) {
         return new EmptyContainer();
     }

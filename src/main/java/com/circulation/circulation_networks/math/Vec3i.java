@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.math;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 //? if <1.20 {
 import com.github.bsideup.jabel.Desugar;
 
@@ -31,7 +31,7 @@ public record Vec3i(int x, int y, int z) {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public String toString() {
         return "Vec3i{" + "x=" + x + ", y=" + y + ", z=" + z + '}';
     }

@@ -21,6 +21,10 @@ public final class ChargingNodeRotatingRenderer extends TileEntitySpecialRendere
     private static final ResourceLocation RING_BASE = model("charging_node/charging_node_ring_base");
     private static final ResourceLocation RING_EMISSIVE = model("charging_node/charging_node_ring_emissive");
 
+    private static ResourceLocation model(String path) {
+        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
+    }
+
     @Override
     public void render(@NotNull TileEntityChargingNode te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         if (!te.hasWorld() || !CFNConfig.NODE.rendering.animatedSpecialModels) {
@@ -46,9 +50,5 @@ public final class ChargingNodeRotatingRenderer extends TileEntitySpecialRendere
             batch.end();
         }
         super.render(te, x, y, z, partialTicks, destroyStage, alpha);
-    }
-
-    private static ResourceLocation model(String path) {
-        return new ResourceLocation(CirculationFlowNetworks.MOD_ID, "block/" + path);
     }
 }

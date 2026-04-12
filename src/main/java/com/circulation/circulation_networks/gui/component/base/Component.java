@@ -27,8 +27,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 *///?}
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.awt.Rectangle;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,7 +43,7 @@ public class Component extends Rectangle {
     /*@Nullable
     private static GuiGraphics currentGuiGraphics;
     *///?}
-    @Nonnull
+    @NotNull
     protected final CFNBaseGui<?> gui;
     private final List<Component> children = new ObjectArrayList<>();
     private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
@@ -57,7 +57,7 @@ public class Component extends Rectangle {
     private boolean hovered = false;
     private String[] spriteLayers = EMPTY;
 
-    public Component(int x, int y, int width, int height, @Nonnull CFNBaseGui<?> gui) {
+    public Component(int x, int y, int width, int height, @NotNull CFNBaseGui<?> gui) {
         super(x, y, width, height);
         this.gui = gui;
         update = true;
@@ -73,7 +73,7 @@ public class Component extends Rectangle {
     }
 
     @Nullable
-    protected static String getItemCountOverlayText(@Nonnull ItemStack stack) {
+    protected static String getItemCountOverlayText(@NotNull ItemStack stack) {
         if (stack.isEmpty() || stack.getCount() <= 1) {
             return null;
         }
@@ -452,7 +452,7 @@ public class Component extends Rectangle {
         AtlasRenderHelper.endBatch();
     }
 
-    @Nonnull
+    @NotNull
     protected List<LocalizedComponent> getTooltip(int mouseX, int mouseY) {
         List<LocalizedComponent> slotTooltip = collectSlotTooltip(mouseX, mouseY);
         if (!slotTooltip.isEmpty()) {
@@ -462,7 +462,7 @@ public class Component extends Rectangle {
     }
 
     //? if <1.20 {
-    @Nonnull
+    @NotNull
     protected List<LocalizedComponent> collectSlotTooltip(int mouseX, int mouseY) {
         if (boundLayouts.isEmpty()) return Collections.emptyList();
 
@@ -613,7 +613,7 @@ public class Component extends Rectangle {
         return (T) this;
     }
 
-    @Nonnull
+    @NotNull
     public final List<LocalizedComponent> collectTooltip(int mouseX, int mouseY) {
         if (!isVisible() || !contains(mouseX, mouseY)) return Collections.emptyList();
         if (children.isEmpty()) {

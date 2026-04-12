@@ -29,9 +29,7 @@ import net.minecraftforge.items.IItemHandler;
 /*import net.neoforged.neoforge.items.IItemHandler;
  *///?}
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -158,7 +156,7 @@ public final class HubNode extends Node implements IHubNode {
     }
 
     @Override
-    public void setChannelName(@Nonnull String channelName) {
+    public void setChannelName(@NotNull String channelName) {
         this.channelName = channelName != null ? channelName : "";
         if (!syncingChannelState && shouldSyncChannelManager()) {
             HubChannelManager.INSTANCE.updateChannelFromHub(this);

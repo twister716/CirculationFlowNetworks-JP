@@ -13,7 +13,7 @@ import ic2.api.item.ElectricItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("DataFlowIssue")
 public final class EUHandler implements IEnergyHandler {
