@@ -9,6 +9,7 @@ import groovy.lang.GroovyObject
 import groovy.lang.GroovyShell
 import groovy.text.SimpleTemplateEngine
 import org.gradle.jvm.tasks.Jar
+import org.gradle.api.tasks.Sync
 import java.util.Properties
 
 plugins {
@@ -845,6 +846,45 @@ val cleanroomAfterSync = tasks.register("cleanroomAfterSync") {
     dependsOn(generateComponentAtlasRegistration)
     if (isLegacyRfg) {
         dependsOn("injectTags")
+    }
+}
+
+if (project != rootProject) {
+    val aggregateVersionArtifacts = run {
+        val taskKey = "aggregateVersionArtifactsProvider"
+        val extra = rootProject.extensions.extraProperties
+        if (extra.has(taskKey)) {
+            @Suppress("UNCHECKED_CAST")
+            extra.get(taskKey) as TaskProvider<Sync>
+        } else {
+            rootProject.tasks.register<Sync>("aggregateVersionArtifacts") {
+                group = "build"
+                description = "Collect versioned jars into the root build/libs directory."
+
+                into(rootProject.layout.buildDirectory.dir("libs"))
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+                rootProject.subprojects.forEach { versionProject ->
+                    from(versionProject.layout.buildDirectory.dir("libs")) {
+                        include("*.jar")
+                    }
+                    from(versionProject.layout.buildDirectory.dir("devlibs")) {
+                        include("*.jar")
+                        rename { fileName ->
+                            if (fileName.endsWith("-dev.jar")) {
+                                fileName
+                            } else {
+                                fileName.removeSuffix(".jar") + "-dev.jar"
+                            }
+                        }
+                    }
+                }
+            }.also { extra.set(taskKey, it) }
+        }
+    }
+
+    tasks.matching { it.name == "assemble" || it.name == "build" }.configureEach {
+        finalizedBy(aggregateVersionArtifacts)
     }
 }
 

@@ -26,3 +26,4 @@ run
 *.txt
 /textures/
 /.worktrees/
+*/copilot*
