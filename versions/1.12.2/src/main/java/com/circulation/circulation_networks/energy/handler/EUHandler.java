@@ -127,8 +127,7 @@ public final class EUHandler implements IEnergyHandler {
     @Override
     public EnergyAmount receiveEnergy(EnergyAmount maxReceive, @Nullable HubNode.HubMetadata hubMetadata) {
         if (isItem) {
-            EnergyAmount receivable = canReceiveValue(hubMetadata);
-            receivable.min(maxReceive);
+            EnergyAmount receivable = EnergyAmount.obtain(maxReceive);
             if (receivable.isZero()) {
                 return receivable;
             }
@@ -141,8 +140,8 @@ public final class EUHandler implements IEnergyHandler {
                 euAmount.recycle();
             }
         } else {
-            EnergyAmount receivable = canReceiveValue(hubMetadata);
-            receivable.min(maxReceive);
+            if (receive == null) return EnergyAmounts.ZERO;
+            EnergyAmount receivable = EnergyAmount.obtain(maxReceive);
             if (receivable.isZero()) {
                 return receivable;
             }
@@ -159,8 +158,8 @@ public final class EUHandler implements IEnergyHandler {
 
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
-        EnergyAmount extractable = canExtractValue(hubMetadata);
-        extractable.min(maxExtract);
+        if (send == null) return EnergyAmounts.ZERO;
+        EnergyAmount extractable = EnergyAmount.obtain(maxExtract);
         if (extractable.isZero()) {
             return extractable;
         }

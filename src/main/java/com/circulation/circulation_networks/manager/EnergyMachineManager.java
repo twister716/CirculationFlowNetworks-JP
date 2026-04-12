@@ -50,9 +50,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -66,7 +66,7 @@ public final class EnergyMachineManager {
     private final Int2ObjectMap<Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
     private final Reference2ObjectMap<INode, Set<TileEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
-    private final WeakHashMap<TileEntity, ReferenceSet<INode>> machineGridMap = new WeakHashMap<>();
+    private final Reference2ObjectOpenHashMap<TileEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
@@ -86,20 +86,9 @@ public final class EnergyMachineManager {
         gridMachineMap.defaultReturnValue(ReferenceSets.emptySet());
     }
 
-    static void transferEnergy(Collection<IEnergyHandler> send,
-                               Collection<IEnergyHandler> receive,
+    static void transferEnergy(Collection<EnergyTransferParticipant> send,
+                               Collection<EnergyTransferParticipant> receive,
                                Status status,
-                               IGrid grid,
-                               boolean receiversAreStorage) {
-        if (send.isEmpty() || receive.isEmpty()) return;
-        transferEnergy(send, receive, status, getHubMetadata(grid), getOrCreateInteraction(grid), receiversAreStorage);
-    }
-
-    static void transferEnergy(Collection<IEnergyHandler> send,
-                               Collection<IEnergyHandler> receive,
-                               Status status,
-                               @Nullable HubNode.HubMetadata hubMetadata,
-                               @Nullable Interaction interactionState,
                                boolean receiversAreStorage) {
         if (send.isEmpty() || receive.isEmpty()) return;
         var si = send.iterator();
@@ -107,7 +96,7 @@ public final class EnergyMachineManager {
             var sender = si.next();
             if (receive.isEmpty()) return;
             var ri = receive.iterator();
-            EnergyAmount extractable = sender.canExtractValue(hubMetadata);
+            EnergyAmount extractable = sender.canExtractValue();
             try {
                 if (extractable.isZero()) {
                     si.remove();
@@ -115,8 +104,8 @@ public final class EnergyMachineManager {
                 }
                 while (ri.hasNext()) {
                     var receiver = ri.next();
-                    if (sender.canExtract(receiver, hubMetadata) && receiver.canReceive(sender, hubMetadata)) {
-                        EnergyAmount receivable = receiver.canReceiveValue(hubMetadata);
+                    if (sender.canExtract(receiver) && receiver.canReceive(sender)) {
+                        EnergyAmount receivable = receiver.canReceiveValue();
                         try {
                             if (receivable.isZero()) {
                                 if (!receiversAreStorage) {
@@ -128,7 +117,7 @@ public final class EnergyMachineManager {
                             int compare = extractable.compareTo(receivable);
                             EnergyAmount transferLimit = compare <= 0 ? EnergyAmount.obtain(extractable) : EnergyAmount.obtain(receivable);
                             try {
-                                EnergyAmount extracted = sender.extractEnergy(transferLimit, hubMetadata);
+                                EnergyAmount extracted = sender.extractEnergy(transferLimit);
                                 try {
                                     if (extracted.isZero()) {
                                         sender.recycle();
@@ -136,10 +125,10 @@ public final class EnergyMachineManager {
                                         break;
                                     }
                                     extractable.subtract(extracted);
-                                    EnergyAmount received = receiver.receiveEnergy(extracted, hubMetadata);
+                                    EnergyAmount received = receiver.receiveEnergy(extracted);
                                     try {
                                         if (!received.isZero()) {
-                                            status.interaction(received, interactionState);
+                                            status.interaction(received, sender.interaction(), receiver.interaction());
                                         }
                                         if (!receiversAreStorage && received.compareTo(receivable) >= 0) {
                                             receiver.recycle();
@@ -250,7 +239,7 @@ public final class EnergyMachineManager {
     //~}
 
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public WeakHashMap<TileEntity, ReferenceSet<INode>> getMachineGridMap() {
+    public Map<TileEntity, ReferenceSet<INode>> getMachineGridMap() {
         return machineGridMap;
     }
     //~}
@@ -296,38 +285,36 @@ public final class EnergyMachineManager {
             //~}
             //~}
             if (CirculationShielderManager.INSTANCE.isBlockedByShielder(pos, world)) continue;
-            var handler = IEnergyHandler.release(te, null);
-
-            if (handler == null) {
-                continue;
-            }
             int dimId = getDimensionId(world);
             var override = overrideManager == null ? null : overrideManager.getOverride(dimId, pos);
-            boolean addedToAnyGrid = false;
             WarningTarget warningTarget = null;
             for (var node : entry.getValue()) {
                 var grid = node.getGrid();
                 if (grid == null) continue;
 
-                var type = override != null ? override : handler.getType(getHubMetadata(grid));
+                var hubMetadata = getHubMetadata(grid);
+                var handler = IEnergyHandler.release(te, hubMetadata);
+                if (handler == null) {
+                    continue;
+                }
+                var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid));
+
+                var type = override != null ? override : participant.getType();
                 if (type == IEnergyHandler.EnergyType.INVALID) {
+                    participant.recycle();
                     continue;
                 }
 
-                addedToAnyGrid = true;
                 var gridData = getTickGridData(grid);
-                gridData.handlers(type).add(handler);
+                gridData.handlers(type).add(participant);
                 if (type == IEnergyHandler.EnergyType.RECEIVE) {
-                    if (gridData.receiveTargets.get(handler) == null) {
+                    if (gridData.receiveTargets.get(participant) == null) {
                         if (warningTarget == null) {
                             warningTarget = new WarningTarget(dimId, getPackedPos(te));
                         }
-                        gridData.receiveTargets.put(handler, warningTarget);
+                        gridData.receiveTargets.put(participant, warningTarget);
                     }
                 }
-            }
-            if (!addedToAnyGrid) {
-                handler.recycle();
             }
         }
 
@@ -353,13 +340,11 @@ public final class EnergyMachineManager {
                             processedTickGrids.add(cg);
                             merged.timedGrids.add(cg);
                         }
-                        var hubMetadata = getHubMetadata(grid);
-                        var interactionState = getOrCreateInteraction(grid);
                         long startNanos = System.nanoTime();
-                        transferEnergy(merged.send, merged.receive, Status.INTERACTION, hubMetadata, interactionState, false);
-                        transferEnergy(merged.storage, merged.receive, Status.EXTRACT, hubMetadata, interactionState, false);
-                        collectWarningPositions(merged.receive, merged.receiveTargets, warningPositionsScratch, hubMetadata);
-                        transferEnergy(merged.send, merged.storage, Status.RECEIVE, hubMetadata, interactionState, true);
+                        transferEnergy(merged.send, merged.receive, Status.INTERACTION, false);
+                        transferEnergy(merged.storage, merged.receive, Status.EXTRACT, false);
+                        collectWarningPositions(merged.receive, merged.receiveTargets, warningPositionsScratch);
+                        transferEnergy(merged.send, merged.storage, Status.RECEIVE, true);
                         recordDistributedGridTickTimeNanos(merged.timedGrids, System.nanoTime() - startNanos);
                         continue;
                     }
@@ -372,13 +357,11 @@ public final class EnergyMachineManager {
                 continue;
             }
 
-            var hubMetadata = getHubMetadata(grid);
-            var interactionState = getOrCreateInteraction(grid);
             long startNanos = System.nanoTime();
-            transferEnergy(handlers.send, handlers.receive, Status.INTERACTION, hubMetadata, interactionState, false);
-            transferEnergy(handlers.storage, handlers.receive, Status.EXTRACT, hubMetadata, interactionState, false);
-            collectWarningPositions(handlers.receive, handlers.receiveTargets, warningPositionsScratch, hubMetadata);
-            transferEnergy(handlers.send, handlers.storage, Status.RECEIVE, hubMetadata, interactionState, true);
+            transferEnergy(handlers.send, handlers.receive, Status.INTERACTION, false);
+            transferEnergy(handlers.storage, handlers.receive, Status.EXTRACT, false);
+            collectWarningPositions(handlers.receive, handlers.receiveTargets, warningPositionsScratch);
+            transferEnergy(handlers.send, handlers.storage, Status.RECEIVE, true);
             recordGridTickTimeNanos(grid, System.nanoTime() - startNanos);
         }
 
@@ -421,7 +404,7 @@ public final class EnergyMachineManager {
 
                 var set1 = gridMachineMap.get(node);
                 if (set1 == gridMachineMap.defaultReturnValue()) {
-                    gridMachineMap.put(node, set1 = Collections.newSetFromMap(new WeakHashMap<>()));
+                    gridMachineMap.put(node, set1 = new ReferenceOpenHashSet<>());
                 }
                 s.add(node);
                 set1.add(blockEntity);
@@ -471,7 +454,7 @@ public final class EnergyMachineManager {
             for (var node : allConnected) {
                 var set1 = gridMachineMap.get(node);
                 if (set1 == gridMachineMap.defaultReturnValue()) {
-                    gridMachineMap.put(node, set1 = Collections.newSetFromMap(new WeakHashMap<>()));
+                    gridMachineMap.put(node, set1 = new ReferenceOpenHashSet<>());
                 }
                 s.add(node);
                 set1.add(blockEntity);
@@ -524,7 +507,7 @@ public final class EnergyMachineManager {
                         if (energySupplyNode.isBlacklisted(tileEntity)) continue;
                         if (RegistryEnergyHandler.isEnergyTileEntity(tileEntity)) {
                             if (set2 == gridMachineMap.defaultReturnValue()) {
-                                gridMachineMap.put(energySupplyNode, set2 = Collections.newSetFromMap(new WeakHashMap<>()));
+                                gridMachineMap.put(energySupplyNode, set2 = new ReferenceOpenHashSet<>());
                             }
                             set2.add(tileEntity);
 
@@ -547,7 +530,7 @@ public final class EnergyMachineManager {
                         if (energySupplyNode.isBlacklisted(blockEntity)) continue;
                         if (RegistryEnergyHandler.isEnergyTileEntity(blockEntity)) {
                             if (set2 == gridMachineMap.defaultReturnValue()) {
-                                gridMachineMap.put(energySupplyNode, set2 = Collections.newSetFromMap(new WeakHashMap<>()));
+                                gridMachineMap.put(energySupplyNode, set2 = new ReferenceOpenHashSet<>());
                             }
                             set2.add(blockEntity);
 
@@ -774,19 +757,18 @@ public final class EnergyMachineManager {
         }
     }
 
-    private void collectWarningPositions(Set<IEnergyHandler> receiveHandlers,
-                                         Reference2ObjectMap<IEnergyHandler, WarningTarget> receiveTargets,
-                                         Int2ObjectMap<LongSet> warningPositions,
-                                         @Nullable HubNode.HubMetadata hubMetadata) {
+    private void collectWarningPositions(Set<EnergyTransferParticipant> receiveHandlers,
+                                         Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets,
+                                         Int2ObjectMap<LongSet> warningPositions) {
         if (receiveHandlers.isEmpty() || receiveTargets == null || receiveTargets.isEmpty()) {
             return;
         }
-        for (var handler : receiveHandlers) {
-            var target = receiveTargets.get(handler);
+        for (var participant : receiveHandlers) {
+            var target = receiveTargets.get(participant);
             if (target == null || !isWarningSendDue(target)) {
                 continue;
             }
-            EnergyAmount receivable = handler.canReceiveValue(hubMetadata);
+            EnergyAmount receivable = participant.canReceiveValue();
             try {
                 if (receivable.isZero()) {
                     continue;
@@ -869,17 +851,28 @@ public final class EnergyMachineManager {
         INTERACTION,
         RECEIVE;
 
-        private void interaction(EnergyAmount value, @Nullable Interaction interaction) {
-            if (interaction == null) {
-                return;
-            }
+        private void interaction(EnergyAmount value,
+                                 @Nullable Interaction senderInteraction,
+                                 @Nullable Interaction receiverInteraction) {
             switch (this) {
                 case INTERACTION -> {
-                    interaction.input.add(value);
-                    interaction.output.add(value);
+                    if (senderInteraction != null) {
+                        senderInteraction.output.add(value);
+                    }
+                    if (receiverInteraction != null) {
+                        receiverInteraction.input.add(value);
+                    }
                 }
-                case EXTRACT -> interaction.output.add(value);
-                case RECEIVE -> interaction.input.add(value);
+                case EXTRACT -> {
+                    if (senderInteraction != null) {
+                        senderInteraction.output.add(value);
+                    }
+                }
+                case RECEIVE -> {
+                    if (receiverInteraction != null) {
+                        receiverInteraction.input.add(value);
+                    }
+                }
             }
         }
     }
@@ -890,13 +883,13 @@ public final class EnergyMachineManager {
     }
 
     static final class GridTickData {
-        final ReferenceOpenHashSet<IEnergyHandler> send = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<IEnergyHandler> storage = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<IEnergyHandler> receive = new ReferenceOpenHashSet<>();
-        final Reference2ObjectMap<IEnergyHandler, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
+        final Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
         boolean activeThisTick;
 
-        ReferenceOpenHashSet<IEnergyHandler> handlers(IEnergyHandler.EnergyType type) {
+        ReferenceOpenHashSet<EnergyTransferParticipant> handlers(IEnergyHandler.EnergyType type) {
             return switch (type) {
                 case SEND -> send;
                 case STORAGE -> storage;
@@ -924,18 +917,18 @@ public final class EnergyMachineManager {
             activeThisTick = false;
         }
 
-        private static void recycle(ReferenceOpenHashSet<IEnergyHandler> handlers) {
-            for (var handler : handlers) {
-                handler.recycle();
+        private static void recycle(ReferenceOpenHashSet<EnergyTransferParticipant> handlers) {
+            for (var participant : handlers) {
+                participant.recycle();
             }
         }
     }
 
     private static final class ChannelMergeScratch {
-        final ReferenceOpenHashSet<IEnergyHandler> send = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<IEnergyHandler> storage = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<IEnergyHandler> receive = new ReferenceOpenHashSet<>();
-        final Reference2ObjectMap<IEnergyHandler, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
+        final ReferenceOpenHashSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
+        final Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
         final ReferenceSet<IGrid> timedGrids = new ReferenceOpenHashSet<>();
 
         ChannelMergeScratch prepare() {

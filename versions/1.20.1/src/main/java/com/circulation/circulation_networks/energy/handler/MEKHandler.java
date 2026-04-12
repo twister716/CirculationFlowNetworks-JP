@@ -184,34 +184,19 @@ public final class MEKHandler implements IEnergyHandler {
             needEnergy.subtract(accepted);
             return accepted;
         }
-        EnergyAmount receivable = canReceiveValue(hubMetadata);
-        receivable.min(maxReceive);
-        clampToMaximum(receivable, MAX_SCALED_DOUBLE_TRANSFER);
-        if (receivable.isZero()) {
-            return receivable;
-        }
-        double requestJoules = EnergyAmountConversionUtils.toDoubleClamped(receivable) * FE_TO_MEK_RATIO;
-        double insertedJoules;
         if (receive == null) return EnergyAmounts.ZERO;
+        double requestJoules = EnergyAmountConversionUtils.toDoubleClamped(maxReceive) * FE_TO_MEK_RATIO;
         FloatingLong remainder = receive.insertEnergy(FloatingLong.create(requestJoules), Action.EXECUTE);
-        insertedJoules = requestJoules - remainder.doubleValue();
+        double insertedJoules = requestJoules - remainder.doubleValue();
         return EnergyAmountConversionUtils.obtainFromDoubleFloor(insertedJoules / FE_TO_MEK_RATIO);
     }
 
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
-        EnergyAmount extractable = canExtractValue(hubMetadata);
-        extractable.min(maxExtract);
-        clampToMaximum(extractable, MAX_SCALED_DOUBLE_TRANSFER);
-        if (extractable.isZero()) {
-            return extractable;
-        }
-        double requestJoules = EnergyAmountConversionUtils.toDoubleClamped(extractable) * FE_TO_MEK_RATIO;
-        double extractedJoules;
         if (send == null) return EnergyAmounts.ZERO;
+        double requestJoules = EnergyAmountConversionUtils.toDoubleClamped(maxExtract) * FE_TO_MEK_RATIO;
         FloatingLong extracted = send.extractEnergy(FloatingLong.create(requestJoules), Action.EXECUTE);
-        extractedJoules = extracted.doubleValue();
-        return EnergyAmountConversionUtils.obtainFromDoubleFloor(extractedJoules / FE_TO_MEK_RATIO);
+        return EnergyAmountConversionUtils.obtainFromDoubleFloor(extracted.doubleValue() / FE_TO_MEK_RATIO);
     }
 
     @Override

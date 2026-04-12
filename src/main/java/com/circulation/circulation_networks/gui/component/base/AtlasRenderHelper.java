@@ -60,7 +60,10 @@ public final class AtlasRenderHelper {
         /*Tesselator.getInstance().end();
         *///?} else {
         /*if (batchBuffer != null) {
-            com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(batchBuffer.buildOrThrow());
+            com.mojang.blaze3d.vertex.MeshData mesh = batchBuffer.build();
+            if (mesh != null) {
+                com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(mesh);
+            }
             batchBuffer = null;
         }
         *///?}

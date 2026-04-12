@@ -148,21 +148,20 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
         bg.add(new TextComponent(12, 130, this, this::formatInteractionTime, 0x79d7ff));
         bg.add(new TextComponent(106, 130, this, () -> f(container.output, false), 0x79d7ff));
         List<Component> n = components.computeIfAbsent(RenderPhase.NORMAL, k -> new ObjectArrayList<>());
-        int i = -1;
         n.add(nodeUI = new NodeListPanelComponent(-116, 0, this, container)
             .setVisible(false)
             .addChild(getNewClose(node, 114, 8))
         );
-        n.add(upgradePluginUI = new DraggableComponent(-34, 51, 58, 117, this)
-            .setSpriteLayers("upgrade_plugin_ui")
+        n.add(upgradePluginUI = new DraggableComponent(-34, 51, 94, 77, this)
+            .setSpriteLayers("hub_upgrade_panel")
             .setVisible(false)
             .addChild(
-                getNewClose(upgradePlugin, 32, 7),
-                new SlotComponent(11, 11 + ++i * 19, 16, 16, container.slots[i], "upgrade_plugin_slot", this),
-                new SlotComponent(11, 11 + ++i * 19, 16, 16, container.slots[i], "upgrade_plugin_slot", this),
-                new SlotComponent(11, 11 + ++i * 19, 16, 16, container.slots[i], "upgrade_plugin_slot", this),
-                new SlotComponent(11, 11 + ++i * 19, 16, 16, container.slots[i], "upgrade_plugin_slot", this),
-                new SlotComponent(11, 11 + ++i * 19, 16, 16, container.slots[i], "upgrade_plugin_slot", this)
+                getNewClose(upgradePlugin, 68, 7),
+                new SlotComponent(29, 29, 16, 16, container.slots[0], null, this),
+                new SlotComponent(11, 11, 16, 16, container.slots[1], null, this),
+                new SlotComponent(47, 11, 16, 16, container.slots[2], null, this),
+                new SlotComponent(11, 47, 16, 16, container.slots[3], null, this),
+                new SlotComponent(47, 47, 16, 16, container.slots[4], null, this)
             )
         );
         n.add(playerPowerSupplyUI = new DraggableComponent(-34, 29, 142, 116, this)

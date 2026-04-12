@@ -9,6 +9,7 @@ import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.inventory.CFNInternalInventory;
 import com.circulation.circulation_networks.inventory.CFNInternalInventoryHost;
 import com.circulation.circulation_networks.inventory.CFNInventoryChangeOperation;
+import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.network.nodes.HubPluginStateTracker;
@@ -30,7 +31,17 @@ public class TileEntityHub extends BaseNodeTileEntity<IHubNode> implements IHubN
         if (!(itemStack.getItem() instanceof IHubPlugin plugin)) {
             return false;
         }
-        return isUniquePluginCapability(inventory, slot, plugin.getCapability());
+
+        HubPluginCapability<?> capability = plugin.getCapability();
+        if (slot == 0) {
+            if (capability != HubCapabilitys.CHANNEL_CAPABILITY) {
+                return false;
+            }
+        } else if (capability == HubCapabilitys.CHANNEL_CAPABILITY) {
+            return false;
+        }
+
+        return isUniquePluginCapability(inventory, slot, capability);
     });
     private boolean init;
     private transient NBTTagCompound initNbt;

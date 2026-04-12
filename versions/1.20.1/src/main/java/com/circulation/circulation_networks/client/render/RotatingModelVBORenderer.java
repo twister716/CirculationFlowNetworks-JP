@@ -5,17 +5,23 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.BlockDestructionProgress;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -29,6 +35,7 @@ import org.joml.Quaternionf;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.SortedSet;
 
 @OnlyIn(Dist.CLIENT)
 public final class RotatingModelVBORenderer {
@@ -264,6 +271,80 @@ public final class RotatingModelVBORenderer {
     }
 
     private record CachedLightSignature(long gameTime, int stateHash, int signature) {
+    }
+
+    // ── Destroy stage query ──────────────────────────────────────────────────
+
+    public static int getDestroyStage(BlockPos pos) {
+        LevelRenderer levelRenderer = Minecraft.getInstance().levelRenderer;
+        Long2ObjectMap<SortedSet<BlockDestructionProgress>> progress = levelRenderer.destructionProgress;
+        SortedSet<BlockDestructionProgress> set = progress.get(pos.asLong());
+        if (set == null || set.isEmpty()) {
+            return -1;
+        }
+        return set.last().getProgress();
+    }
+
+    // ── BufferSource rendering (used during block destruction for crumbling overlay) ──
+
+    public static void renderFullBrightThroughBufferSource(
+        PoseStack poseStack, MultiBufferSource bufferSource,
+        BlockState state, ResourceLocation modelLocation,
+        float angle, float pivotX, float pivotY, float pivotZ,
+        float axisX, float axisY, float axisZ
+    ) {
+        BakedModel model = RotatingBlockModelCache.get(modelLocation);
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+
+        poseStack.pushPose();
+        poseStack.translate(pivotX, pivotY, pivotZ);
+        ROTATION.rotationAxis((float) Math.toRadians(angle), axisX, axisY, axisZ);
+        poseStack.mulPose(ROTATION);
+        poseStack.translate(-pivotX, -pivotY, -pivotZ);
+
+        Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
+            poseStack.last(), consumer, state, model,
+            1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+            ModelData.EMPTY, RenderType.cutout()
+        );
+
+        poseStack.popPose();
+    }
+
+    public static void renderFullBrightYAxisThroughBufferSource(
+        PoseStack poseStack, MultiBufferSource bufferSource,
+        BlockState state, ResourceLocation modelLocation,
+        float angle, float pivotX, float pivotY, float pivotZ
+    ) {
+        renderFullBrightThroughBufferSource(
+            poseStack, bufferSource, state, modelLocation,
+            angle, pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F
+        );
+    }
+
+    public static void renderAmbientLitThroughBufferSource(
+        PoseStack poseStack, MultiBufferSource bufferSource,
+        BlockAndTintGetter level, BlockPos pos,
+        BlockState state, ResourceLocation modelLocation,
+        float angle, float pivotX, float pivotY, float pivotZ,
+        float axisX, float axisY, float axisZ
+    ) {
+        BakedModel model = RotatingBlockModelCache.get(modelLocation);
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+
+        poseStack.pushPose();
+        poseStack.translate(pivotX, pivotY, pivotZ);
+        ROTATION.rotationAxis((float) Math.toRadians(angle), axisX, axisY, axisZ);
+        poseStack.mulPose(ROTATION);
+        poseStack.translate(-pivotX, -pivotY, -pivotZ);
+
+        Minecraft.getInstance().getBlockRenderer().getModelRenderer().tesselateBlock(
+            level, model, state, pos, poseStack, consumer, false,
+            RandomSource.create(), 42L, OverlayTexture.NO_OVERLAY,
+            ModelData.EMPTY, RenderType.cutout()
+        );
+
+        poseStack.popPose();
     }
 
     public static final class RenderSession implements AutoCloseable {

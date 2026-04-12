@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -35,22 +36,23 @@ public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedes
 
         long worldTime = te.getLevel().getGameTime();
 
-        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
-            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PEDESTAL_BASE,
+        if (RotatingModelVBORenderer.getDestroyStage(te.getBlockPos()) >= 0) {
+            BlockState state = te.getBlockState();
+            RotatingModelVBORenderer.renderAmbientLitThroughBufferSource(poseStack, bufferSource, te.getLevel(), te.getBlockPos(), state, PEDESTAL_BASE,
                 0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PEDESTAL_BASE_EMISSIVE,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, PEDESTAL_BASE_EMISSIVE,
                 0.0F, CENTER, CENTER, CENTER);
 
             poseStack.pushPose();
             poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
 
-            RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_CLOCKWISE,
+            RotatingModelVBORenderer.renderFullBrightThroughBufferSource(poseStack, bufferSource, state, PEDESTAL_FRAME_CLOCKWISE,
                 NodeRotationAnimation.pedestalClockwiseFrameAngle(worldTime, partialTick),
                 FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
                 NodeRotationAnimation.tiltedAxisXForZRotation(-22.5F),
                 NodeRotationAnimation.tiltedAxisY(),
                 NodeRotationAnimation.tiltedAxisZ());
-            RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_COUNTER_CLOCKWISE,
+            RotatingModelVBORenderer.renderFullBrightThroughBufferSource(poseStack, bufferSource, state, PEDESTAL_FRAME_COUNTER_CLOCKWISE,
                 NodeRotationAnimation.pedestalCounterClockwiseFrameAngle(worldTime, partialTick),
                 FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
                 NodeRotationAnimation.tiltedAxisXForZRotation(22.5F),
@@ -58,6 +60,31 @@ public final class NodePedestalRenderer implements BlockEntityRenderer<NodePedes
                 NodeRotationAnimation.tiltedAxisZ());
 
             poseStack.popPose();
+        } else {
+            try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
+                RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), PEDESTAL_BASE,
+                    0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), PEDESTAL_BASE_EMISSIVE,
+                    0.0F, CENTER, CENTER, CENTER);
+
+                poseStack.pushPose();
+                poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+
+                RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_CLOCKWISE,
+                    NodeRotationAnimation.pedestalClockwiseFrameAngle(worldTime, partialTick),
+                    FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
+                    NodeRotationAnimation.tiltedAxisXForZRotation(-22.5F),
+                    NodeRotationAnimation.tiltedAxisY(),
+                    NodeRotationAnimation.tiltedAxisZ());
+                RotatingModelVBORenderer.renderFullBright(poseStack, te.getBlockState(), PEDESTAL_FRAME_COUNTER_CLOCKWISE,
+                    NodeRotationAnimation.pedestalCounterClockwiseFrameAngle(worldTime, partialTick),
+                    FRAME_PIVOT_X, FRAME_PIVOT_Y, FRAME_PIVOT_Z,
+                    NodeRotationAnimation.tiltedAxisXForZRotation(22.5F),
+                    NodeRotationAnimation.tiltedAxisY(),
+                    NodeRotationAnimation.tiltedAxisZ());
+
+                poseStack.popPose();
+            }
         }
     }
 }

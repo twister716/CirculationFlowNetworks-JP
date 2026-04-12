@@ -68,25 +68,13 @@ public final class FEHandler implements IEnergyHandler {
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
-        EnergyAmount extractable = canExtractValue(hubMetadata);
-        try {
-            int e = (int) Math.min(maxExtract.asLongClamped(), extractable.asLongClamped());
-            return EnergyAmount.obtain(send.extractEnergy(e, false));
-        } finally {
-            extractable.recycle();
-        }
+        return EnergyAmount.obtain(send.extractEnergy((int) maxExtract.asLongClamped(), false));
     }
 
     @Override
     public EnergyAmount receiveEnergy(EnergyAmount maxReceive, @Nullable HubNode.HubMetadata hubMetadata) {
         if (receive == null) return EnergyAmounts.ZERO;
-        EnergyAmount receivable = canReceiveValue(hubMetadata);
-        try {
-            int e = (int) Math.min(maxReceive.asLongClamped(), receivable.asLongClamped());
-            return EnergyAmount.obtain(receive.receiveEnergy(e, false));
-        } finally {
-            receivable.recycle();
-        }
+        return EnergyAmount.obtain(receive.receiveEnergy((int) maxReceive.asLongClamped(), false));
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -35,20 +36,37 @@ public final class RelayNodeRenderer implements BlockEntityRenderer<RelayNodeBlo
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTick);
         float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTick);
 
-        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
-            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_TOP_SPIRAL_BASE,
+        if (RotatingModelVBORenderer.getDestroyStage(te.getBlockPos()) >= 0) {
+            BlockState state = te.getBlockState();
+            RotatingModelVBORenderer.renderAmbientLitThroughBufferSource(poseStack, bufferSource, te.getLevel(), te.getBlockPos(), state, RELAY_TOP_SPIRAL_BASE,
                 topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_TOP_SPIRAL_EMISSIVE,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, RELAY_TOP_SPIRAL_EMISSIVE,
                 topAngle, CENTER, CENTER, CENTER);
             poseStack.pushPose();
             poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, NODE_CRYSTAL,
                 crystalAngle, CENTER, CENTER, CENTER);
             poseStack.popPose();
-            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_BOTTOM_SPIRAL_BASE,
+            RotatingModelVBORenderer.renderAmbientLitThroughBufferSource(poseStack, bufferSource, te.getLevel(), te.getBlockPos(), state, RELAY_BOTTOM_SPIRAL_BASE,
                 bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_BOTTOM_SPIRAL_EMISSIVE,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, RELAY_BOTTOM_SPIRAL_EMISSIVE,
                 bottomAngle, CENTER, CENTER, CENTER);
+        } else {
+            try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
+                RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_TOP_SPIRAL_BASE,
+                    topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_TOP_SPIRAL_EMISSIVE,
+                    topAngle, CENTER, CENTER, CENTER);
+                poseStack.pushPose();
+                poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
+                    crystalAngle, CENTER, CENTER, CENTER);
+                poseStack.popPose();
+                RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), RELAY_BOTTOM_SPIRAL_BASE,
+                    bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), RELAY_BOTTOM_SPIRAL_EMISSIVE,
+                    bottomAngle, CENTER, CENTER, CENTER);
+            }
         }
     }
 }

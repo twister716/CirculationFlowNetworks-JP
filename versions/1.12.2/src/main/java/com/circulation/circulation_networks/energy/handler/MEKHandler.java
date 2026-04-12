@@ -169,8 +169,7 @@ public final class MEKHandler implements IEnergyHandler {
             return accepted;
         } else {
             if (receive == null) return EnergyAmounts.ZERO;
-            EnergyAmount receivable = canReceiveValue(hubMetadata);
-            receivable.min(maxReceive);
+            EnergyAmount receivable = EnergyAmount.obtain(maxReceive);
             clampToMaximum(receivable, MAX_SCALED_DOUBLE_TRANSFER);
             if (!receivable.isZero()) {
                 receive.setEnergy(receive.getEnergy() + EnergyAmountConversionUtils.toDoubleClamped(receivable) * FE_TO_MEK_RATIO);
@@ -182,8 +181,7 @@ public final class MEKHandler implements IEnergyHandler {
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
-        EnergyAmount extractable = canExtractValue(hubMetadata);
-        extractable.min(maxExtract);
+        EnergyAmount extractable = EnergyAmount.obtain(maxExtract);
         clampToMaximum(extractable, MAX_SCALED_DOUBLE_TRANSFER);
         if (!extractable.isZero() && !creative) {
             send.setEnergy(send.getEnergy() - EnergyAmountConversionUtils.toDoubleClamped(extractable) * FE_TO_MEK_RATIO);

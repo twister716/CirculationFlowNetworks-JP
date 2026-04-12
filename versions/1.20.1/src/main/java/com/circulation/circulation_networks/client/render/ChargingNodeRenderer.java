@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -35,20 +36,37 @@ public final class ChargingNodeRenderer implements BlockEntityRenderer<ChargingN
         float crystalAngle = NodeRotationAnimation.relayCrystalAngle(worldTime, partialTick);
         float bottomAngle = NodeRotationAnimation.relayBottomSpiralAngle(worldTime, partialTick);
 
-        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
-            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_IN_BASE,
+        if (RotatingModelVBORenderer.getDestroyStage(te.getBlockPos()) >= 0) {
+            BlockState state = te.getBlockState();
+            RotatingModelVBORenderer.renderAmbientLitThroughBufferSource(poseStack, bufferSource, te.getLevel(), te.getBlockPos(), state, CHARGING_IN_BASE,
                 topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_IN_EMISSIVE,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, CHARGING_IN_EMISSIVE,
                 topAngle, CENTER, CENTER, CENTER);
             poseStack.pushPose();
             poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, NODE_CRYSTAL,
                 crystalAngle, CENTER, CENTER, CENTER);
             poseStack.popPose();
-            RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_RING_BASE,
+            RotatingModelVBORenderer.renderAmbientLitThroughBufferSource(poseStack, bufferSource, te.getLevel(), te.getBlockPos(), state, CHARGING_RING_BASE,
                 bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_RING_EMISSIVE,
+            RotatingModelVBORenderer.renderFullBrightYAxisThroughBufferSource(poseStack, bufferSource, state, CHARGING_RING_EMISSIVE,
                 bottomAngle, CENTER, CENTER, CENTER);
+        } else {
+            try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
+                RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_IN_BASE,
+                    topAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_IN_EMISSIVE,
+                    topAngle, CENTER, CENTER, CENTER);
+                poseStack.pushPose();
+                poseStack.translate(0.0F, NodeRotationAnimation.bobOffset(worldTime, partialTick), 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), NODE_CRYSTAL,
+                    crystalAngle, CENTER, CENTER, CENTER);
+                poseStack.popPose();
+                RotatingModelVBORenderer.renderAmbientLit(poseStack, te.getLevel(), te.getBlockPos(), te.getBlockState(), CHARGING_RING_BASE,
+                    bottomAngle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
+                RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, te.getBlockState(), CHARGING_RING_EMISSIVE,
+                    bottomAngle, CENTER, CENTER, CENTER);
+            }
         }
     }
 }

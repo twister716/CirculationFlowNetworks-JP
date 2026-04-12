@@ -182,32 +182,18 @@ public final class MEKHandler implements IEnergyHandler {
             needEnergy.subtract(accepted);
             return accepted;
         }
-        EnergyAmount receivable = canReceiveValue(hubMetadata);
-        receivable.min(maxReceive);
-        clampToMaximum(receivable, MAX_SCALED_DOUBLE_TRANSFER);
-        if (receivable.isZero()) {
-            return receivable;
-        }
-        long requestJoules = (long) (EnergyAmountConversionUtils.toDoubleClamped(receivable) * FE_TO_MEK_RATIO);
-        long insertedJoules;
         if (receive == null) return EnergyAmounts.ZERO;
+        long requestJoules = (long) (EnergyAmountConversionUtils.toDoubleClamped(maxReceive) * FE_TO_MEK_RATIO);
         long remainder = receive.insertEnergy(requestJoules, Action.EXECUTE);
-        insertedJoules = requestJoules - remainder;
+        long insertedJoules = requestJoules - remainder;
         return EnergyAmountConversionUtils.obtainFromDoubleFloor(insertedJoules / FE_TO_MEK_RATIO);
     }
 
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
-        EnergyAmount extractable = canExtractValue(hubMetadata);
-        extractable.min(maxExtract);
-        clampToMaximum(extractable, MAX_SCALED_DOUBLE_TRANSFER);
-        if (extractable.isZero()) {
-            return extractable;
-        }
-        long requestJoules = (long) (EnergyAmountConversionUtils.toDoubleClamped(extractable) * FE_TO_MEK_RATIO);
-        long extractedJoules;
         if (send == null) return EnergyAmounts.ZERO;
-        extractedJoules = send.extractEnergy(requestJoules, Action.EXECUTE);
+        long requestJoules = (long) (EnergyAmountConversionUtils.toDoubleClamped(maxExtract) * FE_TO_MEK_RATIO);
+        long extractedJoules = send.extractEnergy(requestJoules, Action.EXECUTE);
         return EnergyAmountConversionUtils.obtainFromDoubleFloor(extractedJoules / FE_TO_MEK_RATIO);
     }
 

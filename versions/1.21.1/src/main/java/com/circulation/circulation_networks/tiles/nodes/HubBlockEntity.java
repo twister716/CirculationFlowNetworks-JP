@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.inventory.CFNInternalInventory;
 import com.circulation.circulation_networks.inventory.CFNInternalInventoryHost;
 import com.circulation.circulation_networks.inventory.CFNInventoryChangeOperation;
+import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.network.nodes.HubPluginStateTracker;
@@ -36,7 +37,17 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
         if (!(itemStack.getItem() instanceof IHubPlugin plugin)) {
             return false;
         }
-        return isUniquePluginCapability(inventory, slot, plugin.getCapability());
+
+        HubPluginCapability<?> capability = plugin.getCapability();
+        if (slot == 0) {
+            if (capability != HubCapabilitys.CHANNEL_CAPABILITY) {
+                return false;
+            }
+        } else if (capability == HubCapabilitys.CHANNEL_CAPABILITY) {
+            return false;
+        }
+
+        return isUniquePluginCapability(inventory, slot, capability);
     });
     private boolean init;
     private transient CompoundTag initNbt;
