@@ -284,6 +284,19 @@ public final class ChargingManager {
         }
     }
 
+    private static void syncBackSenders(ReferenceOpenHashSet<EnergyTransferParticipant> send,
+                                        ReferenceOpenHashSet<EnergyTransferParticipant> storage,
+                                        Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap) {
+        for (var p : send) {
+            var h = machineMap.get(p.grid());
+            if (h != null) h.send.add(p);
+        }
+        for (var p : storage) {
+            var h = machineMap.get(p.grid());
+            if (h != null) h.storage.add(p);
+        }
+    }
+
     private static void transferEnergyForGrid(IGrid grid,
                                               Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> chargeTargetsByGrid,
                                               Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap,
@@ -302,17 +315,28 @@ public final class ChargingManager {
                     var handlers = machineMap.get(channelGrid);
                     if (handlers != null && handlers.activeThisTick) {
                         merged.send.addAll(handlers.send);
+                        handlers.send.clear();
                         merged.storage.addAll(handlers.storage);
+                        handlers.storage.clear();
                     }
-                    merged.targets.addAll(chargeTargetsByGrid.getOrDefault(channelGrid, Collections.emptySet()));
+                    var gridTargets = chargeTargetsByGrid.get(channelGrid);
+                    if (gridTargets != null) {
+                        merged.targets.addAll(gridTargets);
+                        gridTargets.clear();
+                    }
                 }
 
                 if (merged.targets.isEmpty()) {
+                    syncBackSenders(merged.send, merged.storage, machineMap);
                     return;
                 }
 
                 transferEnergy(merged.send, merged.targets, EnergyMachineManager.Status.EXTRACT, false);
                 transferEnergy(merged.storage, merged.targets, EnergyMachineManager.Status.EXTRACT, false);
+                syncBackSenders(merged.send, merged.storage, machineMap);
+                for (var participant : merged.targets) {
+                    participant.recycle();
+                }
                 return;
             }
         }

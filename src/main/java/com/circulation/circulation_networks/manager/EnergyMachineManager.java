@@ -331,8 +331,11 @@ public final class EnergyMachineManager {
                             var handlers = tickGridData.get(cg);
                             if (handlers != null && handlers.activeThisTick) {
                                 merged.send.addAll(handlers.send);
+                                handlers.send.clear();
                                 merged.storage.addAll(handlers.storage);
+                                handlers.storage.clear();
                                 merged.receive.addAll(handlers.receive);
+                                handlers.receive.clear();
                             }
                             if (handlers != null && !handlers.receiveTargets.isEmpty()) {
                                 merged.receiveTargets.putAll(handlers.receiveTargets);
@@ -346,6 +349,7 @@ public final class EnergyMachineManager {
                         collectWarningPositions(merged.receive, merged.receiveTargets, warningPositionsScratch);
                         transferEnergy(merged.send, merged.storage, Status.RECEIVE, true);
                         recordDistributedGridTickTimeNanos(merged.timedGrids, System.nanoTime() - startNanos);
+                        syncBackParticipants(merged.send, merged.storage, merged.receive, tickGridData);
                         continue;
                     }
                 }
@@ -882,14 +886,32 @@ public final class EnergyMachineManager {
     private record WarningTarget(int dimId, long posLong) {
     }
 
+    private static void syncBackParticipants(ReferenceSet<EnergyTransferParticipant> send,
+                                             ReferenceSet<EnergyTransferParticipant> storage,
+                                             ReferenceSet<EnergyTransferParticipant> receive,
+                                             Reference2ObjectMap<IGrid, GridTickData> tickGridData) {
+        for (var p : send) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.send.add(p);
+        }
+        for (var p : storage) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.storage.add(p);
+        }
+        for (var p : receive) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.receive.add(p);
+        }
+    }
+
     static final class GridTickData {
-        final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
         final Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
         boolean activeThisTick;
 
-        ReferenceOpenHashSet<EnergyTransferParticipant> handlers(IEnergyHandler.EnergyType type) {
+        ReferenceSet<EnergyTransferParticipant> handlers(IEnergyHandler.EnergyType type) {
             return switch (type) {
                 case SEND -> send;
                 case STORAGE -> storage;
@@ -917,7 +939,7 @@ public final class EnergyMachineManager {
             activeThisTick = false;
         }
 
-        private static void recycle(ReferenceOpenHashSet<EnergyTransferParticipant> handlers) {
+        private static void recycle(ReferenceSet<EnergyTransferParticipant> handlers) {
             for (var participant : handlers) {
                 participant.recycle();
             }
@@ -925,9 +947,9 @@ public final class EnergyMachineManager {
     }
 
     private static final class ChannelMergeScratch {
-        final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
         final Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
         final ReferenceSet<IGrid> timedGrids = new ReferenceOpenHashSet<>();
 

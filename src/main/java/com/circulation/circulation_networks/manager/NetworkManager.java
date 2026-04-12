@@ -75,6 +75,7 @@ public final class NetworkManager {
     private static File saveFile;
     private final ReferenceSet<INode> activeNodes = new ReferenceOpenHashSet<>();
     private final Object2ObjectMap<UUID, IGrid> grids = new Object2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<String> serializedDimensionKeys = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ReferenceMap<INode>> posNodes = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<INode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
@@ -269,6 +270,10 @@ public final class NetworkManager {
         return node.getDimensionId();
     }
 
+    private @Nullable World resolveWorld(int dimId) {
+        return DimensionManager.getWorld(dimId);
+    }
+
     private static boolean isClientWorld(World world) {
         return world.isRemote;
     }
@@ -290,10 +295,14 @@ public final class NetworkManager {
         world.destroyBlock(pos, true);
     }
 
+    private static boolean isChunkLoaded(World world, int chunkX, int chunkZ) {
+        return world.isBlockLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
+    }
+
     private static boolean isRegisteredDimension(int dimId) {
         return DimensionManager.isDimensionRegistered(dimId);
     }
-    //?} else {
+    //?} else if <1.21 {
     /*private static int getDimensionId(Level world) {
         return world.dimension().location().hashCode();
     }
@@ -302,13 +311,39 @@ public final class NetworkManager {
         return node.getDimensionId();
     }
 
+    private @Nullable Level resolveWorld(int dimId) {
+        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return null;
+        }
+
+        String dimensionKey = serializedDimensionKeys.get(dimId);
+        if (dimensionKey != null && !dimensionKey.isEmpty()) {
+            var level = server.getLevel(
+                net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION,
+                    new net.minecraft.resources.ResourceLocation(dimensionKey)
+                )
+            );
+            if (level != null) {
+                return level;
+            }
+        }
+
+        for (Level level : server.getAllLevels()) {
+            if (level.dimension().location().hashCode() == dimId) {
+                return level;
+            }
+        }
+        return null;
+    }
+
     private static boolean isClientWorld(Level world) {
         return world.isClientSide;
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<Player> getPlayers(Level world) {
-        return (List<Player>) (List<?>) world.players();
+    private static List<? extends Player> getPlayers(Level world) {
+        return world.players();
     }
 
     private static BlockPos blockPosFromLong(long posLong) {
@@ -322,6 +357,74 @@ public final class NetworkManager {
 
     private static void destroyBlock(Level world, BlockPos pos) {
         world.destroyBlock(pos, true, null);
+    }
+
+    private static boolean isChunkLoaded(Level world, int chunkX, int chunkZ) {
+        return world.isLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
+    }
+
+    private static boolean isRegisteredDimension(int dimId) {
+        return true;
+    }
+    *///?} else {
+    /*private static int getDimensionId(Level world) {
+        return world.dimension().location().hashCode();
+    }
+
+    private static int getDimensionId(INode node) {
+        return node.getDimensionId();
+    }
+
+    private @Nullable Level resolveWorld(int dimId) {
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return null;
+        }
+
+        String dimensionKey = serializedDimensionKeys.get(dimId);
+        if (dimensionKey != null && !dimensionKey.isEmpty()) {
+            var level = server.getLevel(
+                net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.DIMENSION,
+                    net.minecraft.resources.ResourceLocation.parse(dimensionKey)
+                )
+            );
+            if (level != null) {
+                return level;
+            }
+        }
+
+        for (Level level : server.getAllLevels()) {
+            if (level.dimension().location().hashCode() == dimId) {
+                return level;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isClientWorld(Level world) {
+        return world.isClientSide;
+    }
+
+    private static List<? extends Player> getPlayers(Level world) {
+        return world.players();
+    }
+
+    private static BlockPos blockPosFromLong(long posLong) {
+        return BlockPos.of(posLong);
+    }
+
+    @Nullable
+    private static BlockEntity getBlockEntity(Level world, BlockPos pos) {
+        return world.getBlockEntity(pos);
+    }
+
+    private static void destroyBlock(Level world, BlockPos pos) {
+        world.destroyBlock(pos, true, null);
+    }
+
+    private static boolean isChunkLoaded(Level world, int chunkX, int chunkZ) {
+        return world.isLoaded(new BlockPos(chunkX << 4, 0, chunkZ << 4));
     }
 
     private static boolean isRegisteredDimension(int dimId) {
@@ -361,6 +464,7 @@ public final class NetworkManager {
     }
 
     private void registerNodeIndices(int dimId, INode node) {
+        rememberSerializedDimensionKey(dimId, node);
         BlockPos pos = node.getPos();
 
         var pMap = posNodes.get(dimId);
@@ -412,6 +516,15 @@ public final class NetworkManager {
             nodeScope.put(dimId, nodeScopeMap);
         }
         nodeScopeMap.put(node, LongSets.unmodifiable(chunksCovered));
+    }
+
+    private void rememberSerializedDimensionKey(int dimId, INode node) {
+        if (!serializedDimensionKeys.containsKey(dimId)) {
+            String dimensionKey = node.getSerializedDimensionKey();
+            if (!dimensionKey.isEmpty()) {
+                serializedDimensionKeys.put(dimId, dimensionKey);
+            }
+        }
     }
 
     private void unregisterNodeIndices(int dimId, INode node) {
@@ -520,6 +633,52 @@ public final class NetworkManager {
             clearPendingNodeValidation(dimId, pendingValidationClearScratch.getLong(i));
         }
     }
+
+    //~ if >=1.20 '(World ' -> '(Level ' {
+    public void validatePendingNodesInLoadedWorlds() {
+        if (!init || pendingNodeValidation.isEmpty()) {
+            return;
+        }
+
+        var pendingByDim = new ObjectArrayList<>(pendingNodeValidation.int2ObjectEntrySet());
+        for (var dimEntry : pendingByDim) {
+            int dimId = dimEntry.getIntKey();
+            var world = resolveWorld(dimId);
+            if (world == null || isClientWorld(world)) {
+                continue;
+            }
+
+            LongArrayList loadedChunkCoords = new LongArrayList();
+            for (long chunkCoord : dimEntry.getValue().keySet()) {
+                int chunkX = (int) (chunkCoord >> 32);
+                int chunkZ = (int) chunkCoord;
+                if (isChunkLoaded(world, chunkX, chunkZ)) {
+                    loadedChunkCoords.add(chunkCoord);
+                }
+            }
+
+            for (int i = 0; i < loadedChunkCoords.size(); i++) {
+                long chunkCoord = loadedChunkCoords.getLong(i);
+                LongSet pending = getPendingNodeValidation(dimId, chunkCoord);
+                if (pending != null && !pending.isEmpty()) {
+                    LongArrayList pendingPositions = new LongArrayList();
+                    for (long posLong : pending) {
+                        pendingPositions.add(posLong);
+                    }
+                    for (int j = 0; j < pendingPositions.size(); j++) {
+                        BlockPos pos = blockPosFromLong(pendingPositions.getLong(j));
+                        var blockEntity = getBlockEntity(world, pos);
+                        if (blockEntity != null) {
+                            BlockEntityLifecycleDispatcher.onValidate(new BlockEntityLifeCycleEvent.Validate(world, pos, blockEntity));
+                        }
+                    }
+                }
+
+                validatePendingNodesInChunk(world, (int) (chunkCoord >> 32), (int) chunkCoord);
+            }
+        }
+    }
+    //~}
 
     //~ if >=1.20 '(World ' -> '(Level ' {
     public @Nonnull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
@@ -873,6 +1032,7 @@ public final class NetworkManager {
         activeNodes.clear();
         grids.clear();
         posNodes.clear();
+        serializedDimensionKeys.clear();
         pendingNodeValidation.clear();
         saveFile = null;
         init = false;
@@ -999,6 +1159,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.initGrid(entries);
         ChargingManager.INSTANCE.initGrid(entries);
         init = true;
+        validatePendingNodesInLoadedWorlds();
     }
 
     private void markPendingNodeValidation(int dimId, BlockPos pos) {
