@@ -91,7 +91,6 @@ public class CirculationFlowNetworks {
     @Mod.EventHandler
     public void serverStarted(FMLServerStartedEvent event) {
         NetworkManager.INSTANCE.initGrid();
-        proxy.revalidateLoadedNodeBlockEntities();
         PocketNodeManager.INSTANCE.load();
     }
 

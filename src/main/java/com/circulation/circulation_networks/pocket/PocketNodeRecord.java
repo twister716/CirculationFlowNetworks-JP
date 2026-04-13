@@ -112,7 +112,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
 
     //~ if >=1.20 'World ' -> 'Level ' {
     public NodeContext createNodeContext(World world) {
-        return NodeContext.of(world, pos, toDisplayName(nodeType.id()), nodeType.fallbackVisualId());
+        return NodeContext.of(world, pos, null, nodeType.fallbackVisualId());
     }
     //~}
 

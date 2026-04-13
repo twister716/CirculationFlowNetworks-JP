@@ -1,10 +1,9 @@
 package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
-import com.circulation.circulation_networks.manager.CirculationShielderManager;
 import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.RenderingUtils;
-import it.unimi.dsi.fastutil.objects.ReferenceSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.client.Minecraft;
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -55,6 +54,7 @@ public final class CirculationShielderRenderingHandler {
     private static final float RANGE_EXPANSION = 0.01f;
     private static final float ANIMATION_DURATION = 2.0f;
 
+    private final ReferenceOpenHashSet<ICirculationShielderBlockEntity> clientShielders = new ReferenceOpenHashSet<>();
     private final Map<ICirculationShielderBlockEntity, Float> animProgress = new WeakHashMap<>();
     private final Map<ICirculationShielderBlockEntity, Float> lastAnimProgress = new WeakHashMap<>();
     //? if >=1.20 {
@@ -65,8 +65,17 @@ public final class CirculationShielderRenderingHandler {
     *///?}
 
     public void clear() {
+        clientShielders.clear();
         animProgress.clear();
         lastAnimProgress.clear();
+    }
+
+    public void addShielder(ICirculationShielderBlockEntity shielder) {
+        clientShielders.add(shielder);
+    }
+
+    public void removeShielder(ICirculationShielderBlockEntity shielder) {
+        clientShielders.remove(shielder);
     }
 
     @SubscribeEvent
@@ -189,8 +198,6 @@ public final class CirculationShielderRenderingHandler {
         double playerY = RenderingUtils.getPlayerRenderY(event.getPartialTicks());
         double playerZ = RenderingUtils.getPlayerRenderZ(event.getPartialTicks());
         float partialTicks = event.getPartialTicks();
-
-        int dimId = mc.player.dimension;
         //?} else if <1.21 {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
@@ -203,8 +210,6 @@ public final class CirculationShielderRenderingHandler {
         double playerY = cameraPos.y;
         double playerZ = cameraPos.z;
         float partialTicks = event.getPartialTick();
-
-        int dimId = mc.level.dimension().location().hashCode();
     *///?} else {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
@@ -217,13 +222,9 @@ public final class CirculationShielderRenderingHandler {
         double playerY = cameraPos.y;
         double playerZ = cameraPos.z;
         float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-
-        int dimId = mc.level.dimension().location().hashCode();
     *///?}
 
-        ReferenceSet<ICirculationShielderBlockEntity> shielders =
-            CirculationShielderManager.INSTANCE.getShieldersForDim(dimId);
-        if (shielders == null || shielders.isEmpty()) return;
+        if (clientShielders.isEmpty()) return;
 
         //? if >=1.20 {
         /*currentWorldPoseStack = event.getPoseStack();
@@ -231,7 +232,7 @@ public final class CirculationShielderRenderingHandler {
         //? if >=1.21 {
         /*cachedEventViewMatrix = event.getModelViewMatrix();
         *///?}
-        for (ICirculationShielderBlockEntity shielder : shielders) {
+        for (ICirculationShielderBlockEntity shielder : clientShielders) {
             if (shielder.isShowingRange()) {
                 animProgress.putIfAbsent(shielder, 0.0f);
                 lastAnimProgress.putIfAbsent(shielder, animProgress.getOrDefault(shielder, 0.0f));

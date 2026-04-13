@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.tiles;
 import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
+import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.manager.CirculationShielderManager;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
@@ -14,6 +15,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,7 +110,11 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
 
     public void onValidate() {
         if (level != null) {
-            CirculationShielderManager.INSTANCE.register(this, level.dimension().location().hashCode());
+            if (level.isClientSide) {
+                clientRegister();
+            } else {
+                CirculationShielderManager.INSTANCE.register(this, level.dimension().location().hashCode());
+            }
         }
     }
 
@@ -126,9 +133,23 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
     @Override
     public void setRemoved() {
         if (level != null) {
-            CirculationShielderManager.INSTANCE.unregister(this, level.dimension().location().hashCode());
+            if (level.isClientSide) {
+                clientUnregister();
+            } else {
+                CirculationShielderManager.INSTANCE.unregister(this, level.dimension().location().hashCode());
+            }
         }
         super.setRemoved();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void clientRegister() {
+        CirculationShielderRenderingHandler.INSTANCE.addShielder(this);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void clientUnregister() {
+        CirculationShielderRenderingHandler.INSTANCE.removeShielder(this);
     }
 
     @Override

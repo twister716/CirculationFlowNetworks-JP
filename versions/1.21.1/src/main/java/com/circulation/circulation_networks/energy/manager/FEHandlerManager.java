@@ -17,11 +17,12 @@ public final class FEHandlerManager implements IEnergyHandlerManager {
         var level = blockEntity.getLevel();
         if (level == null) return false;
         var pos = blockEntity.getBlockPos();
-        if (level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null) != null) {
+        if (level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null, blockEntity, null) != null) {
             return true;
         }
         for (Direction direction : DIRECTIONS) {
-            if (level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction) != null) return true;
+            if (level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null, blockEntity, direction) != null)
+                return true;
         }
         return false;
     }

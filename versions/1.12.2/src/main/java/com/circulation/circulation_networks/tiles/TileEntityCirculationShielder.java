@@ -5,6 +5,7 @@ import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.container.CFNBaseContainer;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
+import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.manager.CirculationShielderManager;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
@@ -116,15 +117,32 @@ public class TileEntityCirculationShielder extends BaseTileEntity implements ICi
     public void validate() {
         super.validate();
         setScope(scope);
-        CirculationShielderManager.INSTANCE.register(this, world.provider.getDimension());
+        if (world.isRemote) {
+            clientRegister();
+        } else {
+            CirculationShielderManager.INSTANCE.register(this, world.provider.getDimension());
+        }
     }
 
     @Override
     public void invalidate() {
         super.invalidate();
         if (world != null) {
-            CirculationShielderManager.INSTANCE.unregister(this, world.provider.getDimension());
+            if (world.isRemote) {
+                clientUnregister();
+            } else {
+                CirculationShielderManager.INSTANCE.unregister(this, world.provider.getDimension());
+            }
         }
     }
 
+    @SideOnly(Side.CLIENT)
+    private void clientRegister() {
+        CirculationShielderRenderingHandler.INSTANCE.addShielder(this);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void clientUnregister() {
+        CirculationShielderRenderingHandler.INSTANCE.removeShielder(this);
+    }
 }

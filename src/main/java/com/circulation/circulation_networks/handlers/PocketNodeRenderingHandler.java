@@ -216,7 +216,6 @@ public final class PocketNodeRenderingHandler {
             poseStack.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
             applyFaceTransform(poseStack, host.getRecord().getAttachmentFace());
             poseStack.scale(16.0F, 16.0F, 16.0F);
-            poseStack.last().pose().scale(1.0F, -1.0F, 1.0F);
             if (host.isGui3d()) {
                 poseStack.scale(1.0F, 1.0F, 0.002F);
             }
@@ -288,7 +287,6 @@ public final class PocketNodeRenderingHandler {
             mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
             GlStateManager.enableAlpha();
             GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
-            GlStateManager.scale(1.0F, -1.0F, 1.0F);
             GlStateManager.scale(16.0F, 16.0F, 16.0F);
             if (host.isGui3d()) {
                 GlStateManager.scale(1.0F, 1.0F, 0.002F);

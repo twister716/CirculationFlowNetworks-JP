@@ -7,7 +7,6 @@ import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
-import com.circulation.circulation_networks.utils.BlockEntityLifecycleDispatcher;
 import com.circulation.circulation_networks.utils.EventHooks;
 import com.circulation.circulation_networks.utils.Functions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -35,6 +34,8 @@ import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 //~ mc_imports
 import net.minecraft.nbt.NBTTagCompound;
@@ -82,9 +83,8 @@ public final class NetworkManager {
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<INode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<LongSet>> pendingNodeValidation = new Int2ObjectOpenHashMap<>();
-    private final LongArrayList pendingValidationClearScratch = new LongArrayList();
-    private final ObjectSet<IGrid> markGird = new ObjectOpenHashSet<>();
+    private final NodeValidationTracker validationTracker = new NodeValidationTracker();
+    private final ObjectSet<IGrid> dirtyGrids = new ObjectOpenHashSet<>();
     private boolean init;
 
     {
@@ -92,7 +92,6 @@ public final class NetworkManager {
         scopeNode.defaultReturnValue(Long2ObjectMaps.emptyMap());
         nodeScope.defaultReturnValue(Object2ObjectMaps.emptyMap());
         nodeLocation.defaultReturnValue(Long2ObjectMaps.emptyMap());
-        pendingNodeValidation.defaultReturnValue(Long2ObjectMaps.emptyMap());
     }
 
     public static File getSaveFile() {
@@ -460,20 +459,19 @@ public final class NetworkManager {
         if (blockEntity instanceof INodeBlockEntity nbe) {
             int dimId = getDimensionId(event.getWorld());
             if (!init) {
-                markPendingNodeValidation(dimId, event.getPos());
+                validationTracker.markEarly(dimId, event.getPos());
                 return;
             }
             INode current = getNodeFromPos(event.getWorld(), event.getPos());
             INode actual = nbe.getNode();
             if (actual == null) {
-                markPendingNodeValidation(dimId, event.getPos());
                 return;
             }
             if (current != null && current != actual) {
                 removeNode(current);
             }
             addNode(actual, blockEntity);
-            clearPendingNodeValidationIfMatched(dimId, event.getPos(), actual);
+            validationTracker.removeIfRegistered(dimId, event.getPos(), posNodes.get(dimId), actual);
         }
     }
 
@@ -483,8 +481,10 @@ public final class NetworkManager {
 
     public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
         if (isClientWorld(event.getWorld())) return;
-        clearPendingNodeValidation(getDimensionId(event.getWorld()), event.getPos());
-        removeNode(getDimensionId(event.getWorld()), event.getPos());
+        int dimId = getDimensionId(event.getWorld());
+        validationTracker.clearEarly(dimId, event.getPos());
+        validationTracker.removePending(dimId, event.getPos());
+        removeNode(dimId, event.getPos());
     }
 
     //~ if >=1.20 '(World ' -> '(Level ' {
@@ -494,19 +494,24 @@ public final class NetworkManager {
 
         int dimId = getDimensionId(world);
         long chunkCoord = Functions.mergeChunkCoords(chunkX, chunkZ);
-        LongSet pending = getPendingNodeValidation(dimId, chunkCoord);
+        LongSet pending = validationTracker.getChunkPositions(dimId, chunkCoord);
         if (pending == null || pending.isEmpty()) {
             return;
         }
 
-        pendingValidationClearScratch.clear();
-        for (long posLong : pending) {
+        LongArrayList pendingSnapshot = new LongArrayList(pending);
+        LongArrayList toRemove = new LongArrayList();
+        for (int idx = 0; idx < pendingSnapshot.size(); idx++) {
+            long posLong = pendingSnapshot.getLong(idx);
             var pos = blockPosFromLong(posLong);
             INode mapped = posNodes.get(dimId).get(posLong);
             var blockEntity = getBlockEntity(world, pos);
 
             if (blockEntity instanceof INodeBlockEntity nbe) {
                 INode actual = nbe.getNode();
+                if (actual == null) {
+                    continue;
+                }
                 if (mapped != actual) {
                     if (mapped != null) {
                         removeNode(mapped);
@@ -521,25 +526,23 @@ public final class NetworkManager {
                 && pos.equals(mapped.getPos())
                 && blockEntity instanceof INodeBlockEntity nbe
                 && nbe.getNode() == mapped) {
-                pendingValidationClearScratch.add(posLong);
+                toRemove.add(posLong);
             } else if (mapped != null) {
                 removeNode(mapped);
             } else {
-                pendingValidationClearScratch.add(posLong);
+                toRemove.add(posLong);
             }
         }
-        for (int i = 0; i < pendingValidationClearScratch.size(); i++) {
-            clearPendingNodeValidation(dimId, pendingValidationClearScratch.getLong(i));
-        }
+        validationTracker.batchRemovePending(dimId, toRemove);
     }
 
     //~ if >=1.20 '(World ' -> '(Level ' {
     public void validatePendingNodesInLoadedWorlds() {
-        if (!init || pendingNodeValidation.isEmpty()) {
+        if (!init || validationTracker.isPendingEmpty()) {
             return;
         }
 
-        var pendingByDim = new ObjectArrayList<>(pendingNodeValidation.int2ObjectEntrySet());
+        var pendingByDim = validationTracker.pendingDimensionsSnapshot();
         for (var dimEntry : pendingByDim) {
             int dimId = dimEntry.getIntKey();
             var world = resolveWorld(dimId);
@@ -558,17 +561,14 @@ public final class NetworkManager {
 
             for (int i = 0; i < loadedChunkCoords.size(); i++) {
                 long chunkCoord = loadedChunkCoords.getLong(i);
-                LongSet pending = getPendingNodeValidation(dimId, chunkCoord);
+                LongSet pending = validationTracker.getChunkPositions(dimId, chunkCoord);
                 if (pending != null && !pending.isEmpty()) {
-                    LongArrayList pendingPositions = new LongArrayList();
-                    for (long posLong : pending) {
-                        pendingPositions.add(posLong);
-                    }
+                    LongArrayList pendingPositions = new LongArrayList(pending);
                     for (int j = 0; j < pendingPositions.size(); j++) {
                         BlockPos pos = blockPosFromLong(pendingPositions.getLong(j));
                         var blockEntity = getBlockEntity(world, pos);
                         if (blockEntity != null) {
-                            BlockEntityLifecycleDispatcher.onValidate(new BlockEntityLifeCycleEvent.Validate(world, pos, blockEntity));
+                            EventHooks.onBlockEntityValidate(world, pos, blockEntity);
                         }
                     }
                 }
@@ -608,7 +608,7 @@ public final class NetworkManager {
 
         EventHooks.postRemoveNodePre(removedNode);
         int dimId = getDimensionId(removedNode);
-        clearPendingNodeValidation(dimId, removedNode.getPos());
+        validationTracker.removePending(dimId, removedNode.getPos());
 
         var players = NodeNetworkRendering.getPlayers(removedNode.getGrid());
         if (players != null && !players.isEmpty()) {
@@ -643,7 +643,7 @@ public final class NetworkManager {
         }
         oldGrid.getNodes().remove(removedNode);
         oldGrid.markSnapshotDirty();
-        markGird.add(oldGrid);
+        dirtyGrids.add(oldGrid);
 
         if (oldGrid.getNodes().isEmpty()) {
             destroyGrid(oldGrid);
@@ -689,7 +689,7 @@ public final class NetworkManager {
                     }
                 }
                 oldGrid.markSnapshotDirty();
-                markGird.add(oldGrid);
+                dirtyGrids.add(oldGrid);
 
                 var watchingPlayers = NodeNetworkRendering.getPlayers(oldGrid);
                 for (int i = 1; i < components.size(); i++) {
@@ -782,10 +782,13 @@ public final class NetworkManager {
         }
         candidates.remove(newNode);
 
+        Reference2ObjectMap<INode, INode.LinkType> linkCache = new Reference2ObjectOpenHashMap<>();
         ReferenceSet<IGrid> linkedGrids = new ReferenceOpenHashSet<>();
         for (INode existing : candidates) {
             if (!existing.isActive()) continue;
-            if (newNode.linkScopeCheck(existing) == INode.LinkType.DISCONNECT) continue;
+            var linkType = newNode.linkScopeCheck(existing);
+            if (linkType == INode.LinkType.DISCONNECT) continue;
+            linkCache.put(existing, linkType);
             if (existing.getGrid() != null) {
                 linkedGrids.add(existing.getGrid());
             }
@@ -831,10 +834,9 @@ public final class NetworkManager {
             return AddNodeResult.failure(AddNodeResult.Status.HUB_CONFLICT);
         }
 
-        for (INode existing : candidates) {
-            if (!existing.isActive()) continue;
-            var linkType = newNode.linkScopeCheck(existing);
-            if (linkType == INode.LinkType.DISCONNECT) continue;
+        for (var entry : linkCache.reference2ObjectEntrySet()) {
+            INode existing = entry.getKey();
+            var linkType = entry.getValue();
             switch (linkType) {
                 case DOUBLY -> {
                     newNode.addNeighbor(existing);
@@ -861,7 +863,7 @@ public final class NetworkManager {
                 src.setHubNode(null);
                 dst.markSnapshotDirty();
                 destroyGrid(src);
-                markGird.add(dst);
+                dirtyGrids.add(dst);
             }
         }
 
@@ -888,7 +890,7 @@ public final class NetworkManager {
     }
 
     private void assignNodeToGrid(INode node, IGrid grid) {
-        markGird.add(grid);
+        dirtyGrids.add(grid);
         grid.getNodes().add(node);
         node.setGrid(grid);
         grid.markSnapshotDirty();
@@ -898,14 +900,14 @@ public final class NetworkManager {
         IGrid grid = new Grid(UUID.randomUUID());
         grids.put(grid.getId(), grid);
         EnergyMachineManager.INSTANCE.getInteraction().put(grid, new EnergyMachineManager.Interaction());
-        markGird.add(grid);
+        dirtyGrids.add(grid);
         return grid;
     }
 
     private void destroyGrid(IGrid grid) {
         grids.remove(grid.getId());
         EnergyMachineManager.INSTANCE.getInteraction().remove(grid);
-        markGird.remove(grid);
+        dirtyGrids.remove(grid);
         deleteFileAsync(new File(getSaveFile(), grid.getId().toString() + ".dat"));
     }
 
@@ -917,23 +919,23 @@ public final class NetworkManager {
         grids.clear();
         posNodes.clear();
         serializedDimensionKeys.clear();
-        pendingNodeValidation.clear();
+        validationTracker.clear();
         saveFile = null;
         init = false;
     }
 
     public void markGridDirty(@Nullable IGrid grid) {
         if (grid != null) {
-            markGird.add(grid);
+            dirtyGrids.add(grid);
         }
     }
 
     public void saveGrid() {
         File saveDir = NetworkManager.getSaveFile();
-        if (!markGird.isEmpty()) {
-            List<IGrid> dirtyGrids = new ObjectArrayList<>(markGird);
-            markGird.clear();
-            for (IGrid grid : dirtyGrids) {
+        if (!dirtyGrids.isEmpty()) {
+            List<IGrid> snapshot = new ObjectArrayList<>(dirtyGrids);
+            dirtyGrids.clear();
+            for (IGrid grid : snapshot) {
                 try {
                     tryWriteCompressedNbt(grid.serialize(), new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
                 } catch (Exception e) {
@@ -1010,13 +1012,13 @@ public final class NetworkManager {
                 }
                 activeNodes.add(node);
                 registerNodeIndices(entry.dimId, node);
-                markPendingNodeValidation(entry.dimId, node.getPos());
+                validationTracker.markPending(entry.dimId, node.getPos());
                 registered.add(node);
             }
             if (collision) {
                 for (INode node : registered) {
                     activeNodes.remove(node);
-                    clearPendingNodeValidation(entry.dimId, node.getPos());
+                    validationTracker.removePending(entry.dimId, node.getPos());
                     unregisterNodeIndices(entry.dimId, node);
                 }
                 grids.remove(grid.getId());
@@ -1027,72 +1029,128 @@ public final class NetworkManager {
         }
         EnergyMachineManager.INSTANCE.initGrid(entries);
         ChargingManager.INSTANCE.initGrid(entries);
+        validationTracker.mergeEarlyIntoPending();
         init = true;
         validatePendingNodesInLoadedWorlds();
     }
 
-    private void markPendingNodeValidation(int dimId, BlockPos pos) {
-        long chunkCoord = Functions.mergeChunkCoords(pos);
-        var dimMap = pendingNodeValidation.get(dimId);
-        if (dimMap == pendingNodeValidation.defaultReturnValue()) {
-            dimMap = new Long2ObjectOpenHashMap<>();
-            dimMap.defaultReturnValue(LongSets.EMPTY_SET);
-            pendingNodeValidation.put(dimId, dimMap);
-        }
-        var positions = dimMap.get(chunkCoord);
-        if (positions == dimMap.defaultReturnValue()) {
-            positions = new LongOpenHashSet();
-            dimMap.put(chunkCoord, positions);
-        }
-        //~ if >=1.20 '.toLong()' -> '.asLong()' {
-        positions.add(pos.toLong());
-        //~}
-    }
+    private static final class NodeValidationTracker {
+        private final Int2ObjectMap<Long2ObjectMap<LongSet>> pending = new Int2ObjectOpenHashMap<>();
+        private final Int2ObjectMap<LongOpenHashSet> early = new Int2ObjectOpenHashMap<>();
 
-    private void clearPendingNodeValidationIfMatched(int dimId, BlockPos pos, INode node) {
-        //~ if >=1.20 '.toLong()' -> '.asLong()' {
-        if (node != null && posNodes.get(dimId).get(pos.toLong()) == node) {
-        //~}
-            clearPendingNodeValidation(dimId, pos);
+        {
+            pending.defaultReturnValue(Long2ObjectMaps.emptyMap());
         }
-    }
 
-    private void clearPendingNodeValidation(int dimId, BlockPos pos) {
-        //~ if >=1.20 '.toLong()' -> '.asLong()' {
-        clearPendingNodeValidation(dimId, pos.toLong());
-        //~}
-    }
+        void markEarly(int dimId, BlockPos pos) {
+            var positions = early.get(dimId);
+            if (positions == null) {
+                early.put(dimId, positions = new LongOpenHashSet());
+            }
+            //~ if >=1.20 '.toLong()' -> '.asLong()' {
+            positions.add(pos.toLong());
+            //~}
+        }
 
-    private void clearPendingNodeValidation(int dimId, long posLong) {
-        var dimMap = pendingNodeValidation.get(dimId);
-        if (dimMap == pendingNodeValidation.defaultReturnValue()) {
-            return;
+        void clearEarly(int dimId, BlockPos pos) {
+            var positions = early.get(dimId);
+            if (positions != null) {
+                //~ if >=1.20 '.toLong()' -> '.asLong()' {
+                positions.remove(pos.toLong());
+                //~}
+                if (positions.isEmpty()) {
+                    early.remove(dimId);
+                }
+            }
         }
-        //~ if >=1.20 '.fromLong(' -> '.of(' {
-        BlockPos pos = BlockPos.fromLong(posLong);
-        //~}
-        long chunkCoord = Functions.mergeChunkCoords(pos);
-        var positions = dimMap.get(chunkCoord);
-        if (positions == dimMap.defaultReturnValue()) {
-            return;
-        }
-        positions.remove(posLong);
-        if (positions.isEmpty()) {
-            dimMap.remove(chunkCoord);
-        }
-        if (dimMap.isEmpty()) {
-            pendingNodeValidation.remove(dimId);
-        }
-    }
 
-    @Nullable
-    private LongSet getPendingNodeValidation(int dimId, long chunkCoord) {
-        var dimMap = pendingNodeValidation.get(dimId);
-        if (dimMap == pendingNodeValidation.defaultReturnValue()) {
-            return null;
+        void mergeEarlyIntoPending() {
+            for (var entry : early.int2ObjectEntrySet()) {
+                int dimId = entry.getIntKey();
+                for (long posLong : entry.getValue()) {
+                    //~ if >=1.20 '.fromLong(' -> '.of(' {
+                    markPending(dimId, BlockPos.fromLong(posLong));
+                    //~}
+                }
+            }
+            early.clear();
         }
-        var positions = dimMap.get(chunkCoord);
-        return positions == dimMap.defaultReturnValue() ? null : positions;
+
+        void markPending(int dimId, BlockPos pos) {
+            long chunkCoord = Functions.mergeChunkCoords(pos);
+            var dimMap = pending.get(dimId);
+            if (dimMap == pending.defaultReturnValue()) {
+                dimMap = new Long2ObjectOpenHashMap<>();
+                dimMap.defaultReturnValue(LongSets.EMPTY_SET);
+                pending.put(dimId, dimMap);
+            }
+            var positions = dimMap.get(chunkCoord);
+            if (positions == dimMap.defaultReturnValue()) {
+                dimMap.put(chunkCoord, positions = new LongOpenHashSet());
+            }
+            //~ if >=1.20 '.toLong()' -> '.asLong()' {
+            positions.add(pos.toLong());
+            //~}
+        }
+
+        void removePending(int dimId, BlockPos pos) {
+            //~ if >=1.20 '.toLong()' -> '.asLong()' {
+            long posLong = pos.toLong();
+            //~}
+            long chunkCoord = Functions.mergeChunkCoords(pos);
+            removePendingInternal(dimId, posLong, chunkCoord);
+        }
+
+        void removePending(int dimId, long posLong) {
+            //~ if >=1.20 '.fromLong(' -> '.of(' {
+            long chunkCoord = Functions.mergeChunkCoords(BlockPos.fromLong(posLong));
+            //~}
+            removePendingInternal(dimId, posLong, chunkCoord);
+        }
+
+        private void removePendingInternal(int dimId, long posLong, long chunkCoord) {
+            var dimMap = pending.get(dimId);
+            if (dimMap == pending.defaultReturnValue()) return;
+            var positions = dimMap.get(chunkCoord);
+            if (positions == dimMap.defaultReturnValue()) return;
+            positions.remove(posLong);
+            if (positions.isEmpty()) dimMap.remove(chunkCoord);
+            if (dimMap.isEmpty()) pending.remove(dimId);
+        }
+
+        void removeIfRegistered(int dimId, BlockPos pos, Long2ReferenceMap<INode> posNodesForDim, INode node) {
+            //~ if >=1.20 '.toLong()' -> '.asLong()' {
+            if (node != null && posNodesForDim.get(pos.toLong()) == node) {
+            //~}
+                removePending(dimId, pos);
+            }
+        }
+
+        @Nullable LongSet getChunkPositions(int dimId, long chunkCoord) {
+            var dimMap = pending.get(dimId);
+            if (dimMap == pending.defaultReturnValue()) return null;
+            var positions = dimMap.get(chunkCoord);
+            return positions == dimMap.defaultReturnValue() ? null : positions;
+        }
+
+        boolean isPendingEmpty() {
+            return pending.isEmpty();
+        }
+
+        ObjectArrayList<Int2ObjectMap.Entry<Long2ObjectMap<LongSet>>> pendingDimensionsSnapshot() {
+            return new ObjectArrayList<>(pending.int2ObjectEntrySet());
+        }
+
+        void batchRemovePending(int dimId, LongArrayList positions) {
+            for (int i = 0; i < positions.size(); i++) {
+                removePending(dimId, positions.getLong(i));
+            }
+        }
+
+        void clear() {
+            pending.clear();
+            early.clear();
+        }
     }
 
     public static final class AddNodeResult {
@@ -1142,3 +1200,4 @@ public final class NetworkManager {
     record GridEntry(int dimId, IGrid grid) {
     }
 }
+
