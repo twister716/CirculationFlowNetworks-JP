@@ -512,6 +512,7 @@ public final class NetworkManager {
             var blockEntity = getBlockEntity(world, pos);
 
             if (blockEntity instanceof INodeBlockEntity nbe) {
+                nbe.syncNodeAfterNetworkInit();
                 INode actual = nbe.getNode();
                 if (actual == null) {
                     continue;

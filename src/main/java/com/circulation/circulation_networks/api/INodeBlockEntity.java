@@ -21,4 +21,6 @@ public interface INodeBlockEntity {
     void nodeValidate();
 
     void nodeInvalidate();
+
+    void syncNodeAfterNetworkInit();
 }
