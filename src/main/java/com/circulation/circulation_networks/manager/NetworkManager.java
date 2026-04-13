@@ -488,12 +488,15 @@ public final class NetworkManager {
     }
 
     //~ if >=1.20 '(World ' -> '(Level ' {
-    public void validatePendingNodesInChunk(World world, int chunkX, int chunkZ) {
+    public void validatePendingNodesInChunk(World world, int x, int z) {
+        validatePendingNodesInChunk(world, Functions.mergeChunkCoords(x, z));
+    }
+
+    public void validatePendingNodesInChunk(World world, long chunkCoord) {
         //~}
         if (isClientWorld(world)) return;
 
         int dimId = getDimensionId(world);
-        long chunkCoord = Functions.mergeChunkCoords(chunkX, chunkZ);
         LongSet pending = validationTracker.getChunkPositions(dimId, chunkCoord);
         if (pending == null || pending.isEmpty()) {
             return;
@@ -561,19 +564,7 @@ public final class NetworkManager {
 
             for (int i = 0; i < loadedChunkCoords.size(); i++) {
                 long chunkCoord = loadedChunkCoords.getLong(i);
-                LongSet pending = validationTracker.getChunkPositions(dimId, chunkCoord);
-                if (pending != null && !pending.isEmpty()) {
-                    LongArrayList pendingPositions = new LongArrayList(pending);
-                    for (int j = 0; j < pendingPositions.size(); j++) {
-                        BlockPos pos = blockPosFromLong(pendingPositions.getLong(j));
-                        var blockEntity = getBlockEntity(world, pos);
-                        if (blockEntity != null) {
-                            EventHooks.onBlockEntityValidate(world, pos, blockEntity);
-                        }
-                    }
-                }
-
-                validatePendingNodesInChunk(world, (int) (chunkCoord >> 32), (int) chunkCoord);
+                validatePendingNodesInChunk(world, chunkCoord);
             }
         }
     }
@@ -1121,7 +1112,7 @@ public final class NetworkManager {
         void removeIfRegistered(int dimId, BlockPos pos, Long2ReferenceMap<INode> posNodesForDim, INode node) {
             //~ if >=1.20 '.toLong()' -> '.asLong()' {
             if (node != null && posNodesForDim.get(pos.toLong()) == node) {
-            //~}
+                //~}
                 removePending(dimId, pos);
             }
         }
@@ -1200,4 +1191,3 @@ public final class NetworkManager {
     record GridEntry(int dimId, IGrid grid) {
     }
 }
-
