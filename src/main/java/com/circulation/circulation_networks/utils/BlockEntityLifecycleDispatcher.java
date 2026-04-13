@@ -1,23 +1,18 @@
-package com.circulation.circulation_networks.manager;
+package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
+import com.circulation.circulation_networks.manager.EnergyMachineManager;
+import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
+import com.circulation.circulation_networks.manager.HubChannelManager;
+import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
+import com.circulation.circulation_networks.manager.NetworkManager;
 
 public final class BlockEntityLifecycleDispatcher {
 
     private BlockEntityLifecycleDispatcher() {
     }
 
-    static void invokeValidateHook(Object blockEntity) {
-        if (blockEntity instanceof BlockEntityLifecycleAware lifecycleAware) {
-            lifecycleAware.onValidate();
-        }
-    }
-
-    static void invokeInvalidateHook(Object blockEntity) {
-    }
-
     public static void onValidate(BlockEntityLifeCycleEvent.Validate event) {
-        invokeValidateHook(event.getBlockEntity());
         MachineNodeBlockEntityManager.INSTANCE.onBlockEntityValidate(event);
         NetworkManager.INSTANCE.onBlockEntityValidate(event);
         EnergyMachineManager.INSTANCE.onBlockEntityValidate(event);

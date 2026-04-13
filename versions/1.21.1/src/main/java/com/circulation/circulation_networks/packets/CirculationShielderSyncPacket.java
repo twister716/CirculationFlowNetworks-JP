@@ -54,7 +54,6 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
                 if (te != null) {
                     te.setScope(clampScope(message.scope, te.getMaxScope()));
                     te.setRedstoneMode(message.redstoneMode);
-                    te.setChanged();
                 }
             }
         });

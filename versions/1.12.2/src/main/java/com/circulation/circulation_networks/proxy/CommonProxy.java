@@ -5,7 +5,7 @@ import com.circulation.circulation_networks.energy.manager.EUHandlerManager;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
-import com.circulation.circulation_networks.manager.BlockEntityLifecycleDispatcher;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleDispatcher;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;

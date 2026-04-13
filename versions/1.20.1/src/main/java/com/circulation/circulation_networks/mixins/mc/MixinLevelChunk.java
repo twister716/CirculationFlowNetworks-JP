@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.mixins.mc;
 
-import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.utils.EventHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -28,14 +28,14 @@ public abstract class MixinLevelChunk {
     @Inject(method = "addAndRegisterBlockEntity", at = @At("TAIL"))
     private void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (blockEntity != null) {
-            CirculationFlowNetworks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
 
     @Redirect(method = {"setBlockEntity", "removeBlockEntity"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V"))
     private void removeBlockEntity(BlockEntity blockEntity) {
         if (blockEntity != null) {
-            CirculationFlowNetworks.onBlockEntityInvalidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            EventHooks.onBlockEntityInvalidate(this.level, blockEntity.getBlockPos(), blockEntity);
             blockEntity.setRemoved();
         }
     }

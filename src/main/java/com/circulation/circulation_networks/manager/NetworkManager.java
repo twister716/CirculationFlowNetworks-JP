@@ -7,6 +7,8 @@ import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleDispatcher;
+import com.circulation.circulation_networks.utils.EventHooks;
 import com.circulation.circulation_networks.utils.Functions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -604,7 +606,7 @@ public final class NetworkManager {
     public void removeNode(INode removedNode) {
         if (removedNode == null || isClientWorld(removedNode.getWorld()) || !activeNodes.remove(removedNode)) return;
 
-        NodeEventHooks.postRemoveNodePre(removedNode);
+        EventHooks.postRemoveNodePre(removedNode);
         int dimId = getDimensionId(removedNode);
         clearPendingNodeValidation(dimId, removedNode.getPos());
 
@@ -711,7 +713,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.removeNode(removedNode);
         ChargingManager.INSTANCE.removeNode(removedNode);
 
-        NodeEventHooks.postRemoveNodePost(removedNode);
+        EventHooks.postRemoveNodePost(removedNode);
     }
 
     private static void enqueueComponentNeighbor(
@@ -765,7 +767,7 @@ public final class NetworkManager {
             return AddNodeResult.failure(AddNodeResult.Status.ALREADY_ACTIVE);
         }
 
-        if (NodeEventHooks.postAddNodePre(newNode, blockEntity)) {
+        if (EventHooks.postAddNodePre(newNode, blockEntity)) {
             return AddNodeResult.failure(AddNodeResult.Status.EVENT_CANCELED);
         }
 
@@ -881,7 +883,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.addNode(newNode);
         ChargingManager.INSTANCE.addNode(newNode);
 
-        NodeEventHooks.postAddNodePost(newNode, blockEntity);
+        EventHooks.postAddNodePost(newNode, blockEntity);
         return AddNodeResult.success(newNode.getGrid());
     }
 
@@ -932,18 +934,11 @@ public final class NetworkManager {
             List<IGrid> dirtyGrids = new ObjectArrayList<>(markGird);
             markGird.clear();
             for (IGrid grid : dirtyGrids) {
-                //? if <1.20 {
-                NBTTagCompound serializedGrid;
-                //?} else {
-                /*CompoundTag serializedGrid;
-                *///?}
                 try {
-                    serializedGrid = grid.serialize();
+                    tryWriteCompressedNbt(grid.serialize(), new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
                 } catch (Exception e) {
                     CirculationFlowNetworks.LOGGER.error("Failed to serialize grid {}", grid.getId(), e);
-                    continue;
                 }
-                tryWriteCompressedNbt(serializedGrid, new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
             }
         }
     }

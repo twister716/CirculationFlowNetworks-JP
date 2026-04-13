@@ -3,7 +3,6 @@ package com.circulation.circulation_networks.tiles;
 import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
-import com.circulation.circulation_networks.manager.BlockEntityLifecycleAware;
 import com.circulation.circulation_networks.manager.CirculationShielderManager;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
@@ -19,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implements ICirculationShielderBlockEntity, MenuProvider, BlockEntityLifecycleAware {
+public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implements ICirculationShielderBlockEntity, MenuProvider {
 
     private transient final BlockPos.MutableBlockPos min = new BlockPos.MutableBlockPos();
     private transient final BlockPos.MutableBlockPos max = new BlockPos.MutableBlockPos();
@@ -107,7 +106,6 @@ public class CirculationShielderBlockEntity extends BaseCFNBlockEntity implement
         return getBlockPos();
     }
 
-    @Override
     public void onValidate() {
         if (level != null) {
             CirculationShielderManager.INSTANCE.register(this, level.dimension().location().hashCode());

@@ -33,18 +33,6 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
     }
 
     @Override
-    public final void invalidate() {
-        super.invalidate();
-        nodeInvalidate();
-    }
-
-    @Override
-    public final void validate() {
-        super.validate();
-        nodeValidate();
-    }
-
-    @Override
     public void nodeValidate() {
         if (!shouldInitializeNode()) {
             return;

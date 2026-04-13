@@ -1,10 +1,7 @@
 package com.circulation.circulation_networks;
 
-import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
-import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
-import com.circulation.circulation_networks.manager.BlockEntityLifecycleDispatcher;
 import com.circulation.circulation_networks.manager.ChargingManager;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
@@ -25,10 +22,8 @@ import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.Packet;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -93,24 +88,6 @@ public final class CirculationFlowNetworks {
 
     public static <T extends Packet<T>> void sendToServer(T packet) {
         CFNNetwork.sendToServer(packet);
-    }
-
-    public static void onBlockEntityValidate(Level level, BlockPos pos, BlockEntity blockEntity) {
-        if (blockEntity instanceof INodeBlockEntity nbe) {
-            nbe.nodeValidate();
-        }
-        var event = new BlockEntityLifeCycleEvent.Validate(level, pos, blockEntity);
-        BlockEntityLifecycleDispatcher.onValidate(event);
-        MinecraftForge.EVENT_BUS.post(event);
-    }
-
-    public static void onBlockEntityInvalidate(Level level, BlockPos pos, BlockEntity blockEntity) {
-        if (blockEntity instanceof INodeBlockEntity nbe) {
-            nbe.nodeInvalidate();
-        }
-        var event = new BlockEntityLifeCycleEvent.Invalidate(level, pos, blockEntity);
-        BlockEntityLifecycleDispatcher.onInvalidate(event);
-        MinecraftForge.EVENT_BUS.post(event);
     }
 
     private void registerEnergyHandlers() {
@@ -185,9 +162,6 @@ public final class CirculationFlowNetworks {
     private void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof Level level) || level.isClientSide() || !(event.getChunk() instanceof LevelChunk chunk)) {
             return;
-        }
-        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
-            onBlockEntityValidate(level, blockEntity.getBlockPos(), blockEntity);
         }
         NetworkManager.INSTANCE.validatePendingNodesInChunk(level, chunk.getPos().x, chunk.getPos().z);
         PocketNodeManager.INSTANCE.onChunkLoad(level, chunk.getPos().x, chunk.getPos().z);
