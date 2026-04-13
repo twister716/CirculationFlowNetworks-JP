@@ -74,6 +74,7 @@ public final class ChargingManager {
     private static final byte CHARGE_PREF_ALL = 0b00111111;
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<ReferenceSet<IHubNode>> wideAreaHubs = new Int2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> tickChargeTargetsByGrid = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeChargeTargetGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTransferGrids = new ReferenceOpenHashSet<>();
@@ -163,6 +164,13 @@ public final class ChargingManager {
         var hubNode = grid.getHubNode();
         if (hubNode == null) {
             return CHARGE_PREF_ALL;
+        }
+
+        if (hubNode.getChannelId().equals(HubNode.EMPTY)) {
+            var owner = hubNode.getOwner();
+            if (owner != null && !owner.equals(player.getUniqueID())) {
+                return 0;
+            }
         }
 
         if (hubNode.getPermissionLevel(player.getUniqueID()) == HubPermissionLevel.NONE) {
@@ -391,28 +399,17 @@ public final class ChargingManager {
             collectPlayerChargeTargets(player, playerState);
         }
 
-        // Plugin-based remote charging: extend range beyond spatial index
+        // Plugin-based remote charging: dimensional scope only (wide-area handled in collectPlayerChargeTargets)
         for (var grid : machineMap.keySet()) {
             var hub = grid.getHubNode();
             if (hub == null || !hub.isActive()) continue;
-            var scope = getChargingPluginScope(hub);
-            if (scope == ChargingPluginScope.NONE) continue;
-
-            int hubDim = getDimensionId(hub);
+            if (getChargingPluginScope(hub) != ChargingPluginScope.DIMENSIONAL) continue;
 
             for (int i = 0; i < players.size(); i++) {
                 var player = players.get(i);
                 var playerState = playerStates.get(i);
-                if (playerState.coveredGrids.contains(grid)) continue;
+                if (playerState.coveredGrids.contains(grid) || playerState.reachableGrids.contains(grid)) continue;
 
-                // Wide area: same dimension only; Dimensional: all dimensions
-                if (scope == ChargingPluginScope.WIDE_AREA) {
-                    //~ if >=1.20 'player.dimension' -> 'player.level().dimension().location().hashCode()' {
-                    if (player.dimension != hubDim) continue;
-                    //~}
-                }
-
-                // Permission check
                 if (hub.getPermissionLevel(player.getUniqueID()) == HubPermissionLevel.NONE) continue;
 
                 playerState.scratch.clear();
@@ -443,30 +440,36 @@ public final class ChargingManager {
     //~ if >=1.20 'player.dimension)' -> 'player.level().dimension().location().hashCode())' {
     //~ if >=1.20 '.getPosition()' -> '.blockPosition()' {
     //~ if >=1.20 '.inventory.mainInventory' -> '.getInventory().items' {
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
+    //~ if >=1.20 '.getUniqueID()' -> '.getUUID()' {
     private void collectPlayerChargeTargets(EntityPlayer player,
                                             PlayerChargeState playerState) {
         var coveredGrids = playerState.coveredGrids;
         var reachableGrids = playerState.reachableGrids;
         coveredGrids.clear();
         reachableGrids.clear();
+
         var map = scopeNode.get(player.dimension);
-        if (map == null || map.isEmpty()) {
-            return;
-        }
-
-        var pos = player.getPosition();
-        var nodeSet = map.get(Functions.mergeChunkCoords(pos));
-        if (nodeSet == null || nodeSet.isEmpty()) {
-            return;
-        }
-
-        for (var node : nodeSet) {
-            if (!node.chargingScopeCheck(pos)) {
-                continue;
+        if (map != null && !map.isEmpty()) {
+            var pos = player.getPosition();
+            var nodeSet = map.get(Functions.mergeChunkCoords(pos));
+            if (nodeSet != null && !nodeSet.isEmpty()) {
+                for (var node : nodeSet) {
+                    if (!node.chargingScopeCheck(pos)) continue;
+                    var grid = node.getGrid();
+                    if (grid != null) {
+                        reachableGrids.add(grid);
+                    }
+                }
             }
-            var grid = node.getGrid();
-            if (grid != null) {
+        }
+
+        var wideHubs = wideAreaHubs.get(player.dimension);
+        if (wideHubs != null) {
+            for (var hub : wideHubs) {
+                if (!hub.isActive()) continue;
+                var grid = hub.getGrid();
+                if (grid == null || reachableGrids.contains(grid)) continue;
+                if (hub.getPermissionLevel(player.getUniqueID()) == HubPermissionLevel.NONE) continue;
                 reachableGrids.add(grid);
             }
         }
@@ -547,6 +550,13 @@ public final class ChargingManager {
             nodeScope.put(dimId, dimNodeScopeMap);
         }
         dimNodeScopeMap.put(chargingNode, LongSets.unmodifiable(coveredChunks));
+
+        if (chargingNode instanceof IHubNode hubNode) {
+            var scope = getChargingPluginScope(hubNode);
+            if (scope == ChargingPluginScope.WIDE_AREA || scope == ChargingPluginScope.DIMENSIONAL) {
+                addWideAreaHub(hubNode, dimId);
+            }
+        }
     }
 
     public void removeNode(INode node) {
@@ -582,6 +592,37 @@ public final class ChargingManager {
                 chunkNodeSet.remove(chargingNode);
             }
         }
+
+        if (chargingNode instanceof IHubNode hubNode) {
+            removeWideAreaHub(hubNode, dimId);
+        }
+    }
+
+    private void addWideAreaHub(IHubNode hub, int dimId) {
+        ReferenceSet<IHubNode> dimSet = wideAreaHubs.get(dimId);
+        if (dimSet == null) {
+            dimSet = new ReferenceOpenHashSet<>();
+            wideAreaHubs.put(dimId, dimSet);
+        }
+        dimSet.add(hub);
+    }
+
+    private void removeWideAreaHub(IHubNode hub, int dimId) {
+        ReferenceSet<IHubNode> dimSet = wideAreaHubs.get(dimId);
+        if (dimSet == null) return;
+        dimSet.remove(hub);
+        if (dimSet.isEmpty()) {
+            wideAreaHubs.remove(dimId);
+        }
+    }
+
+    public void refreshWideAreaState(IHubNode hub) {
+        int dimId = getDimensionId(hub);
+        removeWideAreaHub(hub, dimId);
+        var scope = getChargingPluginScope(hub);
+        if (scope == ChargingPluginScope.WIDE_AREA || scope == ChargingPluginScope.DIMENSIONAL) {
+            addWideAreaHub(hub, dimId);
+        }
     }
 
     void initGrid(Collection<NetworkManager.GridEntry> entries) {
@@ -596,6 +637,7 @@ public final class ChargingManager {
     public void onServerStop() {
         scopeNode.clear();
         nodeScope.clear();
+        wideAreaHubs.clear();
         tickChargeTargetsByGrid.clear();
         activeChargeTargetGrids.clear();
         processedTransferGrids.clear();

@@ -18,7 +18,7 @@ public interface IEnergyHandler {
 
     //~ if >=1.20 '(TileEntity ' -> '(BlockEntity ' {
     static @org.jetbrains.annotations.Nullable IEnergyHandler release(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
-        if (tileEntity instanceof IMachineNodeBlockEntity mbe) return mbe.createEnergyHandler(hubMetadata);
+        if (tileEntity instanceof IMachineNodeBlockEntity mbe) return mbe.getEnergyHandler();
         var m = RegistryEnergyHandler.getEnergyManager(tileEntity);
         if (m == null) return null;
         var q = POOL.get(m.getEnergyHandlerClass());

@@ -1,8 +1,12 @@
 package com.circulation.circulation_networks.blocks.nodes;
 
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +21,21 @@ public final class BlockHub extends BaseNodeBlock {
     @Override
     public boolean hasGui() {
         return true;
+    }
+
+    @Override
+    public void onBlockPlacedBy(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state,
+                                @NotNull EntityLivingBase placer, @NotNull ItemStack stack) {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+        if (placer instanceof EntityPlayer player && !worldIn.isRemote) {
+            var te = worldIn.getTileEntity(pos);
+            if (te instanceof TileEntityHub hub) {
+                IHubNode node = hub.getNode();
+                if (node != null) {
+                    node.setOwner(player.getUniqueID());
+                }
+            }
+        }
     }
 
     @Override

@@ -283,13 +283,50 @@ public class SpoceRenderingHandler {
     private void appendAABBFace(EnumFacing face, AxisAlignedBB box, double R) {
         double planeW, minU, maxU, minV, maxV;
         switch (face) {
-            case UP:    planeW = box.maxY; minU = box.minX; maxU = box.maxX; minV = box.minZ; maxV = box.maxZ; break;
-            case DOWN:  planeW = box.minY; minU = box.minX; maxU = box.maxX; minV = box.minZ; maxV = box.maxZ; break;
-            case SOUTH: planeW = box.maxZ; minU = box.minX; maxU = box.maxX; minV = box.minY; maxV = box.maxY; break;
-            case NORTH: planeW = box.minZ; minU = box.minX; maxU = box.maxX; minV = box.minY; maxV = box.maxY; break;
-            case EAST:  planeW = box.maxX; minU = box.minZ; maxU = box.maxZ; minV = box.minY; maxV = box.maxY; break;
-            case WEST:  planeW = box.minX; minU = box.minZ; maxU = box.maxZ; minV = box.minY; maxV = box.maxY; break;
-            default: return;
+            case UP:
+                planeW = box.maxY;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minZ;
+                maxV = box.maxZ;
+                break;
+            case DOWN:
+                planeW = box.minY;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minZ;
+                maxV = box.maxZ;
+                break;
+            case SOUTH:
+                planeW = box.maxZ;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case NORTH:
+                planeW = box.minZ;
+                minU = box.minX;
+                maxU = box.maxX;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case EAST:
+                planeW = box.maxX;
+                minU = box.minZ;
+                maxU = box.maxZ;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            case WEST:
+                planeW = box.minX;
+                minU = box.minZ;
+                maxU = box.maxZ;
+                minV = box.minY;
+                maxV = box.maxY;
+                break;
+            default:
+                return;
         }
 
         double r2 = R * R - planeW * planeW;

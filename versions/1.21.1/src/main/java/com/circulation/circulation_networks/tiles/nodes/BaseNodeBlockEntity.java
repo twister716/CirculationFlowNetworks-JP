@@ -4,7 +4,6 @@ import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
-import com.circulation.circulation_networks.manager.BlockEntityLifecycleAware;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.tiles.BaseCFNBlockEntity;
 import com.circulation.circulation_networks.utils.Functions;
@@ -15,7 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import org.jetbrains.annotations.NotNull;
 
-public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockEntity implements INodeBlockEntity, BlockEntityLifecycleAware {
+public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockEntity implements INodeBlockEntity {
 
     private N node;
 
@@ -39,8 +38,9 @@ public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockE
     }
 
     @Override
-    public void onValidate() {
+    public void nodeValidate() {
         if (level == null) return;
+        if (node != null && node.isActive()) return;
         if (!level.isClientSide()) {
             if (!NetworkManager.INSTANCE.isInit()) return;
             onServerValidate();
@@ -50,26 +50,27 @@ public abstract class BaseNodeBlockEntity<N extends INode> extends BaseCFNBlockE
     }
 
     @Override
+    public void nodeInvalidate() {
+        if (node == null) return;
+        if (level != null && !level.isClientSide()) {
+            NetworkManager.INSTANCE.removeNode(node);
+        } else {
+            node.setActive(false);
+        }
+    }
+
+    @Override
     public void onLoad() {
         super.onLoad();
-        onValidate();
     }
 
     @Override
     public void clearRemoved() {
         super.clearRemoved();
-        onValidate();
     }
 
     @Override
     public void setRemoved() {
-        if (node != null) {
-            if (level != null && !level.isClientSide()) {
-                NetworkManager.INSTANCE.removeNode(node);
-            } else {
-                node.setActive(false);
-            }
-        }
         super.setRemoved();
     }
 

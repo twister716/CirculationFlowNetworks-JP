@@ -1,9 +1,7 @@
 package com.circulation.circulation_networks.api;
 
 import com.circulation.circulation_networks.api.node.IMachineNode;
-import com.circulation.circulation_networks.network.nodes.HubNode;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface IMachineNodeBlockEntity extends INodeBlockEntity {
 
@@ -11,9 +9,10 @@ public interface IMachineNodeBlockEntity extends INodeBlockEntity {
     IMachineNode getNode();
 
     /**
-     * 为当前调用创建一个上下文隔离的 handler 实例。
-     * 实现不得返回可跨 network/grid 复用的共享实例。
+     * 返回此方块实体持有的能量处理器。
+     * <p>实现类 <b>必须</b> 重写 {@link IEnergyHandler#recycle()}，
+     * 使其成为空操作以防止对象被回收到池中。</p>
      */
     @NotNull
-    IEnergyHandler createEnergyHandler(@Nullable HubNode.HubMetadata hubMetadata);
+    IEnergyHandler getEnergyHandler();
 }

@@ -265,20 +265,6 @@ public final class RotatingModelVBORenderer {
         return signature;
     }
 
-    private record AmbientVBOKey(int worldId, BlockPos pos, ResourceLocation modelLocation) {
-    }
-
-    private record CachedVBO(VertexBuffer vbo, int lightSignature) {
-    }
-
-    private record AmbientLightKey(int worldId, BlockPos pos) {
-    }
-
-    private record CachedLightSignature(long gameTime, int stateHash, int signature) {
-    }
-
-    // ── Destroy stage query ──────────────────────────────────────────────────
-
     public static int getDestroyStage(BlockPos pos) {
         LevelRenderer levelRenderer = Minecraft.getInstance().levelRenderer;
         Long2ObjectMap<SortedSet<BlockDestructionProgress>> progress = levelRenderer.destructionProgress;
@@ -288,8 +274,6 @@ public final class RotatingModelVBORenderer {
         }
         return set.last().getProgress();
     }
-
-    // ── BufferSource rendering (used during block destruction for crumbling overlay) ──
 
     public static void renderFullBrightThroughBufferSource(
         PoseStack poseStack, MultiBufferSource bufferSource,
@@ -349,6 +333,18 @@ public final class RotatingModelVBORenderer {
         );
 
         poseStack.popPose();
+    }
+
+    private record AmbientVBOKey(int worldId, BlockPos pos, ResourceLocation modelLocation) {
+    }
+
+    private record CachedVBO(VertexBuffer vbo, int lightSignature) {
+    }
+
+    private record AmbientLightKey(int worldId, BlockPos pos) {
+    }
+
+    private record CachedLightSignature(long gameTime, int stateHash, int signature) {
     }
 
     public static final class RenderSession implements AutoCloseable {

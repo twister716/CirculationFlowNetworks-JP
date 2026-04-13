@@ -7,14 +7,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import org.jetbrains.annotations.Nullable;
 
 @Mixin(value = LevelChunk.class, remap = false)
 public abstract class MixinLevelChunk {
@@ -34,7 +33,7 @@ public abstract class MixinLevelChunk {
         }
     }
 
-    @WrapOperation(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V"))
+    @WrapOperation(method = {"setBlockEntity", "removeBlockEntity"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V"))
     private void removeBlockEntity(BlockEntity blockentity, Operation<Void> original) {
         if (blockentity != null) {
             CirculationFlowNetworks.onBlockEntityInvalidate(this.level, blockentity.getBlockPos(), blockentity);

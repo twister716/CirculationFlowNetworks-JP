@@ -1,8 +1,8 @@
 package com.circulation.circulation_networks.registry;
 
+import com.circulation.circulation_networks.items.ItemCirculationConfigurator;
 import com.circulation.circulation_networks.items.ItemDimensionalChargingPlugin;
 import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
-import com.circulation.circulation_networks.items.ItemCirculationConfigurator;
 import com.circulation.circulation_networks.items.ItemMaterial;
 import com.circulation.circulation_networks.items.ItemPocketNode;
 import com.circulation.circulation_networks.items.ItemWideAreaChargingPlugin;

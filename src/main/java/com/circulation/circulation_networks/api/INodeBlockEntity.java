@@ -17,4 +17,8 @@ public interface INodeBlockEntity {
     //~ if >=1.20 'World ' -> 'Level ' {
     World getNodeWorld();
     //~}
+
+    void nodeValidate();
+
+    void nodeInvalidate();
 }

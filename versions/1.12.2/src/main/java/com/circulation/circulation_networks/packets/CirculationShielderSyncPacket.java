@@ -21,6 +21,11 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
         this.redstoneMode = te.getRedstoneMode();
     }
 
+    private static int clampScope(int value) {
+        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
+        return Math.max(0, Math.min(maxScope, value));
+    }
+
     @Override
     public void fromBytes(ByteBuf buf) {
         this.scope = buf.readInt();
@@ -44,10 +49,5 @@ public class CirculationShielderSyncPacket implements Packet<CirculationShielder
             }
         }
         return null;
-    }
-
-    private static int clampScope(int value) {
-        int maxScope = Math.max(0, CFNConfig.SHIELDER.maxScope);
-        return Math.max(0, Math.min(maxScope, value));
     }
 }

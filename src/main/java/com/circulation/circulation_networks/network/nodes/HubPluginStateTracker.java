@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.network.nodes;
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.items.HubChannelPluginData;
+import com.circulation.circulation_networks.manager.ChargingManager;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 //~ mc_imports
@@ -38,6 +39,11 @@ public final class HubPluginStateTracker {
         }
         if (newCapability != null) {
             installPlugin(hubNode, newStack);
+        }
+
+        if ((oldCapability == HubCapabilitys.CHARGE_CAPABILITY || newCapability == HubCapabilitys.CHARGE_CAPABILITY)
+                && hubNode.getGrid() != null) {
+            ChargingManager.INSTANCE.refreshWideAreaState(hubNode);
         }
     }
 

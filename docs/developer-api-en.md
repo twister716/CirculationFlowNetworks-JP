@@ -132,9 +132,9 @@ names should not be renamed.
 
 ### Registration
 
-| Signature                                                                                                | Description                                                                          |
-|----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                     | Registers a custom energy handler manager. Must be called before the postInit phase. |
+| Signature                                                                                                                               | Description                                                                          |
+|-----------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | Registers a custom energy handler manager. Must be called before the postInit phase. |
 | `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | Registers a custom node type together with its NBT deserializer and runtime creator. |
 
 ---
@@ -147,30 +147,32 @@ names should not be renamed.
 
 The base interface for all nodes. It defines node position, world, link range, neighbor management, and grid ownership.
 
-| Method                            | Return Type            | Description                                        |
-|-----------------------------------|------------------------|----------------------------------------------------|
-| `getPos()`                        | `@Nonnull BlockPos`    | The node's block position.                         |
-| `getVec3d()`                      | `@Nonnull Vec3d`       | The node's precise position vector.                |
-| `getWorld()`                      | `@Nonnull World`       | The world the node belongs to.                     |
-| `getNodeType()`                   | `@Nonnull NodeType<?>` | The node type identifier.                          |
-| `getVisualId()`                   | `@Nonnull String`      | The visual identifier, usually a registry ID.      |
-| `serialize()`                     | `NBTTagCompound`       | Serializes the node to NBT.                        |
-| `isActive()`                      | `boolean`              | Whether the node is active.                        |
-| `setActive(boolean)`              | `void`                 | Sets the active state.                             |
-| `getLinkScope()`                  | `double`               | The node's link range in blocks.                   |
-| `getLinkScopeSq()`                | `double`               | The squared link range used for distance checks.   |
-| `getNeighbors()`                  | `ReferenceSet<INode>`  | The currently linked neighbor nodes.               |
-| `addNeighbor(INode)`              | `void`                 | Adds a neighbor link.                              |
-| `removeNeighbor(INode)`           | `void`                 | Removes a neighbor link.                           |
-| `clearNeighbors()`                | `void`                 | Clears all neighbor links.                         |
-| `getGrid()`                       | `IGrid`                | The grid this node belongs to.                     |
-| `setGrid(IGrid)`                  | `void`                 | Sets the grid ownership.                           |
-| `getCustomName()`                 | `@Nullable String`     | The node's custom name.                            |
-| `setCustomName(@Nullable String)` | `void`                 | Sets the custom name.                              |
-| `distanceSq(INode)`               | `double`               | Squared distance to another node.                  |
-| `distanceSq(BlockPos)`            | `double`               | Squared distance to a block position.              |
-| `distanceSq(Vec3d)`               | `double`               | Squared distance to a vector position.             |
-| `linkScopeCheck(INode)`           | `LinkType`             | Evaluates the link relationship between two nodes. |
+| Method                            | Return Type            | Description                                                   |
+|-----------------------------------|------------------------|---------------------------------------------------------------|
+| `getPos()`                        | `@Nonnull BlockPos`    | The node's block position.                                    |
+| `getVec3d()`                      | `@Nonnull Vec3d`       | The node's precise position vector.                           |
+| `getWorld()`                      | `@Nonnull World`       | The world the node belongs to.                                |
+| `getDimensionId()`                | `int`                  | Default implementation: returns the dimension ID.             |
+| `getSerializedDimensionKey()`     | `@Nonnull String`      | Default implementation: returns the serialized dimension key. |
+| `getNodeType()`                   | `@Nonnull NodeType<?>` | The node type identifier.                                     |
+| `getVisualId()`                   | `@Nonnull String`      | The visual identifier, usually a registry ID.                 |
+| `serialize()`                     | `NBTTagCompound`       | Serializes the node to NBT.                                   |
+| `isActive()`                      | `boolean`              | Whether the node is active.                                   |
+| `setActive(boolean)`              | `void`                 | Sets the active state.                                        |
+| `getLinkScope()`                  | `double`               | The node's link range in blocks.                              |
+| `getLinkScopeSq()`                | `double`               | The squared link range used for distance checks.              |
+| `getNeighbors()`                  | `ReferenceSet<INode>`  | The currently linked neighbor nodes.                          |
+| `addNeighbor(INode)`              | `void`                 | Adds a neighbor link.                                         |
+| `removeNeighbor(INode)`           | `void`                 | Removes a neighbor link.                                      |
+| `clearNeighbors()`                | `void`                 | Clears all neighbor links.                                    |
+| `getGrid()`                       | `IGrid`                | The grid this node belongs to.                                |
+| `setGrid(IGrid)`                  | `void`                 | Sets the grid ownership.                                      |
+| `getCustomName()`                 | `@Nullable String`     | The node's custom name.                                       |
+| `setCustomName(@Nullable String)` | `void`                 | Sets the custom name.                                         |
+| `distanceSq(INode)`               | `double`               | Squared distance to another node.                             |
+| `distanceSq(BlockPos)`            | `double`               | Squared distance to a block position.                         |
+| `distanceSq(Vec3d)`               | `double`               | Squared distance to a vector position.                        |
+| `linkScopeCheck(INode)`           | `LinkType`             | Evaluates the link relationship between two nodes.            |
 
 **Internal enum `LinkType`**:
 
@@ -246,6 +248,7 @@ capabilities.
 | `removeExplicitPermission(UUID)`                      | `void`                          | Removes an explicit permission.                                                 |
 | `getPermissionLevel(UUID)`                            | `HubPermissionLevel`            | Returns the final permission level for a player.                                |
 | `canEditPermissions(UUID)`                            | `boolean`                       | Whether the player can edit permissions.                                        |
+| `getPlayerPreferences()`                              | `Map<UUID, ChargingPreference>` | Returns all local player charging preferences (used when no channel is bound).  |
 
 ---
 
@@ -358,11 +361,13 @@ Register it through `API.registerNodeType()`. May be `null` if the type does not
 
 The base interface for block entities that are linked to a node.
 
-| Method           | Return Type | Description                            |
-|------------------|-------------|----------------------------------------|
-| `getNode()`      | `INode`     | Returns the associated node.           |
-| `getNodePos()`   | `BlockPos`  | Returns the node position.             |
-| `getNodeWorld()` | `World`     | Returns the world containing the node. |
+| Method             | Return Type | Description                                                               |
+|--------------------|-------------|---------------------------------------------------------------------------|
+| `getNode()`        | `INode`     | Returns the associated node.                                              |
+| `getNodePos()`     | `BlockPos`  | Returns the node position.                                                |
+| `getNodeWorld()`   | `World`     | Returns the world containing the node.                                    |
+| `nodeValidate()`   | `void`      | Lifecycle callback when the node block entity is validated or loaded.     |
+| `nodeInvalidate()` | `void`      | Lifecycle callback when the node block entity is invalidated or unloaded. |
 
 ---
 
@@ -372,10 +377,10 @@ The base interface for block entities that are linked to a node.
 
 Block entity interface for machine nodes.
 
-| Method               | Return Type      | Description                                                           |
-|----------------------|------------------|-----------------------------------------------------------------------|
-| `getNode()`          | `IMachineNode`   | Returns the associated machine node with a more specific return type. |
-| `getEnergyHandler()` | `IEnergyHandler` | Returns the node's energy handler.                                    |
+| Method                                               | Return Type      | Description                                                                                                    |
+|------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------|
+| `getNode()`                                          | `IMachineNode`   | Returns the associated machine node with a more specific return type.                                          |
+| `getEnergyHandler()` | `IEnergyHandler` | Returns the energy handler held by this block entity; implementations must override `recycle()` as a no-op. |
 
 ---
 
@@ -419,26 +424,26 @@ An energy handler that wraps a specific energy system such as FE or EU. Instance
 
 **Lifecycle methods**:
 
-| Method                             | Return Type   | Description                                                                  |
-|------------------------------------|---------------|------------------------------------------------------------------------------|
-| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | Obtains a pooled handler for a block entity, or creates one if the pool is empty. |
-| `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | Obtains a pooled handler for an item stack, or creates one if the pool is empty.  |
-| `init(TileEntity, HubMetadata)`    | `IEnergyHandler` | Initializes the handler from a block entity and returns `this`.                |
-| `init(ItemStack, HubMetadata)`     | `IEnergyHandler` | Initializes the handler from an item stack and returns `this`.                 |
-| `clear()`                          | `void`        | Clears internal state only. This lifecycle reset no longer depends on hub metadata. |
-| `recycle()`                        | `void`        | Calls `clear()` and returns the handler to the pool.                          |
+| Method                             | Return Type                       | Description                                                                         |
+|------------------------------------|-----------------------------------|-------------------------------------------------------------------------------------|
+| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | Obtains a pooled handler for a block entity, or creates one if the pool is empty.   |
+| `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | Obtains a pooled handler for an item stack, or creates one if the pool is empty.    |
+| `init(TileEntity, HubMetadata)`    | `IEnergyHandler`                  | Initializes the handler from a block entity and returns `this`.                     |
+| `init(ItemStack, HubMetadata)`     | `IEnergyHandler`                  | Initializes the handler from an item stack and returns `this`.                      |
+| `clear()`                          | `void`                            | Clears internal state only. This lifecycle reset no longer depends on hub metadata. |
+| `recycle()`                        | `void`                            | Calls `clear()` and returns the handler to the pool.                                |
 
 **Energy operations**:
 
-| Method                                     | Return Type  | Description                                                                                           |
-|--------------------------------------------|--------------|-------------------------------------------------------------------------------------------------------|
-| `receiveEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | Injects energy and returns the amount that was actually accepted.                                      |
-| `extractEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | Extracts energy and returns the amount that was actually extracted.                                    |
-| `canExtractValue(HubMetadata)`             | `EnergyAmount` | Returns the currently extractable amount.                                                              |
-| `canReceiveValue(HubMetadata)`             | `EnergyAmount` | Returns the currently receivable amount.                                                               |
-| `canExtract(IEnergyHandler, HubMetadata)`  | `boolean`    | Whether energy can be extracted from this handler for compatibility checks.                           |
-| `canReceive(IEnergyHandler, HubMetadata)`  | `boolean`    | Whether energy can be injected into this handler for compatibility checks.                            |
-| `getType(HubMetadata)`                     | `EnergyType` | The handler's energy type.                                                                            |
+| Method                                     | Return Type    | Description                                                                 |
+|--------------------------------------------|----------------|-----------------------------------------------------------------------------|
+| `receiveEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | Injects energy and returns the amount that was actually accepted.           |
+| `extractEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | Extracts energy and returns the amount that was actually extracted.         |
+| `canExtractValue(HubMetadata)`             | `EnergyAmount` | Returns the currently extractable amount.                                   |
+| `canReceiveValue(HubMetadata)`             | `EnergyAmount` | Returns the currently receivable amount.                                    |
+| `canExtract(IEnergyHandler, HubMetadata)`  | `boolean`      | Whether energy can be extracted from this handler for compatibility checks. |
+| `canReceive(IEnergyHandler, HubMetadata)`  | `boolean`      | Whether energy can be injected into this handler for compatibility checks.  |
+| `getType(HubMetadata)`                     | `EnergyType`   | The handler's energy type.                                                  |
 
 **Internal enum `EnergyType`**:
 
@@ -458,16 +463,16 @@ An energy handler that wraps a specific energy system such as FE or EU. Instance
 Energy handler manager interface. Each energy system must implement this interface and register itself through
 `API.registerEnergyHandler()`. Managers are ordered by priority.
 
-| Method                    | Return Type                       | Description                                          |
-|---------------------------|-----------------------------------|------------------------------------------------------|
-| `isAvailable(TileEntity)` | `boolean`                         | Whether a block entity is handled by this manager.   |
-| `isAvailable(ItemStack)`  | `boolean`                         | Whether an item stack is handled by this manager.    |
-| `getEnergyHandlerClass()` | `Class<? extends IEnergyHandler>` | Returns the associated handler implementation class. |
-| `getPriority()`           | `int`                             | Manager priority. Lower values are checked first.    |
-| `newBlockEntityInstance()` | `IEnergyHandler`                | Creates a fresh handler instance for block-entity use. |
-| `newItemInstance()`        | `IEnergyHandler`                | Creates a fresh handler instance for item use.         |
-| `getUnit()`               | `String`                          | Default: `"FE"`. Returns the energy unit name.       |
-| `getMultiplying()`        | `double`                          | Default: `1`. Returns the unit multiplier.           |
+| Method                     | Return Type                       | Description                                            |
+|----------------------------|-----------------------------------|--------------------------------------------------------|
+| `isAvailable(TileEntity)`  | `boolean`                         | Whether a block entity is handled by this manager.     |
+| `isAvailable(ItemStack)`   | `boolean`                         | Whether an item stack is handled by this manager.      |
+| `getEnergyHandlerClass()`  | `Class<? extends IEnergyHandler>` | Returns the associated handler implementation class.   |
+| `getPriority()`            | `int`                             | Manager priority. Lower values are checked first.      |
+| `newBlockEntityInstance()` | `IEnergyHandler`                  | Creates a fresh handler instance for block-entity use. |
+| `newItemInstance()`        | `IEnergyHandler`                  | Creates a fresh handler instance for item use.         |
+| `getUnit()`                | `String`                          | Default: `"FE"`. Returns the energy unit name.         |
+| `getMultiplying()`         | `double`                          | Default: `1`. Returns the unit multiplier.             |
 
 **Custom energy system example**:
 
@@ -831,11 +836,11 @@ A grid represents a connected subgraph formed by a set of linked nodes.
 
 | Method                 | Return Type           | Description                                            |
 |------------------------|-----------------------|--------------------------------------------------------|
-| `getId()`              | `int`                 | The grid's unique ID.                                  |
+| `getId()`              | `UUID`                | The grid's unique ID.                                  |
 | `getNodes()`           | `ReferenceSet<INode>` | All nodes in the grid.                                 |
 | `serialize()`          | `NBTTagCompound`      | Serializes the grid to NBT.                            |
 | `getHubNode()`         | `IHubNode`            | The grid's hub node, or `null` if absent.              |
 | `setHubNode(IHubNode)` | `void`                | Sets the hub node.                                     |
-| `getSnapshotVersion()` | `int`                 | Snapshot version used for incremental synchronization. |
+| `getSnapshotVersion()` | `long`                | Snapshot version used for incremental synchronization. |
 | `markSnapshotDirty()`  | `void`                | Marks the snapshot as needing an update.               |
 

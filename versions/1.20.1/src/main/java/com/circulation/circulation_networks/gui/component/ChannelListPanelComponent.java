@@ -15,9 +15,9 @@ import com.circulation.circulation_networks.utils.CI18n;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;

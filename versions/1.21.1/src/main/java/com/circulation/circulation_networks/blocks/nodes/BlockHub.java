@@ -1,12 +1,17 @@
 package com.circulation.circulation_networks.blocks.nodes;
 
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class BlockHub extends BaseNodeBlock {
 
@@ -18,6 +23,21 @@ public final class BlockHub extends BaseNodeBlock {
     @Override
     public boolean hasGui() {
         return true;
+    }
+
+    @Override
+    public void setPlacedBy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state,
+                            @Nullable LivingEntity placer, @NotNull ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (placer instanceof Player player && !level.isClientSide()) {
+            var be = level.getBlockEntity(pos);
+            if (be instanceof HubBlockEntity hub) {
+                IHubNode node = hub.getNode();
+                if (node != null) {
+                    node.setOwner(player.getUUID());
+                }
+            }
+        }
     }
 
     @Override

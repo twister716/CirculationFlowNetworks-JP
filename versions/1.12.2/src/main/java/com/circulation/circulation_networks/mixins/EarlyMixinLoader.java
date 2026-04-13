@@ -2,9 +2,9 @@ package com.circulation.circulation_networks.mixins;
 
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
+import org.jetbrains.annotations.Nullable;
 import zone.rong.mixinbooter.IEarlyMixinLoader;
 
-import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
 

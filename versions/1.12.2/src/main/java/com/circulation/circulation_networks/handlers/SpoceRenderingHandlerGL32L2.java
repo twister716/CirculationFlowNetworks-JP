@@ -97,19 +97,31 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
     @Override
     protected void cleanupGL() {
         if (sphereVBO != 0) {
-            try { GL15.glDeleteBuffers(sphereVBO); } catch (Exception ignored) {}
+            try {
+                GL15.glDeleteBuffers(sphereVBO);
+            } catch (Exception ignored) {
+            }
             sphereVBO = 0;
         }
         if (sphereVAO != 0) {
-            try { GL30.glDeleteVertexArrays(sphereVAO); } catch (Exception ignored) {}
+            try {
+                GL30.glDeleteVertexArrays(sphereVAO);
+            } catch (Exception ignored) {
+            }
             sphereVAO = 0;
         }
         if (buckyVBO != 0) {
-            try { GL15.glDeleteBuffers(buckyVBO); } catch (Exception ignored) {}
+            try {
+                GL15.glDeleteBuffers(buckyVBO);
+            } catch (Exception ignored) {
+            }
             buckyVBO = 0;
         }
         if (buckyVAO != 0) {
-            try { GL30.glDeleteVertexArrays(buckyVAO); } catch (Exception ignored) {}
+            try {
+                GL30.glDeleteVertexArrays(buckyVAO);
+            } catch (Exception ignored) {
+            }
             buckyVAO = 0;
         }
         cleanupShaderResources();
@@ -256,11 +268,17 @@ public class SpoceRenderingHandlerGL32L2 extends SpoceRenderingHandler {
 
     private void cleanupShaderResources() {
         if (shaderProgram != 0) {
-            try { ShaderHelper.deleteProgram(shaderProgram); } catch (Exception ignored) {}
+            try {
+                ShaderHelper.deleteProgram(shaderProgram);
+            } catch (Exception ignored) {
+            }
             shaderProgram = 0;
         }
         if (depthTextureId != 0) {
-            try { GL11.glDeleteTextures(depthTextureId); } catch (Exception ignored) {}
+            try {
+                GL11.glDeleteTextures(depthTextureId);
+            } catch (Exception ignored) {
+            }
             depthTextureId = 0;
         }
         shaderInitialized = false;

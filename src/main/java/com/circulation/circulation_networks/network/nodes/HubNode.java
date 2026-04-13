@@ -283,7 +283,6 @@ public final class HubNode extends Node implements IHubNode {
             channelId = EMPTY;
             channelName = "";
             permissionMode = PermissionMode.PUBLIC;
-            owner = null;
             explicitPermissions.clear();
         } finally {
             syncingChannelState = false;

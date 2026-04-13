@@ -35,16 +35,17 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
     @Override
     public final void invalidate() {
         super.invalidate();
-        if (!this.world.isRemote) {
-            onInvalidate();
-        } else {
-            onClientInvalidate();
-        }
+        nodeInvalidate();
     }
 
     @Override
     public final void validate() {
         super.validate();
+        nodeValidate();
+    }
+
+    @Override
+    public void nodeValidate() {
         if (!shouldInitializeNode()) {
             return;
         }
@@ -55,6 +56,15 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
             onValidate();
         } else {
             onClientValidate();
+        }
+    }
+
+    @Override
+    public void nodeInvalidate() {
+        if (!this.world.isRemote) {
+            onInvalidate();
+        } else {
+            onClientInvalidate();
         }
     }
 

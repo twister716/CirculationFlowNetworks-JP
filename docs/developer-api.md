@@ -129,10 +129,10 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 ### 注册
 
-| 方法签名                                                                                                     | 说明                                  |
-|----------------------------------------------------------------------------------------------------------|-------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                     | 注册自定义的能量管理器。**必须在 postInit 阶段前调用**。 |
-| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | 注册自定义节点类型及其 NBT 反序列化函数和运行时创建函数。 |
+| 方法签名                                                                                                                                    | 说明                                  |
+|-----------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | 注册自定义的能量管理器。**必须在 postInit 阶段前调用**。 |
+| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | 注册自定义节点类型及其 NBT 反序列化函数和运行时创建函数。     |
 
 ---
 
@@ -149,6 +149,8 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 | `getPos()`                        | `@Nonnull BlockPos`    | 节点的方块坐标         |
 | `getVec3d()`                      | `@Nonnull Vec3d`       | 节点的精确向量坐标       |
 | `getWorld()`                      | `@Nonnull World`       | 节点所在的世界         |
+| `getDimensionId()`                | `int`                  | 默认实现：获取世界的维度 ID |
+| `getSerializedDimensionKey()`     | `@Nonnull String`      | 默认实现：获取序列化的维度键  |
 | `getNodeType()`                   | `@Nonnull NodeType<?>` | 节点类型标识          |
 | `getVisualId()`                   | `@Nonnull String`      | 视觉标识（通常为注册表 ID） |
 | `serialize()`                     | `NBTTagCompound`       | 将节点序列化为 NBT     |
@@ -241,6 +243,7 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 | `removeExplicitPermission(UUID)`                      | `void`                          | 移除玩家的显式权限                     |
 | `getPermissionLevel(UUID)`                            | `HubPermissionLevel`            | 获取玩家的最终权限等级（综合显式权限和权限模式）      |
 | `canEditPermissions(UUID)`                            | `boolean`                       | 玩家是否可编辑权限                     |
+| `getPlayerPreferences()`                              | `Map<UUID, ChargingPreference>` | 获取所有本地玩家充能配置（无频道时使用）          |
 
 ---
 
@@ -353,11 +356,13 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 节点方块实体基础接口，方块实体实现此接口以表明其关联了一个网络节点。
 
-| 方法               | 返回类型       | 说明        |
-|------------------|------------|-----------|
-| `getNode()`      | `INode`    | 获取关联的节点   |
-| `getNodePos()`   | `BlockPos` | 获取节点坐标    |
-| `getNodeWorld()` | `World`    | 获取节点所在的世界 |
+| 方法                 | 返回类型       | 说明                  |
+|--------------------|------------|---------------------|
+| `getNode()`        | `INode`    | 获取关联的节点             |
+| `getNodePos()`     | `BlockPos` | 获取节点坐标              |
+| `getNodeWorld()`   | `World`    | 获取节点所在的世界           |
+| `nodeValidate()`   | `void`     | 节点方块实体加载/校验时的生命周期回调 |
+| `nodeInvalidate()` | `void`     | 节点方块实体失效/卸载时的生命周期回调 |
 
 ---
 
@@ -367,10 +372,10 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 机器节点方块实体接口。
 
-| 方法                   | 返回类型             | 说明                |
-|----------------------|------------------|-------------------|
-| `getNode()`          | `IMachineNode`   | 获取关联的机器节点（覆写返回类型） |
-| `getEnergyHandler()` | `IEnergyHandler` | 获取节点的能量处理器        |
+| 方法                                                   | 返回类型             | 说明                            |
+|------------------------------------------------------|------------------|-------------------------------|
+| `getNode()`                                          | `IMachineNode`   | 获取关联的机器节点（覆写返回类型）             |
+| `getEnergyHandler()` | `IEnergyHandler` | 返回此方块实体持有的能量处理器；实现类必须重写 `recycle()` 为空操作 |
 
 ---
 
@@ -413,26 +418,26 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 **生命周期方法**：
 
-| 方法                                 | 返回类型          | 说明                 |
-|------------------------------------|---------------|--------------------|
-| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | 从对象池获取方块实体用处理器；若池为空则新建 |
-| `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | 从对象池获取物品用处理器；若池为空则新建   |
-| `init(TileEntity, HubMetadata)`    | `IEnergyHandler` | 以方块实体初始化处理器状态，并返回 `this` |
-| `init(ItemStack, HubMetadata)`     | `IEnergyHandler` | 以物品堆初始化处理器状态，并返回 `this`  |
-| `clear()`                          | `void`        | 仅清空处理器内部状态；该生命周期重置不再依赖 `HubMetadata` |
-| `recycle()`                        | `void`        | 调用 `clear()` 后将处理器实例回收至对象池 |
+| 方法                                 | 返回类型                              | 说明                                   |
+|------------------------------------|-----------------------------------|--------------------------------------|
+| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | 从对象池获取方块实体用处理器；若池为空则新建               |
+| `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | 从对象池获取物品用处理器；若池为空则新建                 |
+| `init(TileEntity, HubMetadata)`    | `IEnergyHandler`                  | 以方块实体初始化处理器状态，并返回 `this`             |
+| `init(ItemStack, HubMetadata)`     | `IEnergyHandler`                  | 以物品堆初始化处理器状态，并返回 `this`              |
+| `clear()`                          | `void`                            | 仅清空处理器内部状态；该生命周期重置不再依赖 `HubMetadata` |
+| `recycle()`                        | `void`                            | 调用 `clear()` 后将处理器实例回收至对象池           |
 
 **能量操作方法**：
 
-| 方法                                         | 返回类型         | 说明                                   |
-|--------------------------------------------|--------------|--------------------------------------|
-| `receiveEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | 向容器注入能量，并返回实际成功注入的数量                |
-| `extractEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | 从容器提取能量，并返回实际成功提取的数量                |
-| `canExtractValue(HubMetadata)`             | `EnergyAmount` | 返回当前可提取的能量数量                         |
-| `canReceiveValue(HubMetadata)`             | `EnergyAmount` | 返回当前可接收的能量数量                         |
-| `canExtract(IEnergyHandler, HubMetadata)`  | `boolean`    | 是否可从此处理器提取（用于兼容性检查）                  |
-| `canReceive(IEnergyHandler, HubMetadata)`  | `boolean`    | 是否可向此处理器注入（用于兼容性检查）                  |
-| `getType(HubMetadata)`                     | `EnergyType` | 处理器的能量类型                             |
+| 方法                                         | 返回类型           | 说明                   |
+|--------------------------------------------|----------------|----------------------|
+| `receiveEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | 向容器注入能量，并返回实际成功注入的数量 |
+| `extractEnergy(EnergyAmount, HubMetadata)` | `EnergyAmount` | 从容器提取能量，并返回实际成功提取的数量 |
+| `canExtractValue(HubMetadata)`             | `EnergyAmount` | 返回当前可提取的能量数量         |
+| `canReceiveValue(HubMetadata)`             | `EnergyAmount` | 返回当前可接收的能量数量         |
+| `canExtract(IEnergyHandler, HubMetadata)`  | `boolean`      | 是否可从此处理器提取（用于兼容性检查）  |
+| `canReceive(IEnergyHandler, HubMetadata)`  | `boolean`      | 是否可向此处理器注入（用于兼容性检查）  |
+| `getType(HubMetadata)`                     | `EnergyType`   | 处理器的能量类型             |
 
 **内部枚举 `EnergyType`**：
 
@@ -451,16 +456,16 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 能量处理器管理器接口。每种能源体系（FE、EU 等）需实现此接口并通过 `API.registerEnergyHandler()` 注册。管理器通过优先级排序来决定应用顺序。
 
-| 方法                        | 返回类型                              | 说明                  |
-|---------------------------|-----------------------------------|---------------------|
-| `isAvailable(TileEntity)` | `boolean`                         | 判断方块实体是否由此管理器处理     |
-| `isAvailable(ItemStack)`  | `boolean`                         | 判断物品堆是否由此管理器处理      |
-| `getEnergyHandlerClass()` | `Class<? extends IEnergyHandler>` | 返回关联的处理器实现类         |
-| `getPriority()`           | `int`                             | 管理器优先级，数值越小优先级越高    |
-| `newBlockEntityInstance()` | `IEnergyHandler`                | 为方块实体场景创建新的处理器实例    |
-| `newItemInstance()`        | `IEnergyHandler`                | 为物品场景创建新的处理器实例      |
-| `getUnit()`               | `String`                          | 默认返回 `"FE"`。能量单位名称。 |
-| `getMultiplying()`        | `double`                          | 默认返回 `1`。能量值的乘数系数。  |
+| 方法                         | 返回类型                              | 说明                  |
+|----------------------------|-----------------------------------|---------------------|
+| `isAvailable(TileEntity)`  | `boolean`                         | 判断方块实体是否由此管理器处理     |
+| `isAvailable(ItemStack)`   | `boolean`                         | 判断物品堆是否由此管理器处理      |
+| `getEnergyHandlerClass()`  | `Class<? extends IEnergyHandler>` | 返回关联的处理器实现类         |
+| `getPriority()`            | `int`                             | 管理器优先级，数值越小优先级越高    |
+| `newBlockEntityInstance()` | `IEnergyHandler`                  | 为方块实体场景创建新的处理器实例    |
+| `newItemInstance()`        | `IEnergyHandler`                  | 为物品场景创建新的处理器实例      |
+| `getUnit()`                | `String`                          | 默认返回 `"FE"`。能量单位名称。 |
+| `getMultiplying()`         | `double`                          | 默认返回 `1`。能量值的乘数系数。  |
 
 **自定义能量系统集成示例**：
 
@@ -821,10 +826,10 @@ public interface ServerTickMachine {
 
 | 方法                     | 返回类型                  | 说明                  |
 |------------------------|-----------------------|---------------------|
-| `getId()`              | `int`                 | 网格唯一 ID             |
+| `getId()`              | `UUID`                | 网格唯一 ID             |
 | `getNodes()`           | `ReferenceSet<INode>` | 网格中的所有节点            |
 | `serialize()`          | `NBTTagCompound`      | 将网格序列化为 NBT         |
 | `getHubNode()`         | `IHubNode`            | 网格的中枢节点（可能为 `null`） |
 | `setHubNode(IHubNode)` | `void`                | 设置中枢节点              |
-| `getSnapshotVersion()` | `int`                 | 快照版本号，用于增量同步        |
+| `getSnapshotVersion()` | `long`                | 快照版本号，用于增量同步        |
 | `markSnapshotDirty()`  | `void`                | 标记快照需要更新            |

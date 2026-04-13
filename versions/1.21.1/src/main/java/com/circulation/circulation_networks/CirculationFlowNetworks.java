@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
@@ -97,12 +98,18 @@ public final class CirculationFlowNetworks {
     }
 
     public static void onBlockEntityValidate(Level level, BlockPos pos, BlockEntity blockEntity) {
+        if (blockEntity instanceof INodeBlockEntity nbe) {
+            nbe.nodeValidate();
+        }
         var event = new BlockEntityLifeCycleEvent.Validate(level, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onValidate(event);
         NeoForge.EVENT_BUS.post(event);
     }
 
     public static void onBlockEntityInvalidate(Level level, BlockPos pos, BlockEntity blockEntity) {
+        if (blockEntity instanceof INodeBlockEntity nbe) {
+            nbe.nodeInvalidate();
+        }
         var event = new BlockEntityLifeCycleEvent.Invalidate(level, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onInvalidate(event);
         NeoForge.EVENT_BUS.post(event);
