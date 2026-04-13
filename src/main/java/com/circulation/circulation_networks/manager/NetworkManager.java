@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.node.IHubNode;
+import com.circulation.circulation_networks.api.node.IMachineNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
@@ -520,6 +521,9 @@ public final class NetworkManager {
                         removeNode(mapped);
                     }
                     addNode(actual, blockEntity);
+                    if (actual instanceof IMachineNode machineNode) {
+                        EnergyMachineManager.INSTANCE.addMachineNode(machineNode, blockEntity);
+                    }
                     mapped = posNodes.get(dimId).get(posLong);
                 }
             }
