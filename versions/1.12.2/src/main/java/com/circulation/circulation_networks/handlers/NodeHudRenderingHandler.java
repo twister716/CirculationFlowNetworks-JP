@@ -70,8 +70,8 @@ public final class NodeHudRenderingHandler {
             this.displayName = displayName;
         }
         RegistryEnergyHandler.Pair pair = RegistryEnergyHandler.getPair(GuiHub.getEnergyUnitState());
-        this.formattedInput = CI18n.format("hud.node.input", formatEnergy(input, pair));
-        this.formattedOutput = CI18n.format("hud.node.output", formatEnergy(output, pair));
+        this.formattedInput = "I:" + formatEnergy(input, pair);
+        this.formattedOutput = "O:" + formatEnergy(output, pair);
         this.formattedLatency = CI18n.format("gui.hub.energy_latency", formatLatency(interactionTimeMicros));
         this.formattedNodeCount = CI18n.format("gui.hub.node_count", String.valueOf(nodeCount));
         this.hasData = true;

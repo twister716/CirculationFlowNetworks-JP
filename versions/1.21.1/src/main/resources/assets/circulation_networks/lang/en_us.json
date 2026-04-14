@@ -41,7 +41,7 @@
   "gui.circulation_shielder.show_range": "Show Range",
   "gui.circulation_shielder.show_range_status": "Show Range",
   "gui.circulation_shielder.title": "Circulation Shielder Configuration",
-  "gui.hub.energy_latency": "Latency:%s/t",
+  "gui.hub.energy_latency": "Lat:%s/t",
   "gui.hub.no_channel": "No Channel",
   "gui.hub.node_count": "Node Count:%s",
   "gui.hub.tooltip.accessory_slot": "Accessory Slot",
@@ -126,7 +126,5 @@
   "message.circulation_networks.pocket_node_occupied": "§cThis block already hosts a node or pocket node",
   "tooltip.circulation_networks.double_click_locate": "§eDouble-click to locate in world",
   "hud.node.network_data": "Network Data",
-  "hud.node.unnamed": "Unnamed Node",
-  "hud.node.input": "In:%s",
-  "hud.node.output": "Out:%s"
+  "hud.node.unnamed": "Unnamed Node"
 }

@@ -126,7 +126,5 @@
   "message.circulation_networks.pocket_node_occupied": "§c该方块已经承载了节点或口袋节点",
   "tooltip.circulation_networks.double_click_locate": "§e双击查看世界上的坐标",
   "hud.node.network_data": "网络数据",
-  "hud.node.unnamed": "未命名节点",
-  "hud.node.input": "输入:%s",
-  "hud.node.output": "输出:%s"
+  "hud.node.unnamed": "未命名节点"
 }
