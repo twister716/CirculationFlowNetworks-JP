@@ -169,8 +169,8 @@ public final class NodeHudRenderingHandler {
         GlStateManager.translate(hitX * factor, hitY * factor, hitZ * factor);
         GlStateManager.rotate(-mc.getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(mc.getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
-        GlStateManager.rotate(TILT_ANGLE, 1.0F, 0.0F, 0.0F);
-        GlStateManager.scale(scaleFactor, -scaleFactor, scaleFactor);
+        GlStateManager.rotate(TILT_ANGLE, 0.0F, 1.0F, 0.0F);
+        GlStateManager.scale(-scaleFactor, -scaleFactor, scaleFactor);
 
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(

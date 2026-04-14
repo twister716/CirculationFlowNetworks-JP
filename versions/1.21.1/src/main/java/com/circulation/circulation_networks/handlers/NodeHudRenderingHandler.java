@@ -176,8 +176,8 @@ public final class NodeHudRenderingHandler {
         double factor = hitDist > 1e-6 ? 1.0 - HUD_PULL_DIST / hitDist : 1.0;
         modelViewStack.translate((float) (hitX * factor), (float) (hitY * factor), (float) (hitZ * factor));
         modelViewStack.rotate(mc.getEntityRenderDispatcher().cameraOrientation());
-        modelViewStack.rotate(Axis.XP.rotationDegrees(TILT_ANGLE));
-        modelViewStack.scale(scaleFactor, -scaleFactor, scaleFactor);
+        modelViewStack.rotate(Axis.YP.rotationDegrees(TILT_ANGLE));
+        modelViewStack.scale(-scaleFactor, -scaleFactor, scaleFactor);
         RenderSystem.applyModelViewMatrix();
 
         RenderSystem.enableBlend();
