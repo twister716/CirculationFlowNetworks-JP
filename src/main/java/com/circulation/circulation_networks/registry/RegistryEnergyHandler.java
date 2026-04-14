@@ -141,7 +141,19 @@ public final class RegistryEnergyHandler {
         referenceSet.clear();
         referenceSet = null;
         rl.sort(Comparator.reverseOrder());
-        managerUnit = rl.isEmpty() ? new Pair[]{new Pair(1, "RF", 0)} : rl.toArray(new Pair[0]);
+        String defaultUnit = CFNConfig.defaultEnergyUnitDisplay;
+        if (defaultUnit != null && !defaultUnit.isEmpty() && rl.size() > 1) {
+            for (int i = 0; i < rl.size(); i++) {
+                if (defaultUnit.equals(rl.get(i).unit())) {
+                    if (i > 0) {
+                        Pair matched = rl.remove(i);
+                        rl.add(0, matched);
+                    }
+                    break;
+                }
+            }
+        }
+        managerUnit = rl.isEmpty() ? new Pair[]{new Pair(1, "FE", 0)} : rl.toArray(new Pair[0]);
 
         final List<String> blackPrefixes = new ObjectArrayList<>();
         final List<String> supplyPrefixes = new ObjectArrayList<>();

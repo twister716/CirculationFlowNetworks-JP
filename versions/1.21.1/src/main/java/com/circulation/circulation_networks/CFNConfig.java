@@ -15,6 +15,7 @@ public final class CFNConfig {
     static final ModConfigSpec SPEC;
     private static final ModConfigSpec.ConfigValue<List<? extends String>> CLASS_NAMES;
     private static final ModConfigSpec.ConfigValue<List<? extends String>> SUPPLY_CLASS_NAMES;
+    private static final ModConfigSpec.ConfigValue<String> DEFAULT_ENERGY_UNIT_DISPLAY;
     private static final ModConfigSpec.DoubleValue PORT_NODE_ENERGY_SCOPE;
     private static final ModConfigSpec.DoubleValue PORT_NODE_LINK_SCOPE;
     private static final ModConfigSpec.DoubleValue CHARGING_NODE_CHARGING_SCOPE;
@@ -27,6 +28,7 @@ public final class CFNConfig {
     private static final ModConfigSpec.BooleanValue ANIMATED_SPECIAL_MODELS;
     public static String[] classNames = new String[0];
     public static String[] supplyClassNames = new String[0];
+    public static String defaultEnergyUnitDisplay = "FE";
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -46,6 +48,11 @@ public final class CFNConfig {
             "  - 'com.example.AdvancedEnergyTile' Exact match",
             "  - 'com.example.advanced' Prefix match"
         ).defineListAllowEmpty(List.of("supplyClassNames"), List::of, obj -> obj instanceof String);
+
+        DEFAULT_ENERGY_UNIT_DISPLAY = builder.comment(
+            "Default energy unit display (exact unit string match)",
+            "After registry lock, the matched unit will be moved to the first display slot"
+        ).define("defaultEnergyUnitDisplay", "FE");
 
         builder.push("Node");
 
@@ -97,6 +104,7 @@ public final class CFNConfig {
     private static void syncFromSpec() {
         classNames = CLASS_NAMES.get().stream().map(Object::toString).toArray(String[]::new);
         supplyClassNames = SUPPLY_CLASS_NAMES.get().stream().map(Object::toString).toArray(String[]::new);
+        defaultEnergyUnitDisplay = DEFAULT_ENERGY_UNIT_DISPLAY.get();
         NODE.portNode.energyScope = PORT_NODE_ENERGY_SCOPE.get();
         NODE.portNode.linkScope = PORT_NODE_LINK_SCOPE.get();
         NODE.chargingNode.chargingScope = CHARGING_NODE_CHARGING_SCOPE.get();

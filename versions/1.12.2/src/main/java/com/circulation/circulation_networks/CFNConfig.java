@@ -41,6 +41,15 @@ public final class CFNConfig {
     })
     public static String[] supplyClassNames = new String[]{};
 
+    @Config.Name("defaultEnergyUnitDisplay")
+    @Config.Comment({
+        "默认能源单位显示（精确匹配单位字符串）",
+        "注册表锁定后会将该单位提升到显示列表首位",
+        "Default energy unit display (exact unit string match)",
+        "After registry lock, the matched unit will be moved to the first display slot"
+    })
+    public static String defaultEnergyUnitDisplay = "FE";
+
     public static class Node {
 
         @Config.Name("Rendering")
