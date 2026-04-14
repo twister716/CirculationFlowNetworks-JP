@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
+import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.tiles.NodePedestalBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.ChargingNodeBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
@@ -16,6 +17,7 @@ public final class CFNBlockEntityTypes {
     public static BlockEntityType<PortNodeBlockEntity> PORT_NODE;
     public static BlockEntityType<CirculationShielderBlockEntity> CIRCULATION_SHIELDER;
     public static BlockEntityType<NodePedestalBlockEntity> NODE_PEDESTAL;
+    public static BlockEntityType<MultiblockShellBlockEntity> MULTIBLOCK_SHELL;
 
     private CFNBlockEntityTypes() {
     }

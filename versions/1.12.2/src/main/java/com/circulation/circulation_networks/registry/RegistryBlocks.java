@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.blocks.BlockCirculationShielder;
 import com.circulation.circulation_networks.blocks.BlockNodePedestal;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.blocks.nodes.BlockChargingNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockHub;
 import com.circulation.circulation_networks.blocks.nodes.BlockPortNode;
@@ -40,6 +41,8 @@ public final class RegistryBlocks {
         prepareItemBlockRegister(blockCirculationShielder = registerBlock(new BlockCirculationShielder()));
         prepareItemBlockRegister(blockHub = registerBlock(new BlockHub()));
         prepareItemBlockRegister(blockNodePedestal = registerBlock(new BlockNodePedestal()));
+
+        BLOCKS_TO_REGISTER.add(CFNBlocks.blockMultiblockShell = new MultiblockShellBlock());
 
         CFNBlocks.blockPortNode = blockPortNode;
         CFNBlocks.blockChargingNode = blockChargingNode;

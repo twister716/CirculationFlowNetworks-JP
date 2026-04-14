@@ -14,10 +14,12 @@ import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
+import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.registry.CFNCreativeTabs;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.RegistryItems;
+import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.Packet;
@@ -32,6 +34,8 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
@@ -67,6 +71,7 @@ public final class CirculationFlowNetworks {
         modEventBus.addListener(CFNConfig::onConfigReload);
         modEventBus.addListener(this::onRegisterPayloadHandlers);
         modEventBus.addListener(this::onLoadComplete);
+        modEventBus.addListener(this::onRegisterCapabilities);
         if (FMLEnvironment.dist.isClient()) {
             CirculationFlowNetworksClient.init(modEventBus);
         }
@@ -101,6 +106,12 @@ public final class CirculationFlowNetworks {
 
     private void onLoadComplete(FMLLoadCompleteEvent event) {
         RegistryEnergyHandler.lock();
+    }
+
+    private void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+        MultiblockShellBlockEntity.registerCapabilityProxy(event, Capabilities.EnergyStorage.BLOCK, CFNBlocks.blockMultiblockShell);
+        MultiblockShellBlockEntity.registerCapabilityProxy(event, Capabilities.ItemHandler.BLOCK, CFNBlocks.blockMultiblockShell);
+        MultiblockShellBlockEntity.registerCapabilityProxy(event, Capabilities.FluidHandler.BLOCK, CFNBlocks.blockMultiblockShell);
     }
 
     private void installPlatformServices() {

@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.blocks.AnimatedNodeBlockItem;
 import com.circulation.circulation_networks.blocks.BlockCirculationShielder;
 import com.circulation.circulation_networks.blocks.BlockNodePedestal;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.blocks.nodes.BlockChargingNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockHub;
 import com.circulation.circulation_networks.blocks.nodes.BlockPortNode;
@@ -11,6 +12,7 @@ import com.circulation.circulation_networks.blocks.nodes.BlockRelayNode;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.container.ContainerHub;
 import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
+import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.tiles.NodePedestalBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.ChargingNodeBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
@@ -47,6 +49,7 @@ public final class RegistryBlocks {
             CFNBlocks.blockPortNode = registerBlock(helper, "port_node", new BlockPortNode());
             CFNBlocks.blockCirculationShielder = registerBlock(helper, "circulation_shielder", new BlockCirculationShielder());
             CFNBlocks.blockNodePedestal = registerBlock(helper, "node_pedestal", new BlockNodePedestal());
+            CFNBlocks.blockMultiblockShell = registerBlock(helper, "multiblock_shell", new MultiblockShellBlock());
         });
 
         event.register(ForgeRegistries.Keys.ITEMS, helper -> {
@@ -71,6 +74,8 @@ public final class RegistryBlocks {
                 BlockEntityType.Builder.of(CirculationShielderBlockEntity::new, CFNBlocks.blockCirculationShielder).build(null));
             CFNBlockEntityTypes.NODE_PEDESTAL = registerBlockEntityType(helper, "node_pedestal",
                 BlockEntityType.Builder.of(NodePedestalBlockEntity::new, CFNBlocks.blockNodePedestal).build(null));
+            CFNBlockEntityTypes.MULTIBLOCK_SHELL = registerBlockEntityType(helper, "multiblock_shell",
+                BlockEntityType.Builder.of(MultiblockShellBlockEntity::new, CFNBlocks.blockMultiblockShell).build(null));
         });
 
         event.register(ForgeRegistries.Keys.MENU_TYPES, helper -> {
