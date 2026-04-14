@@ -2,9 +2,9 @@ package com.circulation.circulation_networks.blocks;
 
 import com.circulation.circulation_networks.tiles.TileEntityMultiblockShell;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -33,6 +33,21 @@ public class MultiblockShellBlock extends Block {
         this.setHardness(1.5F);
         this.setResistance(10.0F);
         TileEntity.register(MOD_ID + ":multiblock_shell", TileEntityMultiblockShell.class);
+    }
+
+    @Nullable
+    private static BlockPos getOriginPos(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
+        TileEntity te = world.getTileEntity(shellPos);
+        if (te instanceof TileEntityMultiblockShell shell && shell.canRedirect()) {
+            return shell.getOriginPos();
+        }
+        return null;
+    }
+
+    @Nullable
+    private static IBlockState getOriginState(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
+        BlockPos origin = getOriginPos(world, shellPos);
+        return origin != null ? world.getBlockState(origin) : null;
     }
 
     @Override
@@ -76,21 +91,6 @@ public class MultiblockShellBlock extends Block {
     @Override
     protected boolean canSilkHarvest() {
         return false;
-    }
-
-    @Nullable
-    private static BlockPos getOriginPos(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
-        TileEntity te = world.getTileEntity(shellPos);
-        if (te instanceof TileEntityMultiblockShell shell && shell.canRedirect()) {
-            return shell.getOriginPos();
-        }
-        return null;
-    }
-
-    @Nullable
-    private static IBlockState getOriginState(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
-        BlockPos origin = getOriginPos(world, shellPos);
-        return origin != null ? world.getBlockState(origin) : null;
     }
 
     @Override

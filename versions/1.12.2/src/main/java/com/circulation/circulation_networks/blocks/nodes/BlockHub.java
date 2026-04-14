@@ -5,6 +5,7 @@ import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.tiles.TileEntityMultiblockShell;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
@@ -15,11 +16,14 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @SuppressWarnings("deprecation")
+@ParametersAreNonnullByDefault
 public final class BlockHub extends BaseNodeBlock {
+
+    private static final List<BlockPos> positions = new ObjectArrayList<>(17);
 
     public BlockHub() {
         super("hub");
@@ -27,12 +31,13 @@ public final class BlockHub extends BaseNodeBlock {
     }
 
     private static List<BlockPos> shellPositions(BlockPos origin) {
-        var positions = new ArrayList<BlockPos>(17);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = 0; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;
-                    positions.add(origin.add(dx, dy, dz));
+        if (positions.isEmpty()) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = 0; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                        positions.add(origin.add(dx, dy, dz));
+                    }
                 }
             }
         }
@@ -40,7 +45,7 @@ public final class BlockHub extends BaseNodeBlock {
     }
 
     @Override
-    public boolean canPlaceBlockAt(@NotNull World worldIn, @NotNull BlockPos pos) {
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
         for (BlockPos shellPos : shellPositions(pos)) {
             if (shellPos.getY() < 0 || shellPos.getY() > 255) return false;
             if (!worldIn.getBlockState(shellPos).getBlock().isReplaceable(worldIn, shellPos)) return false;
@@ -50,7 +55,7 @@ public final class BlockHub extends BaseNodeBlock {
 
     @NotNull
     @Override
-    public EnumPushReaction getPushReaction(@NotNull IBlockState state) {
+    public EnumPushReaction getPushReaction(IBlockState state) {
         return EnumPushReaction.BLOCK;
     }
 
@@ -60,8 +65,8 @@ public final class BlockHub extends BaseNodeBlock {
     }
 
     @Override
-    public void onBlockPlacedBy(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state,
-                                @NotNull EntityLivingBase placer, @NotNull ItemStack stack) {
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state,
+                                EntityLivingBase placer, ItemStack stack) {
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
         if (placer instanceof EntityPlayer player && !worldIn.isRemote) {
             var te = worldIn.getTileEntity(pos);
@@ -85,7 +90,7 @@ public final class BlockHub extends BaseNodeBlock {
     }
 
     @Override
-    public void breakBlock(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state) {
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
         var te = worldIn.getTileEntity(pos);
         if (te instanceof TileEntityHub hub) {
             var inv = hub.getPlugins();

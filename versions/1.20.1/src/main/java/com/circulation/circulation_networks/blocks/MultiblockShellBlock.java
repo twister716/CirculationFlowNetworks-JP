@@ -37,42 +37,12 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
 
     public MultiblockShellBlock() {
         super(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.METAL)
-            .strength(1.5F, 6.0F)
-            .noOcclusion()
-            .pushReaction(PushReaction.BLOCK)
-            .isViewBlocking((s, l, p) -> false));
+                                       .mapColor(MapColor.METAL)
+                                       .strength(1.5F, 6.0F)
+                                       .noOcclusion()
+                                       .pushReaction(PushReaction.BLOCK)
+                                       .isViewBlocking((s, l, p) -> false));
     }
-
-    // --- EntityBlock ---
-
-    @Override
-    @Nullable
-    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
-        return new MultiblockShellBlockEntity(pos, state);
-    }
-
-    // --- Block properties ---
-
-    @Override
-    @NotNull
-    public RenderShape getRenderShape(@NotNull BlockState state) {
-        return RenderShape.INVISIBLE;
-    }
-
-    @Override
-    @NotNull
-    public List<ItemStack> getDrops(@NotNull BlockState state, @NotNull LootParams.Builder builder) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isPathfindable(@NotNull BlockState state, @NotNull BlockGetter level,
-                                  @NotNull BlockPos pos, @NotNull PathComputationType type) {
-        return false;
-    }
-
-    // --- Origin helpers ---
 
     @Nullable
     private static BlockPos getOriginPos(@NotNull BlockGetter level, @NotNull BlockPos shellPos) {
@@ -89,7 +59,44 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return origin != null ? level.getBlockState(origin) : null;
     }
 
-    // --- Interaction proxy ---
+    @Override
+    @Nullable
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+        return new MultiblockShellBlockEntity(pos, state);
+    }
+
+    @Override
+    @NotNull
+    public RenderShape getRenderShape(@NotNull BlockState state) {
+        return RenderShape.INVISIBLE;
+    }
+
+    @Override
+    public int getLightBlock(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+        return 0;
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public float getShadeBrightness(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+        return 1.0F;
+    }
+
+    @Override
+    @NotNull
+    public List<ItemStack> getDrops(@NotNull BlockState state, @NotNull LootParams.Builder builder) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean isPathfindable(@NotNull BlockState state, @NotNull BlockGetter level,
+                                  @NotNull BlockPos pos, @NotNull PathComputationType type) {
+        return false;
+    }
 
     @Override
     @NotNull
@@ -103,8 +110,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         }
         return InteractionResult.PASS;
     }
-
-    // --- Harvest proxy ---
 
     @Override
     public boolean onDestroyedByPlayer(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
@@ -144,8 +149,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         super.spawnAfterBreak(state, level, pos, stack, dropExperience);
     }
 
-    // --- Destroy cascade ---
-
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                          @NotNull BlockState newState, boolean movedByPiston) {
@@ -156,8 +159,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
-
-    // --- Explosion proxy ---
 
     @Override
     public void onBlockExploded(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
@@ -172,8 +173,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         super.onBlockExploded(state, level, pos, explosion);
     }
 
-    // --- Pick block proxy ---
-
     @Override
     @NotNull
     public ItemStack getCloneItemStack(@NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state) {
@@ -184,8 +183,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         }
         return ItemStack.EMPTY;
     }
-
-    // --- Destroy progress proxy ---
 
     @Override
     public float getDestroyProgress(@NotNull BlockState state, @NotNull Player player,
@@ -198,8 +195,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return super.getDestroyProgress(state, player, level, pos);
     }
 
-    // --- Explosion resistance proxy ---
-
     @Override
     public float getExplosionResistance(@NotNull BlockState state, @NotNull BlockGetter level,
                                         @NotNull BlockPos pos, @NotNull Explosion explosion) {
@@ -211,8 +206,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return super.getExplosionResistance(state, level, pos, explosion);
     }
 
-    // --- Neighbor change proxy ---
-
     @Override
     public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                 @NotNull Block neighborBlock, @NotNull BlockPos neighborPos, boolean isMoving) {
@@ -222,8 +215,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
             originState.neighborChanged(level, originPos, neighborBlock, neighborPos, isMoving);
         }
     }
-
-    // --- Comparator signal proxy ---
 
     @Override
     public boolean hasAnalogOutputSignal(@NotNull BlockState state) {
@@ -238,13 +229,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
             return originState.getAnalogOutputSignal(level, originPos);
         }
         return 0;
-    }
-
-    // --- VoxelShape proxy ---
-
-    @FunctionalInterface
-    private interface ShapeGetter {
-        VoxelShape get(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context);
     }
 
     private VoxelShape proxyShape(BlockGetter level, BlockPos pos, CollisionContext context, ShapeGetter getter) {
@@ -326,11 +310,14 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return moved.isEmpty() ? Shapes.block() : moved;
     }
 
-    // --- Fluid replacement protection / Orphan cleanup ---
-
     @Override
     public boolean canBeReplaced(@NotNull BlockState state, @NotNull BlockPlaceContext context) {
         BlockPos origin = getOriginPos(context.getLevel(), context.getClickedPos());
         return origin == null;
+    }
+
+    @FunctionalInterface
+    private interface ShapeGetter {
+        VoxelShape get(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context);
     }
 }

@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -18,10 +19,11 @@ import net.minecraft.world.level.material.PushReaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public final class BlockHub extends BaseNodeBlock {
+
+    private static final List<BlockPos> positions = new ObjectArrayList<>(17);
 
     public BlockHub() {
         super(metalPropertiesNoOcclusion().pushReaction(PushReaction.BLOCK),
@@ -29,12 +31,13 @@ public final class BlockHub extends BaseNodeBlock {
     }
 
     private static List<BlockPos> shellPositions(BlockPos origin) {
-        var positions = new ArrayList<BlockPos>(17);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = 0; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;
-                    positions.add(origin.offset(dx, dy, dz));
+        if (positions.isEmpty()) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = 0; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                        positions.add(origin.offset(dx, dy, dz));
+                    }
                 }
             }
         }
@@ -47,7 +50,8 @@ public final class BlockHub extends BaseNodeBlock {
         BlockPos origin = context.getClickedPos();
         Level level = context.getLevel();
         for (BlockPos shellPos : shellPositions(origin)) {
-            if (shellPos.getY() < level.getMinBuildHeight() || shellPos.getY() >= level.getMaxBuildHeight()) return null;
+            if (shellPos.getY() < level.getMinBuildHeight() || shellPos.getY() >= level.getMaxBuildHeight())
+                return null;
             if (!level.getBlockState(shellPos).canBeReplaced(context)) return null;
         }
         return super.getStateForPlacement(context);

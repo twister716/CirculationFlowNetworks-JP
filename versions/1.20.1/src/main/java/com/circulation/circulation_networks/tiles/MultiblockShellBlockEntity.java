@@ -21,14 +21,14 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
         super(CFNBlockEntityTypes.MULTIBLOCK_SHELL, pos, state);
     }
 
-    public void setOriginPos(@NotNull BlockPos pos) {
-        this.originPos = pos;
-        setChanged();
-    }
-
     @NotNull
     public BlockPos getOriginPos() {
         return originPos != null ? originPos : worldPosition;
+    }
+
+    public void setOriginPos(@NotNull BlockPos pos) {
+        this.originPos = pos;
+        setChanged();
     }
 
     public boolean canRedirect() {

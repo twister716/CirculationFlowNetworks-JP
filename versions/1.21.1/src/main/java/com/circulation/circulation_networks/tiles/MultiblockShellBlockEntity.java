@@ -23,14 +23,23 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
         super(CFNBlockEntityTypes.MULTIBLOCK_SHELL, pos, state);
     }
 
-    public void setOriginPos(@NotNull BlockPos pos) {
-        this.originPos = pos;
-        setChanged();
+    public static <T, C> void registerCapabilityProxy(RegisterCapabilitiesEvent event, BlockCapability<T, C> capability, Block shellBlock) {
+        event.registerBlock(capability, (level, pos, state, be, context) -> {
+            if (be instanceof MultiblockShellBlockEntity shell && shell.canRedirect()) {
+                return level.getCapability(capability, shell.getOriginPos(), context);
+            }
+            return null;
+        }, shellBlock);
     }
 
     @NotNull
     public BlockPos getOriginPos() {
         return originPos != null ? originPos : worldPosition;
+    }
+
+    public void setOriginPos(@NotNull BlockPos pos) {
+        this.originPos = pos;
+        setChanged();
     }
 
     public boolean canRedirect() {
@@ -55,6 +64,8 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
         }
     }
 
+    // Nameable
+
     @Override
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
@@ -66,8 +77,6 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
             );
         }
     }
-
-    // Nameable
 
     @Override
     @NotNull
@@ -98,6 +107,8 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
         return null;
     }
 
+    // Capability proxy — registered statically via RegisterCapabilitiesEvent
+
     @Override
     @NotNull
     public Component getDisplayName() {
@@ -106,16 +117,5 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
             return nameable.getDisplayName();
         }
         return getName();
-    }
-
-    // Capability proxy — registered statically via RegisterCapabilitiesEvent
-
-    public static <T, C> void registerCapabilityProxy(RegisterCapabilitiesEvent event, BlockCapability<T, C> capability, Block shellBlock) {
-        event.registerBlock(capability, (level, pos, state, be, context) -> {
-            if (be instanceof MultiblockShellBlockEntity shell && shell.canRedirect()) {
-                return level.getCapability(capability, shell.getOriginPos(), context);
-            }
-            return null;
-        }, shellBlock);
     }
 }

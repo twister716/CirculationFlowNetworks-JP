@@ -16,14 +16,14 @@ public class TileEntityMultiblockShell extends TileEntity implements IWorldNamea
     @Nullable
     private BlockPos originPos;
 
-    public void setOriginPos(@NotNull BlockPos pos) {
-        this.originPos = pos;
-        markDirty();
-    }
-
     @NotNull
     public BlockPos getOriginPos() {
         return originPos != null ? originPos : pos;
+    }
+
+    public void setOriginPos(@NotNull BlockPos pos) {
+        this.originPos = pos;
+        markDirty();
     }
 
     public boolean canRedirect() {
