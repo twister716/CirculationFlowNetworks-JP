@@ -130,3 +130,7 @@ gui.channel_settings.tooltip.create=Create channel
 gui.channel_settings.tooltip.delete.owner_only=Only the owner can delete the channel
 gui.channel_settings.tooltip.delete.shift_required=Press Shift 5 times to enable deletion, current %d/%d
 gui.channel_settings.tooltip.delete.ready=Deletion requirements met, click to delete the channel
+hud.node.network_data=Network Data
+hud.node.unnamed=Unnamed Node
+hud.node.input=In:%s
+hud.node.output=Out:%s

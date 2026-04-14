@@ -19,6 +19,8 @@ import com.circulation.circulation_networks.packets.ContainerValueConfig;
 import com.circulation.circulation_networks.packets.CreateHubChannel;
 import com.circulation.circulation_networks.packets.DeleteHubChannel;
 import com.circulation.circulation_networks.packets.EnergyWarningRendering;
+import com.circulation.circulation_networks.packets.NodeHudData;
+import com.circulation.circulation_networks.packets.NodeHudRequest;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.packets.RenderingClear;
@@ -110,6 +112,7 @@ public class CommonProxy implements IGuiHandler {
         registerMessage(ContainerProgressBar.class, Side.SERVER);
         registerMessage(UpdatePlayerChargingMode.class, Side.SERVER);
         registerMessage(UpdateNodeCustomName.class, Side.SERVER);
+        registerMessage(NodeHudRequest.class, Side.SERVER);
         registerMessage(BindHubChannel.class, Side.SERVER);
         registerMessage(CreateHubChannel.class, Side.SERVER);
         registerMessage(UpdateHubChannelSettings.class, Side.SERVER);
@@ -124,6 +127,7 @@ public class CommonProxy implements IGuiHandler {
         registerMessage(ContainerValueConfig.class, Side.CLIENT);
         registerMessage(RenderingClear.INSTANCE, Side.CLIENT);
         registerMessage(PocketNodeRendering.class, Side.CLIENT);
+        registerMessage(NodeHudData.class, Side.CLIENT);
     }
 
     @SubscribeEvent

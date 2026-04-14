@@ -320,6 +320,7 @@ public final class ChargingManager {
 
                 for (var channelGrid : channelGrids) {
                     processedGrids.add(channelGrid);
+                    merged.timedGrids.add(channelGrid);
                     var handlers = machineMap.get(channelGrid);
                     if (handlers != null && handlers.activeThisTick) {
                         merged.send.addAll(handlers.send);
@@ -339,8 +340,10 @@ public final class ChargingManager {
                     return;
                 }
 
+                long startNanos = System.nanoTime();
                 transferEnergy(merged.send, merged.targets, EnergyMachineManager.Status.EXTRACT, false);
                 transferEnergy(merged.storage, merged.targets, EnergyMachineManager.Status.EXTRACT, false);
+                EnergyMachineManager.recordDistributedGridTickTimeNanos(merged.timedGrids, System.nanoTime() - startNanos);
                 syncBackSenders(merged.send, merged.storage, machineMap);
                 for (var participant : merged.targets) {
                     participant.recycle();
@@ -355,8 +358,10 @@ public final class ChargingManager {
 
         var handlers = machineMap.get(grid);
         if (handlers != null && handlers.activeThisTick) {
+            long startNanos = System.nanoTime();
             transferEnergy(handlers.send, chargingTargets, EnergyMachineManager.Status.EXTRACT, false);
             transferEnergy(handlers.storage, chargingTargets, EnergyMachineManager.Status.EXTRACT, false);
+            EnergyMachineManager.recordGridTickTimeNanos(grid, System.nanoTime() - startNanos);
         }
     }
 
@@ -650,11 +655,13 @@ public final class ChargingManager {
         final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
         final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
         final ReferenceOpenHashSet<EnergyTransferParticipant> targets = new ReferenceOpenHashSet<>();
+        final ReferenceSet<IGrid> timedGrids = new ReferenceOpenHashSet<>();
 
         ChannelTransferScratch prepare() {
             send.clear();
             storage.clear();
             targets.clear();
+            timedGrids.clear();
             return this;
         }
     }

@@ -48,14 +48,16 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
     private String oldFI;
     private String oldFO;
     private String oldFT;
-
     private ButtonComponent node, playerPowerSupply, upgradePlugin, channel, permission, settings;
     private Component nodeUI, playerPowerSupplyUI, upgradePluginUI, channelUI, permissionUI, settingsUI;
-
     public GuiHub(ContainerHub container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
         super(container, playerInventory, title);
         this.imageWidth = 178;
         this.imageHeight = 233;
+    }
+
+    public static int getEnergyUnitState() {
+        return state;
     }
 
     private Runnable setC(ChargingDefinition c) {

@@ -5,6 +5,8 @@ import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.tiles.TileEntityMultiblockShell;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.state.IBlockState;
@@ -23,25 +25,28 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public final class BlockHub extends BaseNodeBlock {
 
-    private static final List<BlockPos> positions = new ObjectArrayList<>(17);
-
     public BlockHub() {
         super("hub");
         this.setNodeTileClass(TileEntityHub.class);
     }
 
+    private static final Long2ObjectMap<List<BlockPos>> positions = new Long2ObjectOpenHashMap<>();
+
     private static List<BlockPos> shellPositions(BlockPos origin) {
-        if (positions.isEmpty()) {
+        if (!positions.containsKey(origin.toLong())) {
+            var list = new ObjectArrayList<BlockPos>();
+            positions.put(origin.toLong(), list);
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = 0; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         if (dx == 0 && dy == 0 && dz == 0) continue;
-                        positions.add(origin.add(dx, dy, dz));
+                        list.add(origin.add(dx, dy, dz));
                     }
                 }
             }
+            return list;
         }
-        return positions;
+        return positions.get(origin.toLong());
     }
 
     @Override
@@ -108,6 +113,7 @@ public final class BlockHub extends BaseNodeBlock {
                 worldIn.setBlockToAir(shellPos);
             }
         }
+        positions.remove(pos.toLong());
         super.breakBlock(worldIn, pos, state);
     }
 

@@ -6,6 +6,8 @@ import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,25 +25,28 @@ import java.util.List;
 
 public final class BlockHub extends BaseNodeBlock {
 
-    private static final List<BlockPos> positions = new ObjectArrayList<>(17);
-
     public BlockHub() {
         super(metalPropertiesNoOcclusion().pushReaction(PushReaction.BLOCK),
             () -> CFNBlockEntityTypes.HUB);
     }
 
+    private static final Long2ObjectMap<List<BlockPos>> positions = new Long2ObjectOpenHashMap<>();
+
     private static List<BlockPos> shellPositions(BlockPos origin) {
-        if (positions.isEmpty()) {
+        if (!positions.containsKey(origin.asLong())) {
+            var list = new ObjectArrayList<BlockPos>();
+            positions.put(origin.asLong(), list);
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = 0; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         if (dx == 0 && dy == 0 && dz == 0) continue;
-                        positions.add(origin.offset(dx, dy, dz));
+                        list.add(origin.offset(dx, dy, dz));
                     }
                 }
             }
+            return list;
         }
-        return positions;
+        return positions.get(origin.asLong());
     }
 
     @Nullable
@@ -109,6 +114,7 @@ public final class BlockHub extends BaseNodeBlock {
                     level.removeBlock(shellPos, false);
                 }
             }
+            positions.remove(pos.asLong());
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

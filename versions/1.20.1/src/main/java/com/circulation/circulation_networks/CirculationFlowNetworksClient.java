@@ -15,6 +15,7 @@ import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHand
 import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeHighlightRenderingHandler;
+import com.circulation.circulation_networks.handlers.NodeHudRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
@@ -59,6 +60,7 @@ final class CirculationFlowNetworksClient {
         MinecraftForge.EVENT_BUS.register(ConfigOverrideRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(PocketNodeRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(NodeHighlightRenderingHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(NodeHudRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onBlockEntityInvalidate);

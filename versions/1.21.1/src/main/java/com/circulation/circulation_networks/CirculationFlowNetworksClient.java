@@ -15,6 +15,7 @@ import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHand
 import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;
 import com.circulation.circulation_networks.handlers.ItemToolHandler;
 import com.circulation.circulation_networks.handlers.NodeHighlightRenderingHandler;
+import com.circulation.circulation_networks.handlers.NodeHudRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
@@ -70,6 +71,7 @@ final class CirculationFlowNetworksClient {
         NeoForge.EVENT_BUS.register(ConfigOverrideRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.register(PocketNodeRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.register(NodeHighlightRenderingHandler.INSTANCE);
+        NeoForge.EVENT_BUS.register(NodeHudRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.register(ItemToolHandler.INSTANCE);
         NeoForge.EVENT_BUS.register(CirculationShielderRenderingHandler.INSTANCE);
         NeoForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onBlockEntityInvalidate);

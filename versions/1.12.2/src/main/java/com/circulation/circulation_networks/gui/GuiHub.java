@@ -49,14 +49,16 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
     private String oldFI;
     private String oldFO;
     private String oldFT;
-
     private ButtonComponent node, playerPowerSupply, upgradePlugin, channel, permission, settings;
     private Component nodeUI, playerPowerSupplyUI, upgradePluginUI, channelUI, permissionUI, settingsUI;
-
     public GuiHub(EntityPlayer player, IHubNode node) {
         super(new ContainerHub(player, node));
         this.xSize = 178;
         this.ySize = 233;
+    }
+
+    public static int getEnergyUnitState() {
+        return state;
     }
 
     private Runnable setC(ChargingDefinition c) {

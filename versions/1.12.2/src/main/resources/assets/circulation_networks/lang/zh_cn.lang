@@ -130,3 +130,7 @@ gui.channel_settings.tooltip.create=创建频道
 gui.channel_settings.tooltip.delete.owner_only=仅所有者可以删除频道
 gui.channel_settings.tooltip.delete.shift_required=需要先按下 5 次 Shift 才允许删除，当前 %d/%d
 gui.channel_settings.tooltip.delete.ready=已满足删除条件，点击删除频道
+hud.node.network_data=网络数据
+hud.node.unnamed=未命名节点
+hud.node.input=输入:%s
+hud.node.output=输出:%s
