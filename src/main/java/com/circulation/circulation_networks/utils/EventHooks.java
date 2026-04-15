@@ -59,23 +59,32 @@ public final class EventHooks {
         eventBus.post(new AddNodeEvent.Post(node, tileEntity));
     }
 
+    private static boolean validateLock;
+    private static boolean invalidateLock;
+
     //~ if >=1.20 'World ' -> 'Level ' {
     public static void onBlockEntityValidate(World world, BlockPos pos, TileEntity blockEntity) {
+        if (validateLock) return;
+        validateLock = true;
         if (blockEntity instanceof INodeBlockEntity nbe) {
             nbe.nodeValidate();
         }
         var event = new BlockEntityLifeCycleEvent.Validate(world, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onValidate(event);
         eventBus.post(event);
+        validateLock = false;
     }
 
     public static void onBlockEntityInvalidate(World world, BlockPos pos, TileEntity blockEntity) {
+        if (invalidateLock) return;
+        invalidateLock = true;
         if (blockEntity instanceof INodeBlockEntity nbe) {
             nbe.nodeInvalidate();
         }
         var event = new BlockEntityLifeCycleEvent.Invalidate(world, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onInvalidate(event);
         eventBus.post(event);
+        invalidateLock = false;
     }
     //~}
     //~}

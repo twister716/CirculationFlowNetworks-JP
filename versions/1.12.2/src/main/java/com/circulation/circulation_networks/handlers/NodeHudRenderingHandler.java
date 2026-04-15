@@ -10,7 +10,9 @@ import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
+import com.circulation.circulation_networks.utils.ScrollingTextHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
@@ -23,6 +25,9 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import org.lwjgl.BufferUtils;
 
 @SideOnly(Side.CLIENT)
 public final class NodeHudRenderingHandler {
@@ -95,9 +100,9 @@ public final class NodeHudRenderingHandler {
             micros = 0L;
         }
         if (micros >= 100L) {
-            return FormatNumberUtils.formatDouble(micros / 1000D, 1) + "ms";
+            return FormatNumberUtils.formatDouble(micros / 1000D, 1) + " ms";
         } else {
-            return FormatNumberUtils.formatNumber(micros) + "μs";
+            return FormatNumberUtils.formatNumber(micros) + " μs";
         }
     }
 
@@ -211,11 +216,11 @@ public final class NodeHudRenderingHandler {
         int textX1 = (int) (anchorX + 86);
         int textX2 = (int) (anchorX + 90);
         int hudYI = (int) anchorY;
-        mc.fontRenderer.drawString(mc.fontRenderer.trimStringToWidth(displayName, 66), textX1, hudYI + 13, TEXT_COLOR);
-        mc.fontRenderer.drawString(mc.fontRenderer.trimStringToWidth(formattedInput, 62), textX2, hudYI + 26, TEXT_COLOR);
-        mc.fontRenderer.drawString(mc.fontRenderer.trimStringToWidth(formattedOutput, 62), textX2, hudYI + 40, TEXT_COLOR);
-        mc.fontRenderer.drawString(mc.fontRenderer.trimStringToWidth(formattedLatency, 62), textX2, hudYI + 54, TEXT_COLOR);
-        mc.fontRenderer.drawString(mc.fontRenderer.trimStringToWidth(formattedNodeCount, 62), textX2, hudYI + 68, TEXT_COLOR);
+        drawScrollingText(mc.fontRenderer, displayName, 66, textX1, hudYI + 13, TEXT_COLOR, partialTick);
+        drawScrollingText(mc.fontRenderer, formattedInput, 62, textX2, hudYI + 26, TEXT_COLOR, partialTick);
+        drawScrollingText(mc.fontRenderer, formattedOutput, 62, textX2, hudYI + 40, TEXT_COLOR, partialTick);
+        drawScrollingText(mc.fontRenderer, formattedLatency, 62, textX2, hudYI + 54, TEXT_COLOR, partialTick);
+        drawScrollingText(mc.fontRenderer, formattedNodeCount, 62, textX2, hudYI + 68, TEXT_COLOR, partialTick);
         mc.fontRenderer.drawString(tooltipText, (int) (anchorX + 3), (int) (tooltipY + 2), 0xFFFFFF);
 
         GlStateManager.enableDepth();
@@ -224,6 +229,58 @@ public final class NodeHudRenderingHandler {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
+    }
+
+    private void drawScrollingText(FontRenderer fr, String text, int maxWidth, int x, int y, int color, float partialTick) {
+        int textWidth = fr.getStringWidth(text);
+        if (textWidth <= maxWidth) {
+            fr.drawString(text, x, y, color);
+            return;
+        }
+        float offset = ScrollingTextHelper.getScrollOffset(textWidth, maxWidth, clientTick, partialTick);
+        enableHudScissor(x, y, maxWidth, 9);
+        fr.drawString(text, x - (int) offset, y, color);
+        disableHudScissor();
+    }
+
+    private void enableHudScissor(float hudX, float hudY, int width, int height) {
+        FloatBuffer mv = BufferUtils.createFloatBuffer(16);
+        FloatBuffer proj = BufferUtils.createFloatBuffer(16);
+        IntBuffer vp = BufferUtils.createIntBuffer(16);
+        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, mv);
+        GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, proj);
+        GL11.glGetInteger(GL11.GL_VIEWPORT, vp);
+        float[] c1 = projectToWindow(hudX, hudY, mv, proj, vp);
+        float[] c2 = projectToWindow(hudX + width, hudY, mv, proj, vp);
+        float[] c3 = projectToWindow(hudX + width, hudY + height, mv, proj, vp);
+        float[] c4 = projectToWindow(hudX, hudY + height, mv, proj, vp);
+        float minX = Math.min(Math.min(c1[0], c2[0]), Math.min(c3[0], c4[0]));
+        float minY = Math.min(Math.min(c1[1], c2[1]), Math.min(c3[1], c4[1]));
+        float maxX = Math.max(Math.max(c1[0], c2[0]), Math.max(c3[0], c4[0]));
+        float maxY = Math.max(Math.max(c1[1], c2[1]), Math.max(c3[1], c4[1]));
+        int rx = Math.round(minX);
+        int ry = Math.round(minY);
+        int rw = Math.round(maxX - minX);
+        int rh = Math.round(maxY - minY);
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(rx, ry, Math.max(rw, 1), Math.max(rh, 1));
+    }
+
+    private void disableHudScissor() {
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+    }
+
+    private static float[] projectToWindow(float objX, float objY, FloatBuffer mv, FloatBuffer proj, IntBuffer vp) {
+        float eyeX = mv.get(0) * objX + mv.get(4) * objY + mv.get(12);
+        float eyeY = mv.get(1) * objX + mv.get(5) * objY + mv.get(13);
+        float eyeZ = mv.get(2) * objX + mv.get(6) * objY + mv.get(14);
+        float eyeW = mv.get(3) * objX + mv.get(7) * objY + mv.get(15);
+        float clipX = proj.get(0) * eyeX + proj.get(4) * eyeY + proj.get(8) * eyeZ + proj.get(12) * eyeW;
+        float clipY = proj.get(1) * eyeX + proj.get(5) * eyeY + proj.get(9) * eyeZ + proj.get(13) * eyeW;
+        float clipW = proj.get(3) * eyeX + proj.get(7) * eyeY + proj.get(11) * eyeZ + proj.get(15) * eyeW;
+        float ndcX = clipX / clipW;
+        float ndcY = clipY / clipW;
+        return new float[]{vp.get(0) + vp.get(2) * (ndcX + 1) / 2f, vp.get(1) + vp.get(3) * (ndcY + 1) / 2f};
     }
 
     private void drawRotatedRegion(ComponentAtlas atlas, AtlasRegion region,

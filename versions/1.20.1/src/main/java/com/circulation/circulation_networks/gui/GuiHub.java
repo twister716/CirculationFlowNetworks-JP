@@ -297,9 +297,9 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
         }
         String value;
         if (micros >= 100L) {
-            value = FormatNumberUtils.formatDouble(micros / 1000D, 1) + "ms";
+            value = FormatNumberUtils.formatDouble(micros / 1000D, 1) + " ms";
         } else {
-            value = FormatNumberUtils.formatNumber(micros) + "μs";
+            value = FormatNumberUtils.formatNumber(micros) + " μs";
         }
         return oldFT = trimToWidth(CI18n.format("gui.hub.energy_latency", value), LATENCY_TEXT_WIDTH);
     }

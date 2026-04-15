@@ -15,6 +15,11 @@ import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.SpoceRendering;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
+//? if <1.20 {
+import com.circulation.circulation_networks.tiles.TileEntityMultiblockShell;
+//?} else {
+/*import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
+*///?}
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -132,6 +137,32 @@ public class ItemCirculationConfigurator extends BaseItem {
     }
     //~}
 
+    //~ if >=1.20 'World ' -> 'Level ' {
+    //~ if >=1.20 'TileEntity te' -> 'BlockEntity te' {
+    //~ if >=1.20 'world.getTileEntity(pos)' -> 'world.getBlockEntity(pos)' {
+    //? if <1.20 {
+    //~ if >=1.20 'TileEntityMultiblockShell' -> 'MultiblockShellBlockEntity' {
+    private static BlockPos resolveOriginPos(World world, BlockPos pos) {
+        TileEntity te = world.getTileEntity(pos);
+        if (te instanceof TileEntityMultiblockShell shell && shell.canRedirect()) {
+            return shell.getOriginPos();
+        }
+        return pos;
+    }
+    //~}
+    //?} else {
+    /*private static BlockPos resolveOriginPos(Level world, BlockPos pos) {
+        BlockEntity te = world.getBlockEntity(pos);
+        if (te instanceof MultiblockShellBlockEntity shell && shell.canRedirect()) {
+            return shell.getOriginPos();
+        }
+        return pos;
+    }
+    *///?}
+    //~}
+    //~}
+    //~}
+
     //? if <1.20 {
     @Override
     public @NotNull EnumActionResult onItemUseFirst(@NotNull EntityPlayer player, @NotNull World world, @NotNull BlockPos pos,
@@ -143,6 +174,10 @@ public class ItemCirculationConfigurator extends BaseItem {
             return PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(world), pos)
                 ? EnumActionResult.SUCCESS
                 : EnumActionResult.PASS;
+        }
+        BlockPos resolved = resolveOriginPos(world, pos);
+        if (!resolved.equals(pos)) {
+            return EnumActionResult.PASS;
         }
         return PocketNodeManager.INSTANCE.removePocketNode(world, pos, true)
             ? EnumActionResult.SUCCESS
@@ -160,6 +195,10 @@ public class ItemCirculationConfigurator extends BaseItem {
                 ? InteractionResult.SUCCESS
                 : InteractionResult.PASS;
         }
+        BlockPos resolved = resolveOriginPos(context.getLevel(), context.getClickedPos());
+        if (!resolved.equals(context.getClickedPos())) {
+            return InteractionResult.PASS;
+        }
         return PocketNodeManager.INSTANCE.removePocketNode(context.getLevel(), context.getClickedPos(), true)
             ? InteractionResult.SUCCESS
             : InteractionResult.PASS;
@@ -170,6 +209,9 @@ public class ItemCirculationConfigurator extends BaseItem {
     @Override
     public @NotNull EnumActionResult onItemUse(@NotNull EntityPlayer player, @NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote) {
+            if (worldIn.getTileEntity(pos) instanceof TileEntityMultiblockShell) {
+                return EnumActionResult.SUCCESS;
+            }
             return !player.isSneaking() && PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(worldIn), pos)
                 ? EnumActionResult.SUCCESS
                 : EnumActionResult.PASS;
@@ -181,22 +223,26 @@ public class ItemCirculationConfigurator extends BaseItem {
             return EnumActionResult.SUCCESS;
         }
 
+        BlockPos target = resolveOriginPos(worldIn, pos);
         ItemStack stack = p.getHeldItemMainhand();
         CirculationConfiguratorSelection selection = CirculationConfiguratorSelection.fromStack(stack);
         return switch (selection.function()) {
-            case INSPECTION -> executeInspection(p, worldIn, pos, selection.subMode());
-            case CONFIGURATION -> executeConfiguration(p, worldIn, pos, selection.subMode());
+            case INSPECTION -> executeInspection(p, worldIn, target, selection.subMode());
+            case CONFIGURATION -> executeConfiguration(p, worldIn, target, selection.subMode());
         };
     }
     //?} else {
     /*@Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
         Player player = context.getPlayer();
-        if (player != null
-            && !player.isShiftKeyDown()
-            && context.getLevel().isClientSide
-            && PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(context.getLevel()), context.getClickedPos())) {
-            return InteractionResult.SUCCESS;
+        if (context.getLevel().isClientSide) {
+            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof MultiblockShellBlockEntity) {
+                return InteractionResult.SUCCESS;
+            }
+            return player != null && !player.isShiftKeyDown()
+                && PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(context.getLevel()), context.getClickedPos())
+                ? InteractionResult.SUCCESS
+                : InteractionResult.PASS;
         }
         if (!(player instanceof ServerPlayer p)) {
             return InteractionResult.PASS;
@@ -205,11 +251,12 @@ public class ItemCirculationConfigurator extends BaseItem {
             return InteractionResult.SUCCESS;
         }
 
+        BlockPos target = resolveOriginPos(context.getLevel(), context.getClickedPos());
         ItemStack stack = context.getItemInHand();
         CirculationConfiguratorSelection selection = CirculationConfiguratorSelection.fromStack(stack);
         return switch (selection.function()) {
-            case INSPECTION -> executeInspection(p, context.getLevel(), context.getClickedPos(), selection.subMode());
-            case CONFIGURATION -> executeConfiguration(p, context.getLevel(), context.getClickedPos(), selection.subMode());
+            case INSPECTION -> executeInspection(p, context.getLevel(), target, selection.subMode());
+            case CONFIGURATION -> executeConfiguration(p, context.getLevel(), target, selection.subMode());
         };
     }
     *///?}

@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeBlockEntity;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
+import com.circulation.circulation_networks.utils.ScrollingTextHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -20,6 +21,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,6 +29,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
+import org.lwjgl.opengl.GL11;
 
 @OnlyIn(Dist.CLIENT)
 public final class NodeHudRenderingHandler {
@@ -99,9 +104,9 @@ public final class NodeHudRenderingHandler {
             micros = 0L;
         }
         if (micros >= 100L) {
-            return FormatNumberUtils.formatDouble(micros / 1000D, 1) + "ms";
+            return FormatNumberUtils.formatDouble(micros / 1000D, 1) + " ms";
         } else {
-            return FormatNumberUtils.formatNumber(micros) + "μs";
+            return FormatNumberUtils.formatNumber(micros) + " μs";
         }
     }
 
@@ -205,6 +210,7 @@ public final class NodeHudRenderingHandler {
             drawRotatedRegion(atlas, crystalRegion, cx, cy, angle);
         }
 
+        float partialTick = event.getPartialTick();
         Font font = mc.font;
         String tooltipText = CI18n.format("hud.node.network_data");
         int tooltipWidth = font.width(tooltipText) + 6;
@@ -214,11 +220,11 @@ public final class NodeHudRenderingHandler {
 
         var bufferSource = mc.renderBuffers().bufferSource();
         var textPose = new PoseStack();
-        font.drawInBatch(font.plainSubstrByWidth(displayName, 66), anchorX + 86, anchorY + 13, TEXT_COLOR, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-        font.drawInBatch(font.plainSubstrByWidth(formattedInput, 62), anchorX + 90, anchorY + 26, TEXT_COLOR, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-        font.drawInBatch(font.plainSubstrByWidth(formattedOutput, 62), anchorX + 90, anchorY + 40, TEXT_COLOR, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-        font.drawInBatch(font.plainSubstrByWidth(formattedLatency, 62), anchorX + 90, anchorY + 54, TEXT_COLOR, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-        font.drawInBatch(font.plainSubstrByWidth(formattedNodeCount, 62), anchorX + 90, anchorY + 68, TEXT_COLOR, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+        drawScrollingText(font, displayName, 66, anchorX + 86, anchorY + 13, TEXT_COLOR, partialTick, textPose, bufferSource);
+        drawScrollingText(font, formattedInput, 62, anchorX + 90, anchorY + 26, TEXT_COLOR, partialTick, textPose, bufferSource);
+        drawScrollingText(font, formattedOutput, 62, anchorX + 90, anchorY + 40, TEXT_COLOR, partialTick, textPose, bufferSource);
+        drawScrollingText(font, formattedLatency, 62, anchorX + 90, anchorY + 54, TEXT_COLOR, partialTick, textPose, bufferSource);
+        drawScrollingText(font, formattedNodeCount, 62, anchorX + 90, anchorY + 68, TEXT_COLOR, partialTick, textPose, bufferSource);
         font.drawInBatch(tooltipText, anchorX + 3, tooltipY + 2, 0xFFFFFF, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
         bufferSource.endBatch();
 
@@ -228,6 +234,58 @@ public final class NodeHudRenderingHandler {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         mvStack.popPose();
         RenderSystem.applyModelViewMatrix();
+    }
+
+    private void drawScrollingText(Font font, String text, int maxWidth, float x, float y, int color, float partialTick,
+                                   PoseStack textPose, MultiBufferSource.BufferSource bufferSource) {
+        int textWidth = font.width(text);
+        if (textWidth <= maxWidth) {
+            font.drawInBatch(text, x, y, color, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+            return;
+        }
+        bufferSource.endBatch();
+        float offset = ScrollingTextHelper.getScrollOffset(textWidth, maxWidth, clientTick, partialTick);
+        font.drawInBatch(text, x - offset, y, color, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+        enableHudScissor(x, y, maxWidth, 9);
+        bufferSource.endBatch();
+        disableHudScissor();
+    }
+
+    private void enableHudScissor(float hudX, float hudY, int width, int height) {
+        Matrix4f mv = new Matrix4f(RenderSystem.getModelViewStack().last().pose());
+        Matrix4f mvp = new Matrix4f(RenderSystem.getProjectionMatrix()).mul(mv);
+        Vector4f c1 = mvp.transform(new Vector4f(hudX, hudY, 0, 1));
+        Vector4f c2 = mvp.transform(new Vector4f(hudX + width, hudY, 0, 1));
+        Vector4f c3 = mvp.transform(new Vector4f(hudX + width, hudY + height, 0, 1));
+        Vector4f c4 = mvp.transform(new Vector4f(hudX, hudY + height, 0, 1));
+        c1.div(c1.w);
+        c2.div(c2.w);
+        c3.div(c3.w);
+        c4.div(c4.w);
+        int[] viewport = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+        float sx1 = viewport[0] + viewport[2] * (c1.x + 1) / 2f;
+        float sy1 = viewport[1] + viewport[3] * (c1.y + 1) / 2f;
+        float sx2 = viewport[0] + viewport[2] * (c2.x + 1) / 2f;
+        float sy2 = viewport[1] + viewport[3] * (c2.y + 1) / 2f;
+        float sx3 = viewport[0] + viewport[2] * (c3.x + 1) / 2f;
+        float sy3 = viewport[1] + viewport[3] * (c3.y + 1) / 2f;
+        float sx4 = viewport[0] + viewport[2] * (c4.x + 1) / 2f;
+        float sy4 = viewport[1] + viewport[3] * (c4.y + 1) / 2f;
+        float minX = Math.min(Math.min(sx1, sx2), Math.min(sx3, sx4));
+        float minY = Math.min(Math.min(sy1, sy2), Math.min(sy3, sy4));
+        float maxX = Math.max(Math.max(sx1, sx2), Math.max(sx3, sx4));
+        float maxY = Math.max(Math.max(sy1, sy2), Math.max(sy3, sy4));
+        int rx = Math.round(minX);
+        int ry = Math.round(minY);
+        int rw = Math.round(maxX - minX);
+        int rh = Math.round(maxY - minY);
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(rx, ry, Math.max(rw, 1), Math.max(rh, 1));
+    }
+
+    private void disableHudScissor() {
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 
     private void drawRotatedRegion(ComponentAtlas atlas, AtlasRegion region,
