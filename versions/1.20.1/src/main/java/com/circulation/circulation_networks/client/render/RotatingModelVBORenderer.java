@@ -91,14 +91,23 @@ public final class RotatingModelVBORenderer {
         float angle, float pivotX, float pivotY, float pivotZ,
         float axisX, float axisY, float axisZ
     ) {
-        AmbientVBOKey key = new AmbientVBOKey(System.identityHashCode(level), pos.immutable(), modelLocation);
-        int lightSig = resolveLightSignature(level, pos, state);
+        renderAmbientLit(poseStack, level, pos, pos, state, modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ);
+    }
+
+    public static void renderAmbientLit(
+        PoseStack poseStack, BlockAndTintGetter level, BlockPos originPos, BlockPos lightSamplePos,
+        BlockState state, ResourceLocation modelLocation,
+        float angle, float pivotX, float pivotY, float pivotZ,
+        float axisX, float axisY, float axisZ
+    ) {
+        AmbientVBOKey key = new AmbientVBOKey(System.identityHashCode(level), originPos.immutable(), lightSamplePos.immutable(), modelLocation);
+        int lightSig = resolveLightSignature(level, originPos, lightSamplePos, state);
         CachedVBO cached = AMBIENT_VBOS.get(key);
         if (cached == null || cached.lightSignature != lightSig) {
             if (cached != null) {
                 cached.vbo.close();
             }
-            VertexBuffer vbo = buildAmbientVBO(level, pos, state, modelLocation);
+            VertexBuffer vbo = buildAmbientVBO(level, lightSamplePos, state, modelLocation);
             cached = new CachedVBO(vbo, lightSig);
             AMBIENT_VBOS.put(key, cached);
         }
@@ -110,12 +119,19 @@ public final class RotatingModelVBORenderer {
         while (iter.hasNext()) {
             var entry = iter.next();
             AmbientVBOKey k = entry.getKey();
-            if (k.worldId == worldId && k.pos.equals(pos)) {
+            if (k.worldId == worldId && k.originPos.equals(pos)) {
                 entry.getValue().vbo.close();
                 iter.remove();
             }
         }
-        AMBIENT_LIGHT_SIGNATURES.remove(new AmbientLightKey(worldId, pos));
+        var lightIter = AMBIENT_LIGHT_SIGNATURES.entrySet().iterator();
+        while (lightIter.hasNext()) {
+            var entry = lightIter.next();
+            AmbientLightKey key = entry.getKey();
+            if (key.worldId == worldId && key.originPos.equals(pos)) {
+                lightIter.remove();
+            }
+        }
     }
 
     public static void clearAll() {
@@ -231,12 +247,12 @@ public final class RotatingModelVBORenderer {
         return vbo;
     }
 
-    private static int resolveLightSignature(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+    private static int resolveLightSignature(BlockAndTintGetter level, BlockPos originPos, BlockPos lightSamplePos, BlockState state) {
         if (!(level instanceof Level worldLevel)) {
-            return computeLightSignature(level, pos, state);
+            return computeLightSignature(level, lightSamplePos, state);
         }
 
-        AmbientLightKey key = new AmbientLightKey(System.identityHashCode(level), pos.immutable());
+        AmbientLightKey key = new AmbientLightKey(System.identityHashCode(level), originPos.immutable(), lightSamplePos.immutable());
         long gameTime = worldLevel.getGameTime();
         int stateHash = state.hashCode();
         CachedLightSignature cached = AMBIENT_LIGHT_SIGNATURES.get(key);
@@ -244,7 +260,7 @@ public final class RotatingModelVBORenderer {
             return cached.signature;
         }
 
-        int signature = computeLightSignature(level, pos, state);
+        int signature = computeLightSignature(level, lightSamplePos, state);
         AMBIENT_LIGHT_SIGNATURES.put(key, new CachedLightSignature(gameTime, stateHash, signature));
         return signature;
     }
@@ -313,6 +329,16 @@ public final class RotatingModelVBORenderer {
         float angle, float pivotX, float pivotY, float pivotZ,
         float axisX, float axisY, float axisZ
     ) {
+        renderAmbientLitThroughBufferSourceAt(poseStack, bufferSource, level, pos, state, modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ);
+    }
+
+    public static void renderAmbientLitThroughBufferSourceAt(
+        PoseStack poseStack, MultiBufferSource bufferSource,
+        BlockAndTintGetter level, BlockPos lightSamplePos,
+        BlockState state, ResourceLocation modelLocation,
+        float angle, float pivotX, float pivotY, float pivotZ,
+        float axisX, float axisY, float axisZ
+    ) {
         BakedModel model = RotatingBlockModelCache.get(modelLocation);
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
 
@@ -323,7 +349,7 @@ public final class RotatingModelVBORenderer {
         poseStack.translate(-pivotX, -pivotY, -pivotZ);
 
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().tesselateBlock(
-            level, model, state, pos, poseStack, consumer, false,
+            level, model, state, lightSamplePos, poseStack, consumer, false,
             RandomSource.create(), 42L, OverlayTexture.NO_OVERLAY,
             ModelData.EMPTY, RenderType.cutout()
         );
@@ -331,13 +357,13 @@ public final class RotatingModelVBORenderer {
         poseStack.popPose();
     }
 
-    private record AmbientVBOKey(int worldId, BlockPos pos, ResourceLocation modelLocation) {
+    private record AmbientVBOKey(int worldId, BlockPos originPos, BlockPos lightSamplePos, ResourceLocation modelLocation) {
     }
 
     private record CachedVBO(VertexBuffer vbo, int lightSignature) {
     }
 
-    private record AmbientLightKey(int worldId, BlockPos pos) {
+    private record AmbientLightKey(int worldId, BlockPos originPos, BlockPos lightSamplePos) {
     }
 
     private record CachedLightSignature(long gameTime, int stateHash, int signature) {

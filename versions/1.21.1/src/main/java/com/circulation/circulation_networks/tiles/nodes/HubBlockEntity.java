@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.tiles.nodes;
 
+import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.IHubNodeBlockEntity;
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.api.node.IHubNode;
@@ -11,7 +12,9 @@ import com.circulation.circulation_networks.inventory.CFNInventoryChangeOperatio
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.network.nodes.HubNode;
+import com.circulation.circulation_networks.network.nodes.HubPluginSyncSupport;
 import com.circulation.circulation_networks.network.nodes.HubPluginStateTracker;
+import com.circulation.circulation_networks.packets.HubPluginSyncRequest;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.registry.NodeTypes;
@@ -48,6 +51,7 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     });
     private boolean init;
     private transient CompoundTag initNbt;
+    private transient boolean initialPluginSyncRequested;
 
     public HubBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         super(CFNBlockEntityTypes.HUB, pos, state);
@@ -87,6 +91,15 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
 
     public CFNInternalInventory getPlugins() {
         return plugins;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (HubPluginSyncSupport.shouldRequestInitialSync(level != null && level.isClientSide(), initialPluginSyncRequested)) {
+            initialPluginSyncRequested = true;
+            CirculationFlowNetworks.sendToServer(new HubPluginSyncRequest(worldPosition));
+        }
     }
 
     @Override
@@ -145,6 +158,15 @@ public class HubBlockEntity extends BaseNodeBlockEntity<IHubNode> implements IHu
     public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         syncNodeAfterNetworkInit();
         return new ContainerHub(CFNMenuTypes.HUB_MENU, containerId, player, getNode());
+    }
+
+    public void applyPluginSnapshot(ItemStack[] snapshot) {
+        for (int i = 0; i < plugins.getSlots(); i++) {
+            ItemStack stack = i < snapshot.length ? snapshot[i] : ItemStack.EMPTY;
+            plugins.setStackInSlot(i, stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy());
+        }
+        initializeHubPluginState();
+        setChanged();
     }
 
     private void initializeHubPluginState() {

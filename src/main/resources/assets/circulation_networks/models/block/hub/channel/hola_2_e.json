@@ -1,0 +1,31 @@
+{
+	"credit": "Made with WI_8614_ice X:@wi8614ice @wi8614art QQ:1463599076",
+	"texture_size": [64, 64],
+	"textures": {
+		"15": "circulation_networks:block/node/hub/hub_channel_energy",
+		"particle": "circulation_networks:block/node/hub/hub_ring_band"
+	},
+	"elements": [
+		{
+			"from": [3, 15, 3],
+			"to": [13, 16, 13],
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 16.5, 8]},
+			"faces": {
+				"north": {"uv": [13, 3, 15.5, 3.25], "texture": "#15"},
+				"east": {"uv": [13, 3.5, 15.5, 3.75], "texture": "#15"},
+				"south": {"uv": [13, 4, 15.5, 4.25], "texture": "#15"},
+				"west": {"uv": [6, 12.5, 8.5, 12.75], "texture": "#15"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, 3, 2],
+			"scale": [0.1, 0.1, 0.1]
+		},
+		"gui": {
+			"rotation": [30, 45, 0],
+			"scale": [0.3, 0.3, 0.3]
+		}
+	}
+}

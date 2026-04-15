@@ -26,11 +26,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @SuppressWarnings("deprecation")
 public class MultiblockShellBlock extends Block implements EntityBlock {
@@ -69,6 +71,23 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @NotNull
     public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.INVISIBLE;
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        consumer.accept(new IClientBlockExtensions() {
+            @Override
+            public boolean addHitEffects(BlockState state, Level level, net.minecraft.world.phys.HitResult target,
+                                         net.minecraft.client.particle.ParticleEngine manager) {
+                return true;
+            }
+
+            @Override
+            public boolean addDestroyEffects(BlockState state, Level level, BlockPos pos,
+                                             net.minecraft.client.particle.ParticleEngine manager) {
+                return true;
+            }
+        });
     }
 
     @Override
@@ -244,6 +263,10 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return moved.isEmpty() ? Shapes.block() : moved;
     }
 
+    private static @NotNull VoxelShape emptyShape() {
+        return Shapes.empty();
+    }
+
     @Override
     @NotNull
     public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level,
@@ -262,37 +285,19 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @NotNull
     public VoxelShape getVisualShape(@NotNull BlockState state, @NotNull BlockGetter level,
                                      @NotNull BlockPos pos, @NotNull CollisionContext context) {
-        return proxyShape(level, pos, context, BlockState::getVisualShape);
+        return emptyShape();
     }
 
     @Override
     @NotNull
     public VoxelShape getOcclusionShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = originState.getOcclusionShape(level, originPos);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
+        return emptyShape();
     }
 
     @Override
     @NotNull
     public VoxelShape getBlockSupportShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = originState.getBlockSupportShape(level, originPos);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
+        return emptyShape();
     }
 
     @Override

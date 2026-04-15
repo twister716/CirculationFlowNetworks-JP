@@ -188,7 +188,7 @@ public final class NodeHudRenderingHandler {
         GlStateManager.disableCull();
         GlStateManager.disableDepth();
 
-        float anchorX = 0;
+        float anchorX = 5;
         float anchorY = -HUD_HEIGHT / 2.0f;
 
         AtlasRegion bgRegion = atlas.getRegion("node_hud_base");

@@ -8,6 +8,8 @@ import com.circulation.circulation_networks.packets.ContainerValueConfig;
 import com.circulation.circulation_networks.packets.CreateHubChannel;
 import com.circulation.circulation_networks.packets.DeleteHubChannel;
 import com.circulation.circulation_networks.packets.EnergyWarningRendering;
+import com.circulation.circulation_networks.packets.HubPluginSyncData;
+import com.circulation.circulation_networks.packets.HubPluginSyncRequest;
 import com.circulation.circulation_networks.packets.NodeHudData;
 import com.circulation.circulation_networks.packets.NodeHudRequest;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
@@ -45,6 +47,7 @@ public final class CFNNetwork {
         registerPlayToServer(registrar, UpdateNodeCustomName.class);
         registerPlayToServer(registrar, UpdatePlayerChargingMode.class);
         registerPlayToServer(registrar, NodeHudRequest.class);
+        registerPlayToServer(registrar, HubPluginSyncRequest.class);
 
         registerPlayToClient(registrar, SpoceRendering.class);
         registerPlayToClient(registrar, NodeNetworkRendering.class);
@@ -54,6 +57,7 @@ public final class CFNNetwork {
         registerPlayToClient(registrar, PocketNodeRendering.class);
         registerPlayToClient(registrar, RenderingClear.INSTANCE);
         registerPlayToClient(registrar, NodeHudData.class);
+        registerPlayToClient(registrar, HubPluginSyncData.class);
     }
 
     public static <T extends Packet<T>> void sendToPlayer(T packet, ServerPlayer player) {

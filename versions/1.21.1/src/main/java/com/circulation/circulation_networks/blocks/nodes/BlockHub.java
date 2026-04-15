@@ -1,11 +1,15 @@
 package com.circulation.circulation_networks.blocks.nodes;
 
+import com.circulation.circulation_networks.client.render.HubRenderLayout;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
+import com.circulation.circulation_networks.items.BaseItemTooltipModel;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.tiles.MultiblockShellBlockEntity;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
+import com.circulation.circulation_networks.tooltip.LocalizedComponent;
+import com.circulation.circulation_networks.utils.CI18n;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -16,37 +20,62 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 public final class BlockHub extends BaseNodeBlock {
+
+    private List<LocalizedComponent> cachedHubTooltips;
 
     public BlockHub() {
         super(metalPropertiesNoOcclusion().pushReaction(PushReaction.BLOCK),
             () -> CFNBlockEntityTypes.HUB);
     }
 
-    private static final Long2ObjectMap<List<BlockPos>> positions = new Long2ObjectOpenHashMap<>();
+    private static final Long2ObjectMap<BlockPos[]> positions = new Long2ObjectOpenHashMap<>();
 
-    private static List<BlockPos> shellPositions(BlockPos origin) {
+    private static BlockPos[] shellPositions(BlockPos origin) {
         if (!positions.containsKey(origin.asLong())) {
-            var list = new ObjectArrayList<BlockPos>();
+            var o = HubRenderLayout.shellOffsets();
+            var list = new BlockPos[o.length];
             positions.put(origin.asLong(), list);
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = 0; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) continue;
-                        list.add(origin.offset(dx, dy, dz));
-                    }
-                }
+            for (var i = 0; i < o.length; i++) {
+                var offset = o[i];
+                list[i] = origin.offset(offset.x(), offset.y(), offset.z());
             }
             return list;
         }
         return positions.get(origin.asLong());
+    }
+
+    @Override
+    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    @Override
+    protected List<LocalizedComponent> buildTooltips(ItemStack stack) {
+        if (cachedHubTooltips == null) {
+            String[] tooltipKeys = BaseItemTooltipModel.moveFirstTooltipKeyToEnd(
+                BaseItemTooltipModel.resolveTooltipKeys(getDescriptionId(), CI18n::hasKey)
+            );
+            if (tooltipKeys.length == 0) {
+                cachedHubTooltips = Collections.emptyList();
+            } else {
+                List<LocalizedComponent> result = new ObjectArrayList<>(tooltipKeys.length);
+                for (String key : tooltipKeys) {
+                    result.add(LocalizedComponent.of(key));
+                }
+                cachedHubTooltips = result;
+            }
+        }
+        return cachedHubTooltips;
     }
 
     @Nullable

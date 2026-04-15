@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.ContainerProgressBar;
 import com.circulation.circulation_networks.packets.ContainerValueConfig;
 import com.circulation.circulation_networks.packets.EnergyWarningRendering;
+import com.circulation.circulation_networks.packets.HubPluginSyncData;
 import com.circulation.circulation_networks.packets.NodeHudData;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.PocketNodeRendering;
@@ -27,7 +28,8 @@ final class CFNNetworkPackets {
             ContainerValueConfig.class,
             PocketNodeRendering.class,
             RenderingClear.INSTANCE,
-            NodeHudData.class
+            NodeHudData.class,
+            HubPluginSyncData.class
         );
     }
 }

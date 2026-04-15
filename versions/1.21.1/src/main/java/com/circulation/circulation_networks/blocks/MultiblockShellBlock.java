@@ -28,15 +28,32 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.client.extensions.common.IClientBlockExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 @SuppressWarnings("deprecation")
+@ParametersAreNonnullByDefault
 public class MultiblockShellBlock extends Block implements EntityBlock {
+
+    public static final IClientBlockExtensions PARTICLE_CLIENT_EXTENSIONS = new IClientBlockExtensions() {
+        @Override
+        public boolean addHitEffects(BlockState state, Level level, net.minecraft.world.phys.HitResult target,
+                                     net.minecraft.client.particle.ParticleEngine manager) {
+            return true;
+        }
+
+        @Override
+        public boolean addDestroyEffects(BlockState state, Level level, BlockPos pos,
+                                         net.minecraft.client.particle.ParticleEngine manager) {
+            return true;
+        }
+    };
 
     public MultiblockShellBlock() {
         super(BlockBehaviour.Properties.of()
@@ -48,7 +65,7 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Nullable
-    private static BlockPos getOriginPos(@NotNull BlockGetter level, @NotNull BlockPos shellPos) {
+    private static BlockPos getOriginPos(BlockGetter level, BlockPos shellPos) {
         BlockEntity be = level.getBlockEntity(shellPos);
         if (be instanceof MultiblockShellBlockEntity shell && shell.canRedirect()) {
             return shell.getOriginPos();
@@ -56,55 +73,49 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return null;
     }
 
-    @Nullable
-    private static BlockState getOriginState(@NotNull BlockGetter level, @NotNull BlockPos shellPos) {
-        BlockPos origin = getOriginPos(level, shellPos);
-        return origin != null ? level.getBlockState(origin) : null;
-    }
-
     @Override
     @Nullable
-    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MultiblockShellBlockEntity(pos, state);
     }
 
     @Override
     @NotNull
-    protected RenderShape getRenderShape(@NotNull BlockState state) {
+    protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
     }
 
     @Override
-    protected int getLightBlock(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+    protected int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return 0;
     }
 
     @Override
-    protected boolean propagatesSkylightDown(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+    protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
         return true;
     }
 
     @Override
-    protected float getShadeBrightness(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
         return 1.0F;
     }
 
     @Override
     @NotNull
-    public List<ItemStack> getDrops(@NotNull BlockState state, @NotNull LootParams.Builder builder) {
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         return Collections.emptyList();
     }
 
     @Override
-    protected boolean isPathfindable(@NotNull BlockState state, @NotNull PathComputationType type) {
+    protected boolean isPathfindable(BlockState state, PathComputationType type) {
         return false;
     }
 
     @Override
     @NotNull
-    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level,
-                                               @NotNull BlockPos pos, @NotNull Player player,
-                                               @NotNull BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level,
+                                               BlockPos pos, Player player,
+                                               BlockHitResult hit) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -116,10 +127,10 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
 
     @Override
     @NotNull
-    protected ItemInteractionResult useItemOn(@NotNull ItemStack stack, @NotNull BlockState state,
-                                              @NotNull Level level, @NotNull BlockPos pos,
-                                              @NotNull Player player, @NotNull InteractionHand hand,
-                                              @NotNull BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state,
+                                              Level level, BlockPos pos,
+                                              Player player, InteractionHand hand,
+                                              BlockHitResult hit) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -130,8 +141,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public boolean onDestroyedByPlayer(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                                       @NotNull Player player, boolean willHarvest, @NotNull FluidState fluid) {
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
+                                       Player player, boolean willHarvest, FluidState fluid) {
         if (willHarvest) {
             return true;
         }
@@ -144,8 +155,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
 
     @Override
     @NotNull
-    public BlockState playerWillDestroy(@NotNull Level level, @NotNull BlockPos pos,
-                                        @NotNull BlockState state, @NotNull Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos,
+                                        BlockState state, Player player) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -155,8 +166,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public void playerDestroy(@NotNull Level level, @NotNull Player player, @NotNull BlockPos pos,
-                              @NotNull BlockState state, @Nullable BlockEntity be, @NotNull ItemStack stack) {
+    public void playerDestroy(Level level, Player player, BlockPos pos,
+                              BlockState state, @Nullable BlockEntity be, ItemStack stack) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null && !level.isEmptyBlock(originPos)) {
             BlockState originState = level.getBlockState(originPos);
@@ -169,8 +180,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void spawnAfterBreak(@NotNull BlockState state, @NotNull ServerLevel level, @NotNull BlockPos pos,
-                                   @NotNull ItemStack stack, boolean dropExperience) {
+    protected void spawnAfterBreak(BlockState state, ServerLevel level, BlockPos pos,
+                                   ItemStack stack, boolean dropExperience) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -180,8 +191,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                            @NotNull BlockState newState, boolean movedByPiston) {
+    protected void onRemove(BlockState state, Level level, BlockPos pos,
+                            BlockState newState, boolean movedByPiston) {
         if (state.is(newState.getBlock())) return;
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null && !level.isEmptyBlock(originPos)) {
@@ -191,8 +202,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void onExplosionHit(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                                  @NotNull Explosion explosion, @NotNull BiConsumer<ItemStack, BlockPos> dropConsumer) {
+    protected void onExplosionHit(BlockState state, Level level, BlockPos pos,
+                                  Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null && !level.isEmptyBlock(originPos)) {
             BlockState originState = level.getBlockState(originPos);
@@ -205,7 +216,7 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
 
     @Override
     @NotNull
-    public ItemStack getCloneItemStack(@NotNull LevelReader level, @NotNull BlockPos pos, @NotNull BlockState state) {
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -215,8 +226,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected float getDestroyProgress(@NotNull BlockState state, @NotNull Player player,
-                                       @NotNull BlockGetter level, @NotNull BlockPos pos) {
+    protected float getDestroyProgress(BlockState state, Player player,
+                                       BlockGetter level, BlockPos pos) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -226,8 +237,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public float getExplosionResistance(@NotNull BlockState state, @NotNull BlockGetter level,
-                                        @NotNull BlockPos pos, @NotNull Explosion explosion) {
+    public float getExplosionResistance(BlockState state, BlockGetter level,
+                                        BlockPos pos, Explosion explosion) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -237,8 +248,8 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                                   @NotNull Block neighborBlock, @NotNull BlockPos neighborPos, boolean isMoving) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos,
+                                   Block neighborBlock, BlockPos neighborPos, boolean isMoving) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -247,12 +258,12 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected boolean hasAnalogOutputSignal(@NotNull BlockState state) {
+    protected boolean hasAnalogOutputSignal(BlockState state) {
         return true;
     }
 
     @Override
-    protected int getAnalogOutputSignal(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos) {
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos != null) {
             BlockState originState = level.getBlockState(originPos);
@@ -274,60 +285,46 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return moved.isEmpty() ? Shapes.block() : moved;
     }
 
+    private static @NotNull VoxelShape emptyShape() {
+        return Shapes.empty();
+    }
+
     @Override
     @NotNull
-    protected VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level,
-                                  @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    protected VoxelShape getShape(BlockState state, BlockGetter level,
+                                  BlockPos pos, CollisionContext context) {
         return proxyShape(level, pos, context, BlockState::getShape);
     }
 
     @Override
     @NotNull
-    protected VoxelShape getCollisionShape(@NotNull BlockState state, @NotNull BlockGetter level,
-                                           @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                                           BlockPos pos, CollisionContext context) {
         return proxyShape(level, pos, context, BlockState::getCollisionShape);
     }
 
     @Override
     @NotNull
-    protected VoxelShape getVisualShape(@NotNull BlockState state, @NotNull BlockGetter level,
-                                        @NotNull BlockPos pos, @NotNull CollisionContext context) {
-        return proxyShape(level, pos, context, BlockState::getVisualShape);
+    protected VoxelShape getVisualShape(BlockState state, BlockGetter level,
+                                        BlockPos pos, CollisionContext context) {
+        return emptyShape();
     }
 
     @Override
     @NotNull
-    protected VoxelShape getOcclusionShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = originState.getOcclusionShape(level, originPos);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return emptyShape();
     }
 
     @Override
     @NotNull
-    protected VoxelShape getBlockSupportShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = originState.getBlockSupportShape(level, originPos);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
+    protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return emptyShape();
     }
 
     @Override
     @NotNull
-    protected VoxelShape getInteractionShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos) {
+    protected VoxelShape getInteractionShape(BlockState state, BlockGetter level, BlockPos pos) {
         BlockPos originPos = getOriginPos(level, pos);
         if (originPos == null) return Shapes.block();
         BlockState originState = level.getBlockState(originPos);
@@ -341,7 +338,7 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected boolean canBeReplaced(@NotNull BlockState state, @NotNull BlockPlaceContext context) {
+    protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         BlockPos origin = getOriginPos(context.getLevel(), context.getClickedPos());
         return origin == null;
     }

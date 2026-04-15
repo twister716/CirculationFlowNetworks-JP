@@ -25,4 +25,14 @@ public final class BaseItemTooltipModel {
         }
         return keys.isEmpty() ? EMPTY_TOOLTIPS : keys.toArray(EMPTY_TOOLTIPS);
     }
+
+    public static String[] moveFirstTooltipKeyToEnd(String[] tooltipKeys) {
+        if (tooltipKeys.length <= 1) {
+            return tooltipKeys.clone();
+        }
+        String[] reordered = new String[tooltipKeys.length];
+        System.arraycopy(tooltipKeys, 1, reordered, 0, tooltipKeys.length - 1);
+        reordered[tooltipKeys.length - 1] = tooltipKeys[0];
+        return reordered;
+    }
 }

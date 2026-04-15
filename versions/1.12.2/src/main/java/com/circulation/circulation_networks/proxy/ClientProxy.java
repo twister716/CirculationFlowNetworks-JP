@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.proxy;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.client.render.AnimatedNodeItemStackRenderer;
 import com.circulation.circulation_networks.client.render.ChargingNodeRotatingRenderer;
+import com.circulation.circulation_networks.client.render.HubRotatingRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRotatingRenderer;
 import com.circulation.circulation_networks.client.render.PortNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRotatingRenderer;
@@ -29,6 +30,7 @@ import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
 import com.circulation.circulation_networks.tiles.TileEntityNodePedestal;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityChargingNode;
+import com.circulation.circulation_networks.tiles.nodes.TileEntityHub;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityPortNode;
 import com.circulation.circulation_networks.tiles.nodes.TileEntityRelayNode;
 import com.circulation.circulation_networks.utils.CI18n;
@@ -111,6 +113,7 @@ public final class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityRelayNode.class, new RelayNodeRotatingRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityChargingNode.class, new ChargingNodeRotatingRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityPortNode.class, new PortNodeRotatingRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityHub.class, new HubRotatingRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityNodePedestal.class, new NodePedestalRotatingRenderer());
         AnimatedNodeItemStackRenderer.bindItemRenderers();
         openGLLevel = detectOpenGLLevel();
@@ -152,6 +155,8 @@ public final class ClientProxy extends CommonProxy {
         ComponentAtlas.INSTANCE.dispose();
         RotatingModelRenderHelper.clearDisplayLists();
         RotatingBlockModelCache.clear();
+        // 1.12.2 bakes hub sub-models on demand, so their dynamic-only sprites must be stitched explicitly.
+        RotatingBlockModelCache.registerAdditionalSprites(event.getMap());
     }
 
     @SubscribeEvent

@@ -83,7 +83,14 @@ public final class RotatingModelRenderHelper {
         BlockPos immutablePos = pos.toImmutable();
         removeDisplayLists(NO_DIFFUSE_DISPLAY_LISTS, worldId, immutablePos);
         removeDisplayLists(NORMAL_DISPLAY_LISTS, worldId, immutablePos);
-        LIGHT_SIGNATURES.remove(new LightSignatureKey(worldId, immutablePos));
+        var lightIter = LIGHT_SIGNATURES.entrySet().iterator();
+        while (lightIter.hasNext()) {
+            var entry = lightIter.next();
+            LightSignatureKey key = entry.getKey();
+            if (key.worldId == worldId && key.pos.equals(immutablePos)) {
+                lightIter.remove();
+            }
+        }
     }
 
     /**
@@ -105,13 +112,14 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel model,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
         double blockZ
     ) {
-        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
+        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos().toImmutable(), lightSamplePos.toImmutable(), modelLocation);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state, lightSamplePos);
         CachedDisplayList cached = NO_DIFFUSE_DISPLAY_LISTS.get(key);
         if (cached == null || cached.lightSignature != lightSignature) {
             if (cached != null && cached.id > 0) {
@@ -125,6 +133,7 @@ public final class RotatingModelRenderHelper {
                 model,
                 state,
                 tileEntity,
+                lightSamplePos,
                 renderLayer,
                 blockX,
                 blockY,
@@ -145,13 +154,14 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel model,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
         double blockZ
     ) {
-        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos(), modelLocation);
-        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state);
+        NoDiffuseDisplayListKey key = new NoDiffuseDisplayListKey(System.identityHashCode(tileEntity.getWorld()), tileEntity.getPos().toImmutable(), lightSamplePos.toImmutable(), modelLocation);
+        int lightSignature = resolveNoDiffuseLightSignature(tileEntity, state, lightSamplePos);
         CachedDisplayList cached = NORMAL_DISPLAY_LISTS.get(key);
         if (cached == null || cached.lightSignature != lightSignature) {
             if (cached != null && cached.id > 0) {
@@ -165,6 +175,7 @@ public final class RotatingModelRenderHelper {
                 model,
                 state,
                 tileEntity,
+                lightSamplePos,
                 renderLayer,
                 blockX,
                 blockY,
@@ -185,6 +196,7 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel model,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
@@ -192,7 +204,7 @@ public final class RotatingModelRenderHelper {
     ) {
         int displayList = FULL_BRIGHT_DISPLAY_LISTS.computeIfAbsent(
             modelLocation,
-            ignored -> compileFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ)
+            ignored -> compileFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ)
         );
         GlStateManager.callList(displayList);
     }
@@ -205,6 +217,7 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel model,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
@@ -213,25 +226,25 @@ public final class RotatingModelRenderHelper {
         int displayList = GLAllocation.generateDisplayLists(1);
         GlStateManager.glNewList(displayList, GL11.GL_COMPILE);
         try {
-            renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+            renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
         } finally {
             GlStateManager.glEndList();
         }
         return displayList;
     }
 
-    private static int resolveNoDiffuseLightSignature(@NotNull TileEntity tileEntity, @NotNull IBlockState state) {
+    private static int resolveNoDiffuseLightSignature(@NotNull TileEntity tileEntity, @NotNull IBlockState state, @NotNull BlockPos lightSamplePos) {
         BlockPos pos = tileEntity.getPos().toImmutable();
         int worldId = System.identityHashCode(tileEntity.getWorld());
         long worldTime = tileEntity.getWorld().getTotalWorldTime();
         int stateHash = state.hashCode();
-        LightSignatureKey key = new LightSignatureKey(worldId, pos);
+        LightSignatureKey key = new LightSignatureKey(worldId, pos, lightSamplePos.toImmutable());
         CachedLightSignature cached = LIGHT_SIGNATURES.get(key);
         if (cached != null && cached.worldTime == worldTime && cached.stateHash == stateHash) {
             return cached.signature;
         }
 
-        int signature = computeNoDiffuseLightSignature(tileEntity, state, pos);
+        int signature = computeNoDiffuseLightSignature(tileEntity, state, lightSamplePos);
         LIGHT_SIGNATURES.put(key, new CachedLightSignature(worldTime, stateHash, signature));
         return signature;
     }
@@ -257,6 +270,7 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel model,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
@@ -289,6 +303,7 @@ public final class RotatingModelRenderHelper {
         @NotNull IBakedModel damageModel,
         @NotNull IBlockState state,
         @NotNull TileEntity tileEntity,
+        @NotNull BlockPos lightSamplePos,
         @NotNull BlockRenderLayer renderLayer,
         double blockX,
         double blockY,
@@ -359,11 +374,17 @@ public final class RotatingModelRenderHelper {
         private final BufferBuilder buffer;
         private final BlockRenderLayer renderLayer;
         private final double blockX, blockY, blockZ;
-        private final FullBrightBlockAccess fullBrightAccess;
+        private final LightSamplingBlockAccess fullBrightAccess;
+        private final BlockPos renderPos;
+        private @Nullable BlockPos remappedLightSamplePos;
+        private @Nullable LightSamplingBlockAccess remappedLightAccess;
+        private @Nullable BlockPos remappedFullBrightSamplePos;
+        private @Nullable LightSamplingBlockAccess remappedFullBrightAccess;
 
         private RenderBatch(@NotNull TileEntity tileEntity, double x, double y, double z, int destroyStage) {
             this.tileEntity = tileEntity;
-            this.state = tileEntity.getWorld().getBlockState(tileEntity.getPos());
+            this.renderPos = tileEntity.getPos().toImmutable();
+            this.state = tileEntity.getWorld().getBlockState(renderPos);
             this.x = x;
             this.y = y;
             this.z = z;
@@ -372,14 +393,13 @@ public final class RotatingModelRenderHelper {
             this.tessellator = Tessellator.getInstance();
             this.buffer = tessellator.getBuffer();
             this.renderLayer = state.getBlock().getRenderLayer();
-            BlockPos pos = tileEntity.getPos();
-            this.blockX = pos.getX();
-            this.blockY = pos.getY();
-            this.blockZ = pos.getZ();
-            this.fullBrightAccess = new FullBrightBlockAccess(tileEntity.getWorld());
+            this.blockX = renderPos.getX();
+            this.blockY = renderPos.getY();
+            this.blockZ = renderPos.getZ();
+            this.fullBrightAccess = new LightSamplingBlockAccess(tileEntity.getWorld(), renderPos, renderPos, true);
 
             boolean smoothShading = Minecraft.isAmbientOcclusionEnabled()
-                && state.getLightValue(tileEntity.getWorld(), pos) == 0;
+                && state.getLightValue(tileEntity.getWorld(), renderPos) == 0;
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             RenderHelper.disableStandardItemLighting();
             GlStateManager.enableRescaleNormal();
@@ -390,8 +410,23 @@ public final class RotatingModelRenderHelper {
             minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         }
 
+        public TileEntity getTileEntity() {
+            return tileEntity;
+        }
+
         public void renderAroundYAxisFullBright(@NotNull ResourceLocation modelLocation, float angle, float pivotX, float pivotY, float pivotZ) {
             renderAroundAxis(modelLocation, angle, pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F, true, false);
+        }
+
+        public void renderAroundYAxisFullBright(
+            @NotNull ResourceLocation modelLocation,
+            float angle,
+            float pivotX,
+            float pivotY,
+            float pivotZ,
+            @NotNull BlockPos lightSamplePos
+        ) {
+            renderAroundAxis(modelLocation, angle, pivotX, pivotY, pivotZ, 0.0F, 1.0F, 0.0F, true, false, lightSamplePos);
         }
 
         public void renderAroundAxis(
@@ -406,7 +441,23 @@ public final class RotatingModelRenderHelper {
             boolean fullBright,
             boolean noDiffuse
         ) {
-            IBlockAccess lightAccess = fullBright ? fullBrightAccess : tileEntity.getWorld();
+            renderAroundAxis(modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ, fullBright, noDiffuse, renderPos);
+        }
+
+        public void renderAroundAxis(
+            @NotNull ResourceLocation modelLocation,
+            float angle,
+            float pivotX,
+            float pivotY,
+            float pivotZ,
+            float axisX,
+            float axisY,
+            float axisZ,
+            boolean fullBright,
+            boolean noDiffuse,
+            @NotNull BlockPos lightSamplePos
+        ) {
+            IBlockAccess lightAccess = resolveLightAccess(fullBright, lightSamplePos);
             IBakedModel baseModel = RotatingBlockModelCache.get(modelLocation);
             IBakedModel model = fullBright
                 ? toFullBrightModel(baseModel)
@@ -419,21 +470,42 @@ public final class RotatingModelRenderHelper {
             GlStateManager.translate(-pivotX, -pivotY, -pivotZ);
 
             if (fullBright && destroyStage < 0) {
-                renderFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, modelLocation, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+                renderFullBrightDisplayList(minecraft, tessellator, buffer, lightAccess, modelLocation, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
             } else if (noDiffuse && destroyStage < 0) {
-                renderNoDiffuseDisplayList(minecraft, tessellator, buffer, modelLocation, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+                renderNoDiffuseDisplayList(minecraft, tessellator, buffer, modelLocation, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
             } else if (destroyStage < 0) {
-                renderNormalDisplayList(minecraft, tessellator, buffer, lightAccess, modelLocation, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+                renderNormalDisplayList(minecraft, tessellator, buffer, lightAccess, modelLocation, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
             } else {
-                renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+                renderModelPass(minecraft, tessellator, buffer, lightAccess, model, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
             }
 
             IBakedModel damageModel = createDamageModel(model, state, tileEntity, destroyStage);
             if (damageModel != null) {
-                renderDamagePass(minecraft, tessellator, buffer, lightAccess, damageModel, state, tileEntity, renderLayer, blockX, blockY, blockZ);
+                renderDamagePass(minecraft, tessellator, buffer, lightAccess, damageModel, state, tileEntity, lightSamplePos, renderLayer, blockX, blockY, blockZ);
             }
 
             GlStateManager.popMatrix();
+        }
+
+        private IBlockAccess resolveLightAccess(boolean fullBright, @NotNull BlockPos lightSamplePos) {
+            if (fullBright) {
+                if (lightSamplePos.equals(renderPos)) {
+                    return fullBrightAccess;
+                }
+                if (remappedFullBrightAccess == null || remappedFullBrightSamplePos == null || !remappedFullBrightSamplePos.equals(lightSamplePos)) {
+                    remappedFullBrightSamplePos = lightSamplePos.toImmutable();
+                    remappedFullBrightAccess = new LightSamplingBlockAccess(tileEntity.getWorld(), renderPos, remappedFullBrightSamplePos, true);
+                }
+                return remappedFullBrightAccess;
+            }
+            if (lightSamplePos.equals(renderPos)) {
+                return tileEntity.getWorld();
+            }
+            if (remappedLightAccess == null || remappedLightSamplePos == null || !remappedLightSamplePos.equals(lightSamplePos)) {
+                remappedLightSamplePos = lightSamplePos.toImmutable();
+                remappedLightAccess = new LightSamplingBlockAccess(tileEntity.getWorld(), renderPos, remappedLightSamplePos, false);
+            }
+            return remappedLightAccess;
         }
 
         public void end() {
@@ -446,36 +518,44 @@ public final class RotatingModelRenderHelper {
 
     @Desugar
     @ParametersAreNonnullByDefault
-    private record FullBrightBlockAccess(IBlockAccess delegate) implements IBlockAccess {
+    private record LightSamplingBlockAccess(IBlockAccess delegate, BlockPos renderPos, BlockPos samplePos, boolean fullBright) implements IBlockAccess {
+
+        private BlockPos remap(BlockPos pos) {
+            return pos.add(
+                samplePos.getX() - renderPos.getX(),
+                samplePos.getY() - renderPos.getY(),
+                samplePos.getZ() - renderPos.getZ()
+            );
+        }
 
         @Override
         public @Nullable TileEntity getTileEntity(BlockPos pos) {
-            return delegate.getTileEntity(pos);
+            return delegate.getTileEntity(remap(pos));
         }
 
         @Override
         public int getCombinedLight(BlockPos pos, int lightValue) {
-            return FULL_BRIGHT_LIGHTMAP;
+            return fullBright ? FULL_BRIGHT_LIGHTMAP : delegate.getCombinedLight(remap(pos), lightValue);
         }
 
         @Override
         public IBlockState getBlockState(BlockPos pos) {
-            return delegate.getBlockState(pos);
+            return delegate.getBlockState(remap(pos));
         }
 
         @Override
         public boolean isAirBlock(BlockPos pos) {
-            return delegate.isAirBlock(pos);
+            return delegate.isAirBlock(remap(pos));
         }
 
         @Override
         public Biome getBiome(BlockPos pos) {
-            return delegate.getBiome(pos);
+            return delegate.getBiome(remap(pos));
         }
 
         @Override
         public int getStrongPower(BlockPos pos, EnumFacing direction) {
-            return delegate.getStrongPower(pos, direction);
+            return delegate.getStrongPower(remap(pos), direction);
         }
 
         @Override
@@ -485,7 +565,7 @@ public final class RotatingModelRenderHelper {
 
         @Override
         public boolean isSideSolid(BlockPos pos, EnumFacing side, boolean _default) {
-            return delegate.isSideSolid(pos, side, _default);
+            return delegate.isSideSolid(remap(pos), side, _default);
         }
     }
 
@@ -555,10 +635,10 @@ public final class RotatingModelRenderHelper {
 
     @Desugar
     private record NoDiffuseDisplayListKey(int worldId, BlockPos pos,
-                                           ResourceLocation modelLocation) {
+                                           BlockPos lightSamplePos, ResourceLocation modelLocation) {
     }
 
     @Desugar
-    private record LightSignatureKey(int worldId, BlockPos pos) {
+    private record LightSignatureKey(int worldId, BlockPos pos, BlockPos lightSamplePos) {
     }
 }

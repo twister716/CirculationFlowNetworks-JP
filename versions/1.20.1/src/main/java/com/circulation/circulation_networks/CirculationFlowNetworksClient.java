@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks;
 
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
+import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
@@ -72,6 +73,7 @@ final class CirculationFlowNetworksClient {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.CHARGING_NODE, ChargingNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.PORT_NODE, PortNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.HUB, HubRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.NODE_PEDESTAL, NodePedestalRenderer::new);
         });
 

@@ -6,6 +6,7 @@ import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -20,10 +21,15 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import static com.circulation.circulation_networks.CirculationFlowNetworks.MOD_ID;
 
 @SuppressWarnings("deprecation")
+@ParametersAreNonnullByDefault
 public class MultiblockShellBlock extends Block {
 
     public MultiblockShellBlock() {
@@ -36,7 +42,7 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Nullable
-    private static BlockPos getOriginPos(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
+    private static BlockPos getOriginPos(IBlockAccess world, BlockPos shellPos) {
         TileEntity te = world.getTileEntity(shellPos);
         if (te instanceof TileEntityMultiblockShell shell && shell.canRedirect()) {
             return shell.getOriginPos();
@@ -45,46 +51,68 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Nullable
-    private static IBlockState getOriginState(@NotNull IBlockAccess world, @NotNull BlockPos shellPos) {
+    private static IBlockState getOriginState(IBlockAccess world, BlockPos shellPos) {
         BlockPos origin = getOriginPos(world, shellPos);
         return origin != null ? world.getBlockState(origin) : null;
     }
 
     @Override
-    public boolean hasTileEntity(@NotNull IBlockState state) {
+    public boolean hasTileEntity(IBlockState state) {
         return true;
     }
 
     @Override
     @NotNull
-    public TileEntity createTileEntity(@NotNull World world, @NotNull IBlockState state) {
+    public TileEntity createTileEntity(World world, IBlockState state) {
         return new TileEntityMultiblockShell();
     }
 
     @Override
-    public boolean isOpaqueCube(@NotNull IBlockState state) {
+    public boolean isOpaqueCube(IBlockState state) {
         return false;
     }
 
     @Override
-    public boolean isFullCube(@NotNull IBlockState state) {
+    public boolean isFullCube(IBlockState state) {
         return false;
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public boolean addHitEffects(IBlockState state, World world, RayTraceResult target, ParticleManager manager) {
+        return true;
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public boolean addDestroyEffects(World world, BlockPos pos, ParticleManager manager) {
+        return true;
+    }
+
+    @Override
+    public int getLightOpacity(IBlockState state, IBlockAccess world, BlockPos pos) {
+        return 0;
+    }
+
+    @Override
+    public float getAmbientOcclusionLightValue(IBlockState state) {
+        return 1.0F;
     }
 
     @Override
     @NotNull
-    public EnumBlockRenderType getRenderType(@NotNull IBlockState state) {
+    public EnumBlockRenderType getRenderType(IBlockState state) {
         return EnumBlockRenderType.INVISIBLE;
     }
 
     @Override
     @NotNull
-    public EnumPushReaction getPushReaction(@NotNull IBlockState state) {
+    public EnumPushReaction getPushReaction(IBlockState state) {
         return EnumPushReaction.BLOCK;
     }
 
     @Override
-    public boolean canPlaceBlockAt(@NotNull World worldIn, @NotNull BlockPos pos) {
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
         return false;
     }
 
@@ -94,8 +122,8 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public boolean onBlockActivated(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state,
-                                    @NotNull EntityPlayer playerIn, @NotNull EnumHand hand, @NotNull EnumFacing facing,
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state,
+                                    EntityPlayer playerIn, EnumHand hand, EnumFacing facing,
                                     float hitX, float hitY, float hitZ) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null) {
@@ -106,8 +134,8 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public boolean removedByPlayer(@NotNull IBlockState state, @NotNull World world, @NotNull BlockPos pos,
-                                   @NotNull EntityPlayer player, boolean willHarvest) {
+    public boolean removedByPlayer(IBlockState state, World world, BlockPos pos,
+                                   EntityPlayer player, boolean willHarvest) {
         if (willHarvest) {
             return true;
         }
@@ -119,15 +147,15 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public void harvestBlock(@NotNull World worldIn, @NotNull EntityPlayer player, @NotNull BlockPos pos,
-                             @NotNull IBlockState state, @Nullable TileEntity te, @NotNull ItemStack stack) {
+    public void harvestBlock(World worldIn, EntityPlayer player, BlockPos pos,
+                             IBlockState state, @Nullable TileEntity te, ItemStack stack) {
         super.harvestBlock(worldIn, player, pos, state, te, stack);
         worldIn.setBlockToAir(pos);
     }
 
     @Override
-    public void getDrops(@NotNull NonNullList<ItemStack> drops, @NotNull IBlockAccess world, @NotNull BlockPos pos,
-                         @NotNull IBlockState state, int fortune) {
+    public void getDrops(NonNullList<ItemStack> drops, IBlockAccess world, BlockPos pos,
+                         IBlockState state, int fortune) {
         BlockPos originPos = getOriginPos(world, pos);
         if (originPos != null) {
             IBlockState originState = world.getBlockState(originPos);
@@ -136,7 +164,7 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public void breakBlock(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state) {
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null && !worldIn.isAirBlock(originPos)) {
             worldIn.setBlockToAir(originPos);
@@ -145,8 +173,8 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public float getPlayerRelativeBlockHardness(@NotNull IBlockState state, @NotNull EntityPlayer player,
-                                                @NotNull World worldIn, @NotNull BlockPos pos) {
+    public float getPlayerRelativeBlockHardness(IBlockState state, EntityPlayer player,
+                                                World worldIn, BlockPos pos) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null) {
             IBlockState originState = worldIn.getBlockState(originPos);
@@ -157,8 +185,8 @@ public class MultiblockShellBlock extends Block {
 
     @Override
     @NotNull
-    public ItemStack getPickBlock(@NotNull IBlockState state, @NotNull RayTraceResult target,
-                                  @NotNull World world, @NotNull BlockPos pos, @NotNull EntityPlayer player) {
+    public ItemStack getPickBlock(IBlockState state, RayTraceResult target,
+                                  World world, BlockPos pos, EntityPlayer player) {
         BlockPos originPos = getOriginPos(world, pos);
         if (originPos != null) {
             IBlockState originState = world.getBlockState(originPos);
@@ -168,8 +196,8 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public void neighborChanged(@NotNull IBlockState state, @NotNull World worldIn, @NotNull BlockPos pos,
-                                @NotNull Block blockIn, @NotNull BlockPos fromPos) {
+    public void neighborChanged(IBlockState state, World worldIn, BlockPos pos,
+                                Block blockIn, BlockPos fromPos) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null) {
             IBlockState originState = worldIn.getBlockState(originPos);
@@ -178,12 +206,12 @@ public class MultiblockShellBlock extends Block {
     }
 
     @Override
-    public boolean hasComparatorInputOverride(@NotNull IBlockState state) {
+    public boolean hasComparatorInputOverride(IBlockState state) {
         return true;
     }
 
     @Override
-    public int getComparatorInputOverride(@NotNull IBlockState state, @NotNull World worldIn, @NotNull BlockPos pos) {
+    public int getComparatorInputOverride(IBlockState state, World worldIn, BlockPos pos) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null) {
             IBlockState originState = worldIn.getBlockState(originPos);
@@ -194,8 +222,8 @@ public class MultiblockShellBlock extends Block {
 
     @Override
     @NotNull
-    public BlockFaceShape getBlockFaceShape(@NotNull IBlockAccess worldIn, @NotNull IBlockState state,
-                                            @NotNull BlockPos pos, @NotNull EnumFacing face) {
+    public BlockFaceShape getBlockFaceShape(IBlockAccess worldIn, IBlockState state,
+                                            BlockPos pos, EnumFacing face) {
         BlockPos originPos = getOriginPos(worldIn, pos);
         if (originPos != null) {
             IBlockState originState = worldIn.getBlockState(originPos);

@@ -190,7 +190,7 @@ public final class NodeHudRenderingHandler {
         RenderSystem.disableCull();
         RenderSystem.disableDepthTest();
 
-        float anchorX = 0;
+        float anchorX = 5;
         float anchorY = -HUD_HEIGHT / 2.0f;
 
         AtlasRegion bgRegion = atlas.getRegion("node_hud_base");

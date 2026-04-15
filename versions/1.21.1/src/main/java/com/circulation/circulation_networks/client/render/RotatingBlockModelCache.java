@@ -45,6 +45,32 @@ public final class RotatingBlockModelCache {
     public static final ResourceLocation CHARGING_STATIC = register("charging_node/charging_node");
     public static final ResourceLocation PORT_STATIC = register("port_node/port_node");
     public static final ResourceLocation PEDESTAL_STATIC = register("node_pedestal/node_pedestal");
+    // Hub sub-part models
+    public static final ResourceLocation HUB_BASE = register(HubRenderLayout.HUB_BASE_MODEL);
+    public static final ResourceLocation HUB_EMISSIVE = register(HubRenderLayout.HUB_EMISSIVE_MODEL);
+    public static final ResourceLocation HUB_CRYSTAL = register(HubRenderLayout.HUB_CRYSTAL_MODEL);
+    public static final ResourceLocation HUB_RING_UP_BASE = register(HubRenderLayout.RING_UP_BASE_MODEL);
+    public static final ResourceLocation HUB_RING_UP_EMISSIVE = register(HubRenderLayout.RING_UP_EMISSIVE_MODEL);
+    public static final ResourceLocation HUB_RING_DOWN_BASE = register(HubRenderLayout.RING_DOWN_BASE_MODEL);
+    public static final ResourceLocation HUB_RING_DOWN_EMISSIVE = register(HubRenderLayout.RING_DOWN_EMISSIVE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_TOP_INSIDE = register(HubRenderLayout.CHANNEL_BEACON_TOP_INSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_TOP_OUTSIDE = register(HubRenderLayout.CHANNEL_BEACON_TOP_OUTSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_MID_INSIDE = register(HubRenderLayout.CHANNEL_BEACON_MID_INSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_MID_OUTSIDE = register(HubRenderLayout.CHANNEL_BEACON_MID_OUTSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_DOWN_INSIDE = register(HubRenderLayout.CHANNEL_BEACON_DOWN_INSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_BEACON_DOWN_OUTSIDE = register(HubRenderLayout.CHANNEL_BEACON_DOWN_OUTSIDE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_HOLA_TOP = register(HubRenderLayout.CHANNEL_HOLA_TOP_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_HOLA_MIDDLE = register(HubRenderLayout.CHANNEL_HOLA_MIDDLE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_HOLA_BOTTOM = register(HubRenderLayout.CHANNEL_HOLA_BOTTOM_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_RING_AERIALS_BASE = register(HubRenderLayout.CHANNEL_RING_AERIALS_BASE_MODEL);
+    public static final ResourceLocation HUB_CHANNEL_RING_AERIALS_EMISSIVE = register(HubRenderLayout.CHANNEL_RING_AERIALS_EMISSIVE_MODEL);
+    public static final ResourceLocation HUB_EMPTY_PLUGIN = register(HubRenderLayout.EMPTY_PLUGIN_MODEL);
+    public static final ResourceLocation HUB_DEFAULT_PLUGIN_0 = register(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "0");
+    public static final ResourceLocation HUB_DEFAULT_PLUGIN_1 = register(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "1");
+    public static final ResourceLocation HUB_DEFAULT_PLUGIN_2 = register(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "2");
+    public static final ResourceLocation HUB_DEFAULT_PLUGIN_3 = register(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "3");
+    public static final ResourceLocation HUB_PLUGIN_WIDE_AREA = register(HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
+    public static final ResourceLocation HUB_PLUGIN_DIMENSIONAL = register(HubRenderLayout.DIMENSIONAL_PLUGIN_MODEL);
     private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 
     private RotatingBlockModelCache() {

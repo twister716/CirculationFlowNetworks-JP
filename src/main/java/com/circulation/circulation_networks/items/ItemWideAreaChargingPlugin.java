@@ -1,9 +1,16 @@
 package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
+import com.circulation.circulation_networks.client.render.HubRenderLayout;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
-//~ mc_imports
+//? if <1.20 {
+import net.minecraft.util.ResourceLocation;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
+
+import org.jetbrains.annotations.Nullable;
 
 public class ItemWideAreaChargingPlugin extends BaseItem implements IHubPlugin {
 
@@ -21,5 +28,14 @@ public class ItemWideAreaChargingPlugin extends BaseItem implements IHubPlugin {
     @Override
     public HubPluginCapability<?> getCapability() {
         return HubCapabilitys.CHARGE_CAPABILITY;
+    }
+
+    @Override
+    public @Nullable ResourceLocation getHubModelLocation() {
+        //? if <1.21 {
+        return new ResourceLocation("circulation_networks", "block/" + HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
+        //?} else {
+        /*return ResourceLocation.fromNamespaceAndPath("circulation_networks", "block/" + HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
+        *///?}
     }
 }

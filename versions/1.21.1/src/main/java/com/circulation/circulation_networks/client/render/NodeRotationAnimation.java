@@ -7,6 +7,8 @@ public final class NodeRotationAnimation {
     private static final float RELAY_TOP_SPIRAL_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(10.0F);
     private static final float RELAY_CRYSTAL_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(40.0F);
     private static final float RELAY_RING_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(10.0F);
+    private static final float HUB_CRYSTAL_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(20.0F);
+    private static final float HUB_ROTATION_DEGREES_PER_TICK = degreesPerTickForPeriodSeconds(10.0F);
     private static final float PEDESTAL_ROTATION_DEGREES_PER_TICK = 1.25F;
 
     private static final float BOBBING_PERIOD_TICKS = 80.0F;
@@ -29,6 +31,50 @@ public final class NodeRotationAnimation {
 
     public static float relayBottomSpiralAngle(long worldTime, float partialTicks) {
         return counterClockwiseDegrees(worldTime, partialTicks, RELAY_TOP_SPIRAL_DEGREES_PER_TICK);
+    }
+
+    public static float hubCrystalAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_CRYSTAL_DEGREES_PER_TICK);
+    }
+
+    public static float hubUpperRingAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubLowerRingAngle(long worldTime, float partialTicks) {
+        return counterClockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubChannelTopAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubChannelMiddleAngle(long worldTime, float partialTicks) {
+        return counterClockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubChannelBottomAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubChannelAerialAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubClockwisePluginAngle(long worldTime, float partialTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubCounterClockwisePluginAngle(long worldTime, float partialTicks) {
+        return counterClockwiseDegrees(worldTime, partialTicks, HUB_ROTATION_DEGREES_PER_TICK);
+    }
+
+    public static float hubClockwisePluginAngle(long worldTime, float partialTicks, int rotationPeriodTicks) {
+        return clockwiseDegrees(worldTime, partialTicks, degreesPerTickForPeriodTicks(rotationPeriodTicks));
+    }
+
+    public static float hubCounterClockwisePluginAngle(long worldTime, float partialTicks, int rotationPeriodTicks) {
+        return counterClockwiseDegrees(worldTime, partialTicks, degreesPerTickForPeriodTicks(rotationPeriodTicks));
     }
 
     public static float pedestalClockwiseFrameAngle(long worldTime, float partialTicks) {
@@ -72,5 +118,9 @@ public final class NodeRotationAnimation {
 
     private static float degreesPerTickForPeriodSeconds(float secondsPerRotation) {
         return DEGREES_PER_ROTATION / (secondsPerRotation * TICKS_PER_SECOND);
+    }
+
+    private static float degreesPerTickForPeriodTicks(int ticksPerRotation) {
+        return DEGREES_PER_ROTATION / ticksPerRotation;
     }
 }

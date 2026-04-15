@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks;
 
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
+import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
@@ -10,6 +11,7 @@ import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
 import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;
@@ -84,6 +86,7 @@ final class CirculationFlowNetworksClient {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.CHARGING_NODE, ChargingNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.PORT_NODE, PortNodeRenderer::new);
+            event.registerBlockEntityRenderer(CFNBlockEntityTypes.HUB, HubRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.NODE_PEDESTAL, NodePedestalRenderer::new);
         });
 
@@ -176,6 +179,7 @@ final class CirculationFlowNetworksClient {
             CFNBlocks.blockPortNode.asItem(),
             CFNBlocks.blockNodePedestal.asItem()
         );
+        event.registerBlock(MultiblockShellBlock.PARTICLE_CLIENT_EXTENSIONS, CFNBlocks.blockMultiblockShell);
     }
 
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
