@@ -67,7 +67,9 @@ import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.node.INode;
 
-// Register a custom energy handler manager (must be called before postInit)
+// Register a custom energy handler manager
+// 1.12.2: call during init, before the postInit lock
+// 1.20.1 / 1.21.1: call during mod construction and common registration, before the FMLLoadCompleteEvent lock
 API.registerEnergyHandler(myEnergyHandlerManager);
 
 // Query the energy handler manager for a block entity
@@ -134,8 +136,9 @@ names should not be renamed.
 
 | Signature                                                                                                                               | Description                                                                          |
 |-----------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | Registers a custom energy handler manager. Must be called before the postInit phase. |
-| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | Registers a custom node type together with its NBT deserializer and runtime creator. |
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | Registers a custom energy handler manager. It must be registered before `RegistryEnergyHandler.lock()`; that means before `postInit` on 1.12.2, and before `FMLLoadCompleteEvent` on 1.20.1 / 1.21.1. |
+| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | Registers a custom node type together with its NBT deserializer and runtime creator. Node types that can be created in the world should provide a `NodeCreator`. |
+| `void registerPocketNodeItem(@Nonnull NodeType<? extends INode> nodeType, @Nonnull Item item)`                                          | Registers the mapping from a node type to its pocket-node item. Only types that allow pocket-node form should register this mapping.                         |
 
 ---
 
@@ -189,11 +192,13 @@ The base interface for all nodes. It defines node position, world, link range, n
 
 `com.circulation.circulation_networks.api.node.IMachineNode extends IEnergySupplyNode`
 
-A machine node represents a node that directly interacts with energy devices.
+A machine node represents a node whose own block position is itself an energy-machine endpoint. It inherits the supply-node contract and expects the node's own block entity to expose the energy handler directly.
 
 | Method      | Return Type                 | Description                                               |
 |-------------|-----------------------------|-----------------------------------------------------------|
 | `getType()` | `IEnergyHandler.EnergyType` | The node's energy type (`SEND`, `RECEIVE`, or `STORAGE`). |
+
+These types should usually reject pocket-node form.
 
 It inherits all methods from `IEnergySupplyNode` and `INode`.
 
@@ -203,7 +208,7 @@ It inherits all methods from `IEnergySupplyNode` and `INode`.
 
 `com.circulation.circulation_networks.api.node.IEnergySupplyNode extends INode`
 
-Marks a node that can interact with nearby energy devices.
+Marks a node that can interact with nearby energy devices inside its energy range.
 
 | Method                       | Return Type | Description                                                                         |
 |------------------------------|-------------|-------------------------------------------------------------------------------------|
@@ -276,45 +281,13 @@ Node type identifier interface used to register and distinguish node types.
 |-------------------------|---------------------|-----------------------------------------------------------------------|
 | `id()`                  | `@NotNull String`   | The unique node type identifier.                                      |
 | `nodeClass()`           | `@NotNull Class<N>` | The node class.                                                       |
-| `allowsPocketNode()`    | `boolean`           | Whether pocket-node form is allowed.                                  |
-| `fallbackVisualId()`    | `@NotNull String`   | The fallback visual identifier.                                       |
+| `allowsPocketNode()`    | `boolean`           | Whether this type may exist in pocket-node form. Types such as `IMachineNode` should usually return `false`. |
+| `fallbackVisualId()`    | `@NotNull String`   | The visual identifier used for pocket-node restore, client fallback display, and item fallback paths.        |
 | `getId()`               | `@NotNull String`   | Default implementation: same as `id()`.                               |
 | `getNodeClass()`        | `@NotNull Class<N>` | Default implementation: same as `nodeClass()`.                        |
 | `getFallbackVisualId()` | `@NotNull String`   | Default implementation: same as `fallbackVisualId()`.                 |
 | `matches(INode)`        | `boolean`           | Default implementation: checks whether the node belongs to this type. |
 | `cast(INode)`           | `@NotNull N`        | Default implementation: casts the node to this type.                  |
-
-**Registering a custom node type**:
-
-```
-// Define the node type
-NodeType<MyCustomNode> MY_NODE_TYPE = new NodeType<>() {
-        @Override
-        public @NotNull String id() {
-            return "mymod:my_node";
-        }
-
-        @Override
-        public @NotNull Class<MyCustomNode> nodeClass() {
-            return MyCustomNode.class;
-        }
-
-        @Override
-        public boolean allowsPocketNode() {
-            return true;
-        }
-
-        @Override
-        public @NotNull String fallbackVisualId() {
-            return "mymod:my_node_block";
-        }
-    };
-
-// Register the node type and deserializer
-API.registerNodeType(MY_NODE_TYPE, nbt -> MyCustomNode.deserialize(nbt));
-```
-
----
 
 ### NodeContext
 
@@ -347,9 +320,9 @@ Register it through `API.registerNodeType()`.
 
 `com.circulation.circulation_networks.api.NodeCreator`
 
-A functional interface extending `Function<NodeContext, INode>` used to create new node instances at runtime (e.g. when placing a block or a pocket node).
+A functional interface extending `Function<NodeContext, INode>` used to create new node instances at runtime, such as block placement, block-entity binding, or pocket-node restore.
 
-Register it through `API.registerNodeType()`. May be `null` if the type does not support runtime creation.
+Register it through `API.registerNodeType()`. Node types that can be created or restored in the world should provide it.
 
 ---
 
@@ -375,11 +348,11 @@ The base interface for block entities that are linked to a node.
 
 `com.circulation.circulation_networks.api.IMachineNodeBlockEntity extends INodeBlockEntity`
 
-Block entity interface for machine nodes.
+Block entity interface for machine nodes whose own block entity is the energy-machine endpoint represented by `IMachineNode`.
 
-| Method                                               | Return Type      | Description                                                                                                    |
-|------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------|
-| `getNode()`                                          | `IMachineNode`   | Returns the associated machine node with a more specific return type.                                          |
+| Method               | Return Type      | Description                                                                                                 |
+|----------------------|------------------|-------------------------------------------------------------------------------------------------------------|
+| `getNode()`          | `IMachineNode`   | Returns the associated machine node with a more specific return type.                                       |
 | `getEnergyHandler()` | `IEnergyHandler` | Returns the energy handler held by this block entity; implementations must override `recycle()` as a no-op. |
 
 ---

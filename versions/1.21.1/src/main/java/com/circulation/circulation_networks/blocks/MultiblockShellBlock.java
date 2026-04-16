@@ -76,7 +76,7 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     }
 
     @NotNull
-    public static BlockPos resolveRedirectedPos(@NotNull BlockGetter level, @NotNull BlockPos pos) {
+    public static BlockPos resolveRedirectedPos(BlockGetter level, BlockPos pos) {
         BlockPos originPos = getOriginPos(level, pos);
         return originPos != null ? originPos : pos;
     }

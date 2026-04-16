@@ -1,0 +1,79 @@
+package com.circulation.circulation_networks.client.render;
+
+import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.registry.CFNItems;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@OnlyIn(Dist.CLIENT)
+public final class PocketNodeModelCache {
+
+    private static final List<ResourceLocation> REGISTERED_MODELS = new ArrayList<>();
+    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    public static final ResourceLocation PORT = register("pocket_node/pocket_port_node");
+    public static final ResourceLocation CHARGING = register("pocket_node/pocket_charging_node");
+    public static final ResourceLocation RELAY = register("pocket_node/pocket_relay_node");
+
+    private PocketNodeModelCache() {
+    }
+
+    private static ResourceLocation register(String path) {
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(CirculationFlowNetworks.MOD_ID, "block/" + path);
+        REGISTERED_MODELS.add(location);
+        return location;
+    }
+
+    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+        for (ResourceLocation location : REGISTERED_MODELS) {
+            event.register(new ModelResourceLocation(location, "standalone"));
+        }
+    }
+
+    public static BakedModel get(ItemStack stack) {
+        ResourceLocation location = resolveLocation(stack);
+        if (location == null) {
+            return Minecraft.getInstance().getModelManager().getMissingModel();
+        }
+        return BAKED_MODELS.computeIfAbsent(location, PocketNodeModelCache::loadModel);
+    }
+
+    public static boolean isGui3d(ItemStack stack) {
+        return get(stack).isGui3d();
+    }
+
+    public static void clear() {
+        BAKED_MODELS.clear();
+    }
+
+    private static BakedModel loadModel(ResourceLocation location) {
+        return Minecraft.getInstance().getModelManager().getModel(new ModelResourceLocation(location, "standalone"));
+    }
+
+    private static @Nullable ResourceLocation resolveLocation(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return null;
+        }
+        if (stack.getItem() == CFNItems.pocketPortNode) {
+            return PORT;
+        }
+        if (stack.getItem() == CFNItems.pocketChargingNode) {
+            return CHARGING;
+        }
+        if (stack.getItem() == CFNItems.pocketRelayNode) {
+            return RELAY;
+        }
+        return null;
+    }
+}

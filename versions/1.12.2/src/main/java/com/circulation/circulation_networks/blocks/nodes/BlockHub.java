@@ -54,7 +54,7 @@ public final class BlockHub extends BaseNodeBlock {
         return positions.get(origin.toLong());
     }
 
-    private static boolean canReplaceOccupiedPosition(@NotNull World world, @NotNull BlockPos pos) {
+    private static boolean canReplaceOccupiedPosition(World world, BlockPos pos) {
         IBlockState occupiedState = world.getBlockState(pos);
         if (occupiedState.getBlock() instanceof MultiblockShellBlock) {
             return MultiblockShellBlock.canBeReplacedAt(world, pos);

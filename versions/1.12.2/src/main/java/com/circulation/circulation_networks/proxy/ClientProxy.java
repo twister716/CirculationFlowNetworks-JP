@@ -5,6 +5,8 @@ import com.circulation.circulation_networks.client.render.AnimatedNodeItemStackR
 import com.circulation.circulation_networks.client.render.ChargingNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.HubRotatingRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRotatingRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeItemStackRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.client.render.PortNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRotatingRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
@@ -116,6 +118,7 @@ public final class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityHub.class, new HubRotatingRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityNodePedestal.class, new NodePedestalRotatingRenderer());
         AnimatedNodeItemStackRenderer.bindItemRenderers();
+        PocketNodeItemStackRenderer.bindItemRenderers();
         openGLLevel = detectOpenGLLevel();
         SpoceRenderingHandler.INSTANCE = createSpoceHandler();
     }
@@ -155,8 +158,10 @@ public final class ClientProxy extends CommonProxy {
         ComponentAtlas.INSTANCE.dispose();
         RotatingModelRenderHelper.clearDisplayLists();
         RotatingBlockModelCache.clear();
+        PocketNodeModelCache.clear();
         // 1.12.2 bakes hub sub-models on demand, so their dynamic-only sprites must be stitched explicitly.
         RotatingBlockModelCache.registerAdditionalSprites(event.getMap());
+        PocketNodeModelCache.registerAdditionalSprites(event.getMap());
     }
 
     @SubscribeEvent

@@ -28,3 +28,4 @@ run
 /.worktrees/
 */copilot*
 .github/hooks/*
+.tmp

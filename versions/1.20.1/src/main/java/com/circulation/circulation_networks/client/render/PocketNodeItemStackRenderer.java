@@ -1,0 +1,119 @@
+package com.circulation.circulation_networks.client.render;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.model.BakedModelWrapper;
+import net.minecraftforge.client.model.data.ModelData;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+
+@OnlyIn(Dist.CLIENT)
+public final class PocketNodeItemStackRenderer extends BlockEntityWithoutLevelRenderer {
+
+    private static final Map<BakedModel, BakedModel> BRIGHT_ITEM_MODELS = new IdentityHashMap<>();
+    private static PocketNodeItemStackRenderer instance;
+
+    private PocketNodeItemStackRenderer(BlockEntityRenderDispatcher dispatcher, EntityModelSet modelSet) {
+        super(dispatcher, modelSet);
+    }
+
+    public static PocketNodeItemStackRenderer getInstance() {
+        if (instance == null) {
+            Minecraft minecraft = Minecraft.getInstance();
+            instance = new PocketNodeItemStackRenderer(minecraft.getBlockEntityRenderDispatcher(), minecraft.getEntityModels());
+        }
+        return instance;
+    }
+
+    public static BakedModel toBrightItemModel(BakedModel model) {
+        return BRIGHT_ITEM_MODELS.computeIfAbsent(model, BrightItemBakedModel::new);
+    }
+
+    @Override
+    public void renderByItem(ItemStack stack, @NotNull ItemDisplayContext displayContext, @NotNull PoseStack poseStack,
+                             @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        BakedModel model = PocketNodeModelCache.get(stack);
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
+        minecraft.getBlockRenderer().getModelRenderer().renderModel(
+            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
+        );
+        minecraft.getBlockRenderer().getModelRenderer().renderModel(
+            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null
+        );
+    }
+
+    private static final class BrightItemBakedModel extends BakedModelWrapper<BakedModel> {
+
+        private static final Map<BakedQuad, BakedQuad> NO_DIFFUSE_QUADS = new IdentityHashMap<>();
+        private static final Map<List<BakedQuad>, List<BakedQuad>> NO_DIFFUSE_QUAD_LISTS = new IdentityHashMap<>();
+
+        private BrightItemBakedModel(BakedModel originalModel) {
+            super(originalModel);
+        }
+
+        private static List<BakedQuad> wrapQuads(List<BakedQuad> quads) {
+            List<BakedQuad> wrapped = new ArrayList<>(quads.size());
+            for (BakedQuad quad : quads) {
+                wrapped.add(NO_DIFFUSE_QUADS.computeIfAbsent(quad, BrightItemBakedModel::wrapQuad));
+            }
+            return wrapped;
+        }
+
+        private static BakedQuad wrapQuad(BakedQuad quad) {
+            return new BakedQuad(
+                quad.getVertices(),
+                quad.getTintIndex(),
+                quad.getDirection(),
+                quad.getSprite(),
+                false,
+                false
+            );
+        }
+
+        @Override
+        public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull net.minecraft.util.RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
+            List<BakedQuad> quads = originalModel.getQuads(state, side, rand, data, renderType);
+            if (quads.isEmpty()) {
+                return quads;
+            }
+            return NO_DIFFUSE_QUAD_LISTS.computeIfAbsent(quads, BrightItemBakedModel::wrapQuads);
+        }
+
+        @Override
+        public boolean useAmbientOcclusion() {
+            return false;
+        }
+
+        @Override
+        public boolean usesBlockLight() {
+            return false;
+        }
+    }
+}

@@ -29,6 +29,9 @@ public final class RegistryItems {
         CFNItems.pocketPortNode = registryItem(new ItemPocketNode("pocket_port_node", NodeTypes.PORT_NODE));
         CFNItems.pocketChargingNode = registryItem(new ItemPocketNode("pocket_charging_node", NodeTypes.CHARGING_NODE));
         CFNItems.pocketRelayNode = registryItem(new ItemPocketNode("pocket_relay_node", NodeTypes.RELAY_NODE));
+        PocketNodeItems.register(NodeTypes.PORT_NODE, CFNItems.pocketPortNode);
+        PocketNodeItems.register(NodeTypes.CHARGING_NODE, CFNItems.pocketChargingNode);
+        PocketNodeItems.register(NodeTypes.RELAY_NODE, CFNItems.pocketRelayNode);
         CFNItems.hubChannelPlugin = registryItem(new ItemHubChannelPlugin());
         CFNItems.wideAreaChargingPlugin = registryItem(new ItemWideAreaChargingPlugin());
         CFNItems.dimensionalChargingPlugin = registryItem(new ItemDimensionalChargingPlugin());

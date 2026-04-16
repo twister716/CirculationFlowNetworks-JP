@@ -3,6 +3,7 @@ package com.circulation.circulation_networks;
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
@@ -68,7 +69,11 @@ final class CirculationFlowNetworksClient {
         MinecraftForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
 
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
-        modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
+        modEventBus.addListener(PocketNodeModelCache::onRegisterAdditionalModels);
+        modEventBus.addListener((ModelEvent.BakingCompleted event) -> {
+            RotatingBlockModelCache.clear();
+            PocketNodeModelCache.clear();
+        });
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.CHARGING_NODE, ChargingNodeRenderer::new);

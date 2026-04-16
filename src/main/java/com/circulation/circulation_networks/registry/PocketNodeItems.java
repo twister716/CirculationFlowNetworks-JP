@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.api.node.NodeType;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 //~ mc_imports
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -15,11 +17,17 @@ import org.jetbrains.annotations.Nullable;
 
 public final class PocketNodeItems {
 
+    private static final Object2ReferenceMap<String, Item> ITEMS_BY_NODE_TYPE_ID = new Object2ReferenceOpenHashMap<>();
+
     private PocketNodeItems() {
     }
 
+    public static void register(NodeType<?> nodeType, Item item) {
+        ITEMS_BY_NODE_TYPE_ID.put(nodeType.id(), item);
+    }
+
     public static @Nullable Item getItemForType(NodeType<?> nodeType) {
-        Item pocketItem = getPocketItem(nodeType);
+        Item pocketItem = ITEMS_BY_NODE_TYPE_ID.get(nodeType.id());
         if (pocketItem != null) {
             return pocketItem;
         }
@@ -45,20 +53,6 @@ public final class PocketNodeItems {
         Item blockItem = Item.byBlock(block);
         return blockItem != net.minecraft.world.item.Items.AIR ? blockItem : null;
         *///?}
-    }
-
-    private static @Nullable Item getPocketItem(NodeType<?> nodeType) {
-        String nodeTypeId = nodeType.id();
-        if (NodeTypes.PORT_NODE.id().equals(nodeTypeId)) {
-            return CFNItems.pocketPortNode;
-        }
-        if (NodeTypes.CHARGING_NODE.id().equals(nodeTypeId)) {
-            return CFNItems.pocketChargingNode;
-        }
-        if (NodeTypes.RELAY_NODE.id().equals(nodeTypeId)) {
-            return CFNItems.pocketRelayNode;
-        }
-        return null;
     }
 
     public static ItemStack createStack(NodeType<?> nodeType) {
