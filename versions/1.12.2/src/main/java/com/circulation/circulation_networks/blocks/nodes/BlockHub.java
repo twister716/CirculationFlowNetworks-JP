@@ -54,6 +54,14 @@ public final class BlockHub extends BaseNodeBlock {
         return positions.get(origin.toLong());
     }
 
+    private static boolean canReplaceOccupiedPosition(@NotNull World world, @NotNull BlockPos pos) {
+        IBlockState occupiedState = world.getBlockState(pos);
+        if (occupiedState.getBlock() instanceof MultiblockShellBlock) {
+            return MultiblockShellBlock.canBeReplacedAt(world, pos);
+        }
+        return occupiedState.getBlock().isReplaceable(world, pos);
+    }
+
     @Override
     public @NotNull EnumBlockRenderType getRenderType(IBlockState state) {
         return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
@@ -80,9 +88,10 @@ public final class BlockHub extends BaseNodeBlock {
 
     @Override
     public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
+        if (!canReplaceOccupiedPosition(worldIn, pos)) return false;
         for (BlockPos shellPos : shellPositions(pos)) {
             if (shellPos.getY() < 0 || shellPos.getY() > 255) return false;
-            if (!worldIn.getBlockState(shellPos).getBlock().isReplaceable(worldIn, shellPos)) return false;
+            if (!canReplaceOccupiedPosition(worldIn, shellPos)) return false;
         }
         return super.canPlaceBlockAt(worldIn, pos);
     }
@@ -102,6 +111,9 @@ public final class BlockHub extends BaseNodeBlock {
     public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state,
                                 EntityLivingBase placer, ItemStack stack) {
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+        if (worldIn.getBlockState(pos).getBlock() != this) {
+            return;
+        }
         if (placer instanceof EntityPlayer player && !worldIn.isRemote) {
             var te = worldIn.getTileEntity(pos);
             if (te instanceof TileEntityHub hub) {

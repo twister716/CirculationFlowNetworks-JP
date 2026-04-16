@@ -1,10 +1,10 @@
 package com.circulation.circulation_networks.packets;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.container.ContainerHub;
-import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.Packet;
@@ -61,7 +61,7 @@ public final class UpdateNodeCustomName implements Packet<UpdateNodeCustomName> 
                 && !HubPlatformServices.INSTANCE.hasChannelManagementOverride(sender)) return;
 
             BlockPos pos = BlockPos.of(message.posLong);
-            INode node = NetworkManager.INSTANCE.getNodeFromPos(hubNode.getWorld(), pos);
+            INode node = API.getNodeAt(hubNode.getWorld(), pos);
             if (node == null || node.getGrid() == null) return;
             if (!Objects.equals(node.getGrid().getId(), hubNode.getGrid().getId())) return;
 

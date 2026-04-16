@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.blocks;
 
-import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.items.BaseItemTooltipModel;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.registry.CFNItems;
@@ -102,7 +102,7 @@ public abstract class BaseBlock extends Block implements EntityBlock {
             player.getItemInHand(hand).getItem() == CFNItems.circulationConfigurator
         )) {
             if (level.isClientSide()) {
-                if (PocketNodeRenderingHandler.INSTANCE.hasNode(level.dimension().location().hashCode(), pos)) {
+                if (API.getNodeAt(level, pos) != null) {
                     return InteractionResult.sidedSuccess(true);
                 }
             } else if (PocketNodeManager.INSTANCE.removePocketNode(level, pos, true)) {

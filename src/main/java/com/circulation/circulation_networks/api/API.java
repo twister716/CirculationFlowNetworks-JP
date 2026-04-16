@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.api;
 
+import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeType;
@@ -51,8 +52,31 @@ public final class API {
      */
     @Nullable
     public static INode getNodeAt(@NotNull World world, @NotNull BlockPos pos) {
+        if (isClientWorld(world)) {
+            INode clientNode = getClientNodeAt(world, pos);
+            if (clientNode != null) {
+                return clientNode;
+            }
+        }
         return NetworkManager.INSTANCE.getNodeFromPos(world, pos);
     }
+
+    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
+    private static boolean isClientWorld(@NotNull World world) {
+        return world.isRemote;
+    }
+
+    @Nullable
+    private static INode getClientNodeAt(@NotNull World world, @NotNull BlockPos pos) {
+        //~ if >=1.20 'world.getTileEntity(pos)' -> 'world.getBlockEntity(pos)' {
+        var blockEntity = world.getTileEntity(pos);
+        //~}
+        if (blockEntity instanceof INodeBlockEntity nodeBlockEntity) {
+            return nodeBlockEntity.getNode();
+        }
+        return PocketNodeRenderingHandler.INSTANCE.getNode(world, pos);
+    }
+    //~}
 
     /**
      * 返回当前所有处于活跃状态的节点。

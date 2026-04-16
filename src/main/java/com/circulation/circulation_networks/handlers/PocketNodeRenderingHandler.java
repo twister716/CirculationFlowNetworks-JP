@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.handlers;
 
+import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
@@ -11,6 +12,11 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.util.math.BlockPos;
+//? if <1.20 {
+import net.minecraft.world.World;
+//?} else {
+/*import net.minecraft.world.level.Level;
+*///?}
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -51,6 +57,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 //~ neo_imports
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 *///?}
+import org.jetbrains.annotations.Nullable;
 
 //~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
@@ -68,6 +75,7 @@ public final class PocketNodeRenderingHandler {
 
     private static void unregisterHost(PocketNodeClientHost host) {
         if (host != null) {
+            host.invalidateNode();
             MachineNodeBlockEntityManager.INSTANCE.unregisterClientMachine(host);
         }
     }
@@ -128,6 +136,36 @@ public final class PocketNodeRenderingHandler {
 
     private Long2ObjectMap<PocketNodeClientHost> getDimHosts(int dimId) {
         return hosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
+    }
+
+    private static int getDimensionId(
+        //? if <1.20 {
+        World world
+        //?} else {
+        /*Level world
+        *///?}
+    ) {
+        //? if <1.20 {
+        return world.provider.getDimension();
+        //?} else {
+        /*return world.dimension().location().hashCode();
+        *///?}
+    }
+
+    @Nullable
+    private PocketNodeClientHost getHost(
+        //? if <1.20 {
+        World world,
+        //?} else {
+        /*Level world,
+        *///?}
+        BlockPos pos
+    ) {
+        if (pos == null) {
+            return null;
+        }
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(getDimensionId(world));
+        return dimHosts == null ? null : dimHosts.get(pack(pos));
     }
 
     public void setDimensionState(int dimId, ObjectList<PocketNodeRecord> records) {
@@ -237,12 +275,17 @@ public final class PocketNodeRenderingHandler {
     }
     *///?}
 
-    public boolean hasNode(int dimId, BlockPos pos) {
-        if (pos == null) {
-            return false;
-        }
-        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
-        return dimHosts != null && dimHosts.containsKey(pack(pos));
+    @Nullable
+    public INode getNode(
+        //? if <1.20 {
+        World world,
+        //?} else {
+        /*Level world,
+        *///?}
+        BlockPos pos
+    ) {
+        PocketNodeClientHost host = getHost(world, pos);
+        return host == null ? null : host.getNode(world);
     }
 
     //? if <1.20 {

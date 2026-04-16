@@ -1,13 +1,14 @@
 package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.packets.NodeHudRequest;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.tiles.nodes.BaseNodeBlockEntity;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import com.circulation.circulation_networks.utils.ScrollingTextHelper;
@@ -120,9 +121,8 @@ public final class NodeHudRenderingHandler {
             return;
         }
         if (mc.hitResult instanceof BlockHitResult bhr) {
-            BlockPos pos = bhr.getBlockPos();
-            if (mc.level.getBlockEntity(pos) instanceof BaseNodeBlockEntity<?>
-                || PocketNodeRenderingHandler.INSTANCE.hasNode(mc.level.dimension().location().hashCode(), pos)) {
+            BlockPos pos = MultiblockShellBlock.resolveRedirectedPos(mc.level, bhr.getBlockPos());
+            if (API.getNodeAt(mc.level, pos) != null) {
                 long posLong = pos.asLong();
                 if (posLong != lastTargetPosLong) {
                     lastTargetPosLong = posLong;
@@ -145,7 +145,8 @@ public final class NodeHudRenderingHandler {
         if (!hasData) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
-        if (!(mc.hitResult instanceof BlockHitResult bhr) || bhr.getBlockPos().asLong() != cachedPosLong) {
+        if (!(mc.hitResult instanceof BlockHitResult bhr)
+            || MultiblockShellBlock.resolveRedirectedPos(mc.level, bhr.getBlockPos()).asLong() != cachedPosLong) {
             return;
         }
 

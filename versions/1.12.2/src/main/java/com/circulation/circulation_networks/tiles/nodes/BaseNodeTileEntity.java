@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.tiles.nodes;
 
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeContext;
@@ -94,7 +95,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
 
     protected void onValidate() {
         var nodeType = getNodeType();
-        INode existingNode = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
+        INode existingNode = API.getNodeAt(world, pos);
 
         if (nodeType.matches(existingNode)) {
             if (node != existingNode) {

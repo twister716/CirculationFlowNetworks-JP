@@ -27,3 +27,4 @@ run
 /textures/
 /.worktrees/
 */copilot*
+.github/hooks/*

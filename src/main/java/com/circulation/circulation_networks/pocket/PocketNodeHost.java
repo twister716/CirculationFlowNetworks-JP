@@ -31,7 +31,8 @@ public record PocketNodeHost(PocketNodeRecord record, INode node) {
             record.pos(),
             record.nodeType(),
             record.attachmentFace(),
-            node.getCustomName()
+            node.getCustomName(),
+            record.hostBlockId()
         );
     }
 

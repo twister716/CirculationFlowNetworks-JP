@@ -80,7 +80,7 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
             if (buf.readBoolean()) {
                 face = EnumFacing.byName(ByteBufUtils.readUTF8String(buf));
             }
-            parsedRecords.add(new PocketNodeRecord(parsedDim, pos, nodeType, face, null));
+            parsedRecords.add(new PocketNodeRecord(parsedDim, pos, nodeType, face, null, null));
         }
     }
 

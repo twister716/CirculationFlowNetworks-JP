@@ -1,15 +1,20 @@
 package com.circulation.circulation_networks.pocket;
 
 import com.circulation.circulation_networks.api.ClientTickMachine;
+import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
+import com.circulation.circulation_networks.utils.Functions;
 import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public final class PocketNodeClientHost implements ClientTickMachine {
 
     private final PocketNodeRecord record;
     private final ItemStack renderStack;
+    private INode node;
     private byte gui3dState = -1;
 
     public PocketNodeClientHost(PocketNodeRecord record) {
@@ -23,6 +28,30 @@ public final class PocketNodeClientHost implements ClientTickMachine {
 
     public ItemStack getRenderStack() {
         return renderStack;
+    }
+
+    //~ if >=1.20 'World ' -> 'Level ' {
+    public @Nullable INode getNode(World world) {
+        if (node == null || node.getWorld() != world || node.getNodeType() != record.nodeType()) {
+            try {
+                node = Functions.createNode(record.nodeType(), record.createNodeContext(world));
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+        if (record.customName() != null) {
+            node.setCustomName(record.customName());
+        }
+        node.setActive(true);
+        return node;
+    }
+    //~}
+
+    public void invalidateNode() {
+        if (node != null) {
+            node.setActive(false);
+            node = null;
+        }
     }
 
     public boolean isGui3d() {

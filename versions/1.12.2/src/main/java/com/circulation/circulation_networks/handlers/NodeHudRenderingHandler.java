@@ -1,13 +1,14 @@
 package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.packets.NodeHudRequest;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import com.circulation.circulation_networks.utils.ScrollingTextHelper;
@@ -116,9 +117,9 @@ public final class NodeHudRenderingHandler {
             return;
         }
         if (mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == RayTraceResult.Type.BLOCK) {
-            BlockPos pos = mc.objectMouseOver.getBlockPos();
-            if (mc.world.getTileEntity(pos) instanceof BaseNodeTileEntity
-                || PocketNodeRenderingHandler.INSTANCE.hasNode(mc.player.dimension, pos)) {
+            BlockPos hitPos = mc.objectMouseOver.getBlockPos();
+            BlockPos pos = MultiblockShellBlock.resolveRedirectedPos(mc.world, hitPos);
+            if (API.getNodeAt(mc.world, pos) != null) {
                 long posLong = pos.toLong();
                 if (posLong != lastTargetPosLong) {
                     lastTargetPosLong = posLong;
@@ -141,7 +142,7 @@ public final class NodeHudRenderingHandler {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player == null || mc.world == null) return;
         if (mc.objectMouseOver == null || mc.objectMouseOver.typeOfHit != RayTraceResult.Type.BLOCK
-            || mc.objectMouseOver.getBlockPos().toLong() != cachedPosLong) {
+            || MultiblockShellBlock.resolveRedirectedPos(mc.world, mc.objectMouseOver.getBlockPos()).toLong() != cachedPosLong) {
             return;
         }
 
