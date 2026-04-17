@@ -6,21 +6,22 @@ import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.math.Vec3d;
 import com.circulation.circulation_networks.math.Vec3i;
+import com.circulation.circulation_networks.utils.BlockPosCompat;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.objects.Reference2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Reference2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagLong;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if <1.20
-import net.minecraftforge.common.DimensionManager;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongTag;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
@@ -30,12 +31,9 @@ public class Node implements INode {
     private final NodeType<?> nodeType;
     private final BlockPos pos;
     private final Vec3d vec3d;
-    //~ if >=1.20 '<World>' -> '<Level>' {
-    private final WeakReference<World> world;
-    //~}
+    private final WeakReference<Level> world;
     private final int dimensionId;
-    //? if >=1.20
-    //private final String dimensionKey;
+    private final String dimensionKey;
     private final ReferenceSet<INode> neighbors = new ReferenceOpenHashSet<>();
     private final Reference2DoubleMap<INode> distanceMap = new Reference2DoubleOpenHashMap<>();
     private final double linkScope;
@@ -46,41 +44,27 @@ public class Node implements INode {
     private boolean active;
     private IGrid grid;
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 'BlockPos.fromLong(' -> 'BlockPos.of(' {
-    //~ if >=1.20 '.hasKey(' -> '.contains(' {
-    public Node(NBTTagCompound nbt) {
+    public Node(CompoundTag nbt) {
         this(resolveNodeType(nbt), nbt);
     }
 
-    public Node(NodeType<?> nodeType, NBTTagCompound nbt) {
+    public Node(NodeType<?> nodeType, CompoundTag nbt) {
         this.nodeType = nodeType;
-        //? if <1.20 {
-        this.dimensionId = nbt.getInteger("dim");
-        this.world = new WeakReference<>(resolveWorld(dimensionId));
-        //?} else {
-        /*this.dimensionKey = nbt.getString("dim");
-        //~ if >=1.21 'new net.minecraft.resources.ResourceLocation(' -> 'net.minecraft.resources.ResourceLocation.parse(' {
-        this.dimensionId = new net.minecraft.resources.ResourceLocation(dimensionKey).hashCode();
-        //~}
-        this.world = new WeakReference<>(resolveWorld(dimensionKey));
-        *///?}
-        this.pos = BlockPos.fromLong(nbt.getLong("pos"));
+        this.dimensionKey = NbtCompat.getStringOr(nbt, "dim", "minecraft:overworld");
+        this.dimensionId = dimensionKey.hashCode();
+        this.world = new WeakReference<>(WorldResolveCompat.resolveWorld(dimensionKey, dimensionId));
+        this.pos = BlockPosCompat.fromLong(NbtCompat.getLongOr(nbt, "pos", 0L));
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
-        this.linkScope = nbt.getDouble("linkScope");
+        this.linkScope = NbtCompat.getDoubleOr(nbt, "linkScope", 0.0D);
         this.linkScopeSq = linkScope * linkScope;
-        this.visualId = normalizeVisualId(nbt.hasKey("visualId") ? nbt.getString("visualId") : nodeType.fallbackVisualId());
-        this.customName = normalizeCustomName(nbt.hasKey("customName") ? nbt.getString("customName") : null);
+        this.visualId = normalizeVisualId(NbtCompat.getStringOr(nbt, "visualId", nodeType.fallbackVisualId()));
+        this.customName = normalizeCustomName(NbtCompat.contains(nbt, "customName") ? NbtCompat.getStringOr(nbt, "customName", "") : null);
     }
-    //~}
-    //~}
-    //~}
 
     public Node(NodeType<?> nodeType, NodeContext context, double linkScope) {
         this.nodeType = nodeType;
-        this.dimensionId = getDimensionId(context.getWorld());
-        //? if >=1.20
-        //this.dimensionKey = context.getWorld().dimension().location().toString();
+        this.dimensionId = WorldResolveCompat.getDimensionId(context.getWorld());
+        this.dimensionKey = WorldResolveCompat.getSerializedDimensionKey(context.getWorld());
         this.world = new WeakReference<>(context.getWorld());
         this.pos = context.getPos();
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
@@ -89,42 +73,6 @@ public class Node implements INode {
         this.visualId = normalizeVisualId(context.getVisualId());
         this.customName = normalizeCustomName(context.getDefaultName());
     }
-
-    //? if <1.20 {
-    private static World resolveWorld(int dimensionId) {
-        return DimensionManager.getWorld(dimensionId);
-    }
-    //?} else if <1.21 {
-    /*private static Level resolveWorld(String dimensionKey) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return null;
-        return server.getLevel(
-            net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION,
-                new net.minecraft.resources.ResourceLocation(dimensionKey)
-            )
-        );
-    }
-    *///?} else {
-    /*private static Level resolveWorld(String dimensionKey) {
-        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return null;
-        return server.getLevel(
-            net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION,
-                net.minecraft.resources.ResourceLocation.parse(dimensionKey)
-            )
-        );
-    }
-    *///?}
-
-    //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
-    private static int getDimensionId(World world) {
-        return world.provider.getDimension();
-    }
-    //~}
-    //~}
 
     @Nullable
     private static String normalizeCustomName(@Nullable String customName) {
@@ -148,12 +96,10 @@ public class Node implements INode {
         return trimmedId.isEmpty() ? "" : trimmedId;
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    private static NodeType<?> resolveNodeType(NBTTagCompound nbt) {
-        NodeType<?> resolved = com.circulation.circulation_networks.registry.NodeTypes.getById(nbt.getString("type"));
+    private static NodeType<?> resolveNodeType(CompoundTag nbt) {
+        NodeType<?> resolved = com.circulation.circulation_networks.registry.NodeTypes.getById(NbtCompat.getStringOr(nbt, "type", ""));
         return resolved != null ? resolved : com.circulation.circulation_networks.registry.NodeTypes.RELAY_NODE;
     }
-    //~}
 
     public @NotNull BlockPos getPos() {
         return pos;
@@ -185,58 +131,36 @@ public class Node implements INode {
         }
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    //~ if >=1.20 'NBTTagList' -> 'ListTag' {
-    //~ if >=1.20 '.appendTag(new NBTTagLong(' -> '.add(LongTag.valueOf(' {
-    //~ if >=1.20 '.set' -> '.put' {
-    //~ if >=1.20 '.setTag("nei' -> '.put("nei' {
     @Override
-    public NBTTagCompound serialize() {
-        var nbt = new NBTTagCompound();
-        nbt.setString("type", nodeType.id());
-        nbt.setLong("pos", pos.toLong());
-        //? if <1.20 {
-        nbt.setInteger("dim", dimensionId);
-        //?} else {
-        /*nbt.setString("dim", dimensionKey);
-         *///?}
-        var list = new NBTTagList();
-        neighbors.forEach(neighbor -> list.appendTag(new NBTTagLong(neighbor.getPos().toLong())));
-        nbt.setTag("neighbors", list);
-        nbt.setDouble("linkScope", linkScope);
+    public CompoundTag serialize() {
+        var nbt = new CompoundTag();
+        NbtCompat.putString(nbt, "type", nodeType.id());
+        NbtCompat.putLong(nbt, "pos", BlockPosCompat.toLong(pos));
+        NbtCompat.putString(nbt, "dim", dimensionKey);
+        var list = new ListTag();
+        neighbors.forEach(neighbor -> list.add(LongTag.valueOf(BlockPosCompat.toLong(neighbor.getPos()))));
+        nbt.put("neighbors", list);
+        NbtCompat.putDouble(nbt, "linkScope", linkScope);
         if (!visualId.isEmpty()) {
-            nbt.setString("visualId", visualId);
+            NbtCompat.putString(nbt, "visualId", visualId);
         }
         if (customName != null) {
-            nbt.setString("customName", customName);
+            NbtCompat.putString(nbt, "customName", customName);
         }
         return nbt;
     }
-    //~}
-    //~}
-    //~}
-    //~}
-    //~}
-    //~}
 
-    //~ if >=1.20 ' World ' -> ' Level ' {
-    public @NotNull World getWorld() {
+    public @NotNull Level getWorld() {
         var cachedWorld = world.get();
         if (cachedWorld != null) {
             return cachedWorld;
         }
-        //? if <1.20 {
-        var resolvedWorld = resolveWorld(dimensionId);
-        //?} else {
-        /*var resolvedWorld = resolveWorld(dimensionKey);
-         *///?}
+        var resolvedWorld = WorldResolveCompat.resolveWorld(dimensionKey, dimensionId);
         if (resolvedWorld != null) {
             return resolvedWorld;
         }
         throw new IllegalStateException("World is null");
     }
-    //~}
 
     @Override
     public int getDimensionId() {
@@ -245,11 +169,7 @@ public class Node implements INode {
 
     @Override
     public @NotNull String getSerializedDimensionKey() {
-        //? if <1.20 {
-        return Integer.toString(dimensionId);
-        //?} else {
-        /*return dimensionKey;
-         *///?}
+        return dimensionKey;
     }
 
     @Override
@@ -268,7 +188,7 @@ public class Node implements INode {
     public void removeNeighbor(INode neighbor) {
         if (neighbor == null) return;
         neighbors.remove(neighbor);
-        distanceMap.remove(neighbor);
+        distanceMap.removeDouble(neighbor);
     }
 
     @Override
@@ -307,7 +227,7 @@ public class Node implements INode {
     @Override
     public double distanceSq(INode node) {
         if (distanceMap.containsKey(node)) {
-            return distanceMap.get(node);
+            return distanceMap.getDouble(node);
         }
         return this.distanceSq(node.getVec3d());
     }

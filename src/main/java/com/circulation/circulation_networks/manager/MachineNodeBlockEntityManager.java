@@ -13,10 +13,8 @@ public class MachineNodeBlockEntityManager {
     private final ReferenceSet<ServerTickMachine> serverTe = new ReferenceLinkedOpenHashSet<>();
     private final ReferenceSet<ClientTickMachine> clientTe = new ReferenceLinkedOpenHashSet<>();
 
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
+    private static boolean isClientWorld(net.minecraft.world.level.Level world) {
+        return world.isClientSide();
     }
 
     public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
@@ -75,6 +73,4 @@ public class MachineNodeBlockEntityManager {
         serverTe.clear();
         clientTe.clear();
     }
-    //~}
-    //~}
 }

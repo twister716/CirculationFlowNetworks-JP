@@ -5,37 +5,20 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.AddNodeEvent;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.events.RemoveNodeEvent;
-//~ mc_imports
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-import net.minecraft.util.math.BlockPos;
-//? if <1.21 {
-import net.minecraftforge.common.MinecraftForge;
-//?} else {
-/*import net.neoforged.neoforge.common.NeoForge;
- *///?}
-//? if <1.20 {
-import net.minecraftforge.fml.common.eventhandler.EventBus;
-//?} else if < 1.21 {
-/*import net.minecraftforge.eventbus.api.IEventBus;
- *///?} else {
-/*import net.neoforged.bus.api.IEventBus;
- *///?}
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 
 public final class EventHooks {
 
-    //~ if >=1.20 'EventBus ' -> 'IEventBus ' {
-    private static final EventBus eventBus;
-    //~}
+    private static final IEventBus eventBus = NeoForge.EVENT_BUS;
+    private static boolean validateLock;
+    private static boolean invalidateLock;
 
-    static {
-        //?if <1.21 {
-        eventBus = MinecraftForge.EVENT_BUS;
-        //?} else {
-        /*eventBus = NeoForge.EVENT_BUS;
-         *///?}
+    private EventHooks() {
     }
 
     public static void postRemoveNodePre(INode node) {
@@ -46,46 +29,35 @@ public final class EventHooks {
         eventBus.post(new RemoveNodeEvent.Post(node));
     }
 
-    //~ if >=1.20 'TileEntity ' -> 'BlockEntity ' {
-    public static boolean postAddNodePre(INode node, @Nullable TileEntity tileEntity) {
-        //? if <1.21 {
-        return eventBus.post(new AddNodeEvent.Pre(node, tileEntity));
-        //?} else {
-        /*return eventBus.post(new AddNodeEvent.Pre(node, tileEntity)).isCanceled();
-         *///?}
+    public static boolean postAddNodePre(INode node, @Nullable BlockEntity tileEntity) {
+        return eventBus.post(new AddNodeEvent.Pre(node, tileEntity)).isCanceled();
     }
 
-    public static void postAddNodePost(INode node, @Nullable TileEntity tileEntity) {
+    public static void postAddNodePost(INode node, @Nullable BlockEntity tileEntity) {
         eventBus.post(new AddNodeEvent.Post(node, tileEntity));
     }
 
-    private static boolean validateLock;
-    private static boolean invalidateLock;
-
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public static void onBlockEntityValidate(World world, BlockPos pos, TileEntity blockEntity) {
+    public static void onBlockEntityValidate(Level world, BlockPos pos, BlockEntity blockEntity) {
         if (validateLock) return;
         validateLock = true;
         if (blockEntity instanceof INodeBlockEntity nbe) {
             nbe.nodeValidate();
         }
-        var event = new BlockEntityLifeCycleEvent.Validate(world, pos, blockEntity);
+        BlockEntityLifeCycleEvent.Validate event = new BlockEntityLifeCycleEvent.Validate(world, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onValidate(event);
         eventBus.post(event);
         validateLock = false;
     }
 
-    public static void onBlockEntityInvalidate(World world, BlockPos pos, TileEntity blockEntity) {
+    public static void onBlockEntityInvalidate(Level world, BlockPos pos, BlockEntity blockEntity) {
         if (invalidateLock) return;
         invalidateLock = true;
         if (blockEntity instanceof INodeBlockEntity nbe) {
             nbe.nodeInvalidate();
         }
-        var event = new BlockEntityLifeCycleEvent.Invalidate(world, pos, blockEntity);
+        BlockEntityLifeCycleEvent.Invalidate event = new BlockEntityLifeCycleEvent.Invalidate(world, pos, blockEntity);
         BlockEntityLifecycleDispatcher.onInvalidate(event);
         eventBus.post(event);
         invalidateLock = false;
     }
-    //~}
-    //~}
 }

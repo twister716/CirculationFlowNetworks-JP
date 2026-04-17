@@ -1,43 +1,20 @@
 package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.api.IEnergyHandler;
+import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.items.CirculationConfiguratorState;
 import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.RenderingUtils;
+import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.client.Minecraft;
-//~ mc_imports
-import net.minecraft.util.math.BlockPos;
-//? if <1.20 {
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else if <1.21 {
-/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-*///?} else {
-/*import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-//? if <1.20 {
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
-//?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
-//~ neo_imports
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-*///?}
+import net.minecraft.core.BlockPos;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
-//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
-@SideOnly(Side.CLIENT)
-//~}
 public final class ConfigOverrideRenderingHandler {
 
     public static final ConfigOverrideRenderingHandler INSTANCE = new ConfigOverrideRenderingHandler();
@@ -60,69 +37,33 @@ public final class ConfigOverrideRenderingHandler {
     }
 
     @SubscribeEvent
-        //? if <1.20 {
-    public void renderWorldLastEvent(RenderWorldLastEvent event) {
-        //?} else {
-    /*public void renderWorldLastEvent(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-    *///?}
+    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentBlocks event) {
         if (overrides.isEmpty()) return;
 
-        //? if <1.20 {
-        Minecraft mc = Minecraft.getMinecraft();
-        EntityPlayerSP p = mc.player;
-        //?} else {
-        /*Minecraft mc = Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
-        *///?}
 
-        //? if <1.20 {
-        var stack = p.getHeldItemMainhand();
-        //?} else {
-        /*var stack = p.getMainHandItem();
-         *///?}
+        var stack = p.getMainHandItem();
         if (!(stack.getItem() == CFNItems.circulationConfigurator
             && CirculationConfiguratorState.getFunction(stack) == ToolFunction.CONFIGURATION))
             return;
 
-        //? if <1.20 {
-        double doubleX = RenderingUtils.getPlayerRenderX(event.getPartialTicks());
-        double doubleY = RenderingUtils.getPlayerRenderY(event.getPartialTicks());
-        double doubleZ = RenderingUtils.getPlayerRenderZ(event.getPartialTicks());
-        //?} else {
-        /*var cameraPos = event.getCamera().getPosition();
+        var cameraPos = mc.gameRenderer.getMainCamera().position();
         double doubleX = cameraPos.x;
         double doubleY = cameraPos.y;
         double doubleZ = cameraPos.z;
-        *///?}
 
-        //? if <1.20 {
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(-doubleX, -doubleY, -doubleZ);
-        //?} else if <1.21 {
-        /*PoseStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.pushPose();
-        mvStack.last().pose().set(event.getPoseStack().last().pose());
-        mvStack.last().normal().set(event.getPoseStack().last().normal());
-        mvStack.translate(-doubleX, -doubleY, -doubleZ);
-        RenderSystem.applyModelViewMatrix();
-        *///?} else {
-        /*var mvStack = RenderSystem.getModelViewStack();
+        var mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
         mvStack.set(event.getModelViewMatrix());
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
-        RenderSystem.applyModelViewMatrix();
-        *///?}
+        RenderSystemCompat.applyModelViewMatrix();
         try {
             RenderingUtils.setupWorldRenderState();
             RenderingUtils.setupAdditiveBlend();
 
             for (var entry : overrides.long2ObjectEntrySet()) {
-                //? if <1.20 {
-                BlockPos pos = BlockPos.fromLong(entry.getLongKey());
-                //?} else {
-                /*BlockPos pos = BlockPos.of(entry.getLongKey());
-                 *///?}
+                BlockPos pos = BlockPos.of(entry.getLongKey());
                 IEnergyHandler.EnergyType type = entry.getValue();
 
                 if (!RenderingUtils.isWithinRenderDistance(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -166,15 +107,8 @@ public final class ConfigOverrideRenderingHandler {
             }
         } finally {
             RenderingUtils.restoreWorldRenderState();
-            //? if <1.20 {
-            GlStateManager.popMatrix();
-            //?} else if <1.21 {
-            /*RenderSystem.getModelViewStack().popPose();
-            RenderSystem.applyModelViewMatrix();
-            *///?} else {
-            /*RenderSystem.getModelViewStack().popMatrix();
-            RenderSystem.applyModelViewMatrix();
-             *///?}
+            RenderSystem.getModelViewStack().popMatrix();
+            RenderSystemCompat.applyModelViewMatrix();
         }
     }
 }

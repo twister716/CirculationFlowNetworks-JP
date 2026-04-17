@@ -1,34 +1,20 @@
 package com.circulation.circulation_networks.gui.component.base;
 
+import com.circulation.circulation_networks.client.compat.GuiGraphicsCompat;
+import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
 import com.circulation.circulation_networks.container.ComponentSlotLayout;
 import com.circulation.circulation_networks.gui.CFNBaseGui;
 import com.circulation.circulation_networks.tooltip.Composite;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//? if <1.20 {
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
-import org.lwjgl.opengl.GL11;
-//?} else {
-/*import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.RenderType;
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-*///?}
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.awt.Rectangle;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,12 +23,10 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"unused", "unchecked"})
 public class Component extends Rectangle {
-    private static final String[] EMPTY = new String[0];
     protected static final int GUI_TEXT_HEIGHT = 8;
-    //? if >=1.20 {
-    /*@Nullable
-    private static GuiGraphics currentGuiGraphics;
-    *///?}
+    private static final String[] EMPTY = new String[0];
+    @Nullable
+    private static GuiGraphicsExtractor currentGuiGraphics;
     @NotNull
     protected final CFNBaseGui<?> gui;
     private final List<Component> children = new ObjectArrayList<>();
@@ -78,6 +62,10 @@ public class Component extends Rectangle {
             return null;
         }
         return FormatNumberUtils.formatItemCount(stack.getCount());
+    }
+
+    protected static int alignTextY(int topY, int areaHeight) {
+        return topY + Math.max(0, (areaHeight - GUI_TEXT_HEIGHT) / 2);
     }
 
     public List<Component> getChildren() {
@@ -205,11 +193,11 @@ public class Component extends Rectangle {
     }
 
     public int getAbsoluteX() {
-        return parent != null ? parent.getAbsoluteX() + x : gui.getGuiLeft() + x;
+        return parent != null ? parent.getAbsoluteX() + x : gui.getGuiLeftPos() + x;
     }
 
     public int getAbsoluteY() {
-        return parent != null ? parent.getAbsoluteY() + y : gui.getGuiTop() + y;
+        return parent != null ? parent.getAbsoluteY() + y : gui.getGuiTopPos() + y;
     }
 
     public boolean contains(int mouseX, int mouseY) {
@@ -283,107 +271,27 @@ public class Component extends Rectangle {
         }
     }
 
-    //? if >=1.20 {
-    /*public static void setCurrentGuiGraphics(@Nullable GuiGraphics guiGraphics) {
-        currentGuiGraphics = guiGraphics;
-    }
-
     @Nullable
-    protected final GuiGraphics getCurrentGuiGraphics() {
+    protected final GuiGraphicsExtractor getCurrentGuiGraphics() {
         return currentGuiGraphics;
     }
-    *///?}
+
+    public static void setCurrentGuiGraphics(@Nullable GuiGraphicsExtractor guiGraphics) {
+        currentGuiGraphics = guiGraphics;
+    }
 
     protected void render(int mouseX, int mouseY, float partialTicks) {
 
     }
 
-    protected static int alignTextY(int topY, int areaHeight) {
-        return topY + Math.max(0, (areaHeight - GUI_TEXT_HEIGHT) / 2);
-    }
-
-    //? if <1.20 {
     protected void renderBoundLayouts(int mouseX, int mouseY) {
         if (boundLayouts.isEmpty()) return;
 
-        Minecraft mc = Minecraft.getMinecraft();
-        RenderItem renderItem = mc.getRenderItem();
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
-        boolean topComponent = gui.isTopComponent(this, mouseX, mouseY);
-
-        restoreGuiRenderState();
-        GlStateManager.pushMatrix();
-        GlStateManager.translate((float) gui.getGuiLeft(), (float) gui.getGuiTop(), 100.0F);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableDepth();
-        GlStateManager.enableCull();
-        GlStateManager.depthMask(true);
-        GlStateManager.enableLighting();
-        GlStateManager.enableRescaleNormal();
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-        RenderHelper.enableGUIStandardItemLighting();
-
-        for (ComponentSlotLayout layout : boundLayouts) {
-            List<? extends Slot> slots = layout.getSlots();
-            if (slots.isEmpty()) continue;
-            for (Slot slot : slots) {
-                if (!slot.isEnabled()) continue;
-
-                int sx = slot.xPos;
-                int sy = slot.yPos;
-                ItemStack stack = slot.getStack();
-
-                float prevZLevel = renderItem.zLevel;
-                renderItem.zLevel = 100.0F;
-                if (!stack.isEmpty()) {
-                    renderItem.renderItemAndEffectIntoGUI(mc.player, stack, sx, sy);
-                    renderItem.renderItemOverlayIntoGUI(mc.fontRenderer, stack, sx, sy, getItemCountOverlayText(stack));
-                }
-                renderItem.zLevel = prevZLevel;
-
-                if (topComponent && isMouseOverSlot(localMouseX, localMouseY, sx, sy)) {
-                    gui.setHoveredSlot(slot);
-                    GlStateManager.disableLighting();
-                    GlStateManager.disableDepth();
-                    GlStateManager.enableBlend();
-                    GlStateManager.tryBlendFuncSeparate(
-                        org.lwjgl.opengl.GL11.GL_SRC_ALPHA,
-                        org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA,
-                        org.lwjgl.opengl.GL11.GL_ONE,
-                        org.lwjgl.opengl.GL11.GL_ZERO
-                    );
-                    GlStateManager.colorMask(true, true, true, false);
-                    Gui.drawRect(sx, sy, sx + 16, sy + 16, -2130706433);
-                    GlStateManager.enableBlend();
-                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                }
-
-                restoreGuiRenderState();
-                GlStateManager.enableDepth();
-                GlStateManager.enableCull();
-                GlStateManager.depthMask(true);
-                GlStateManager.enableLighting();
-                GlStateManager.enableRescaleNormal();
-                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
-                GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-                RenderHelper.enableGUIStandardItemLighting();
-            }
-        }
-
-        GlStateManager.popMatrix();
-        restoreGuiRenderState();
-    }
-    //?} else {
-    /*protected void renderBoundLayouts(int mouseX, int mouseY) {
-        if (boundLayouts.isEmpty()) return;
-
-        GuiGraphics guiGraphics = getCurrentGuiGraphics();
+        GuiGraphicsExtractor guiGraphics = getCurrentGuiGraphics();
         if (guiGraphics == null) return;
 
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
+        int localMouseX = mouseX - gui.getGuiLeftPos();
+        int localMouseY = mouseY - gui.getGuiTopPos();
         boolean topComponent = gui.isTopComponent(this, mouseX, mouseY);
 
         restoreGuiRenderState();
@@ -394,28 +302,24 @@ public class Component extends Rectangle {
             for (Slot slot : slots) {
                 if (!slot.isActive()) continue;
 
-                int screenX = gui.getGuiLeft() + slot.x;
-                int screenY = gui.getGuiTop() + slot.y;
+                int screenX = gui.getGuiLeftPos() + slot.x;
+                int screenY = gui.getGuiTopPos() + slot.y;
                 ItemStack stack = slot.getItem();
 
                 if (!stack.isEmpty()) {
-                    guiGraphics.pose().pushPose();
-                    guiGraphics.pose().translate(0, 0, 100);
-                    guiGraphics.renderItem(stack, screenX, screenY);
-                    guiGraphics.renderItemDecorations(Minecraft.getInstance().font, stack, screenX, screenY, getItemCountOverlayText(stack));
-                    guiGraphics.pose().popPose();
+                    GuiGraphicsCompat.renderItem(guiGraphics, stack, screenX, screenY);
+                    GuiGraphicsCompat.renderItemDecorations(guiGraphics, Minecraft.getInstance().font, stack, screenX, screenY, getItemCountOverlayText(stack));
                 }
 
                 if (topComponent && isMouseOverSlot(localMouseX, localMouseY, slot.x, slot.y)) {
                     gui.setHoveredSlot(slot);
-                    guiGraphics.fill(RenderType.guiOverlay(), screenX, screenY, screenX + 16, screenY + 16, -2130706433);
+                    guiGraphics.fill(screenX, screenY, screenX + 16, screenY + 16, -2130706433);
                 }
             }
         }
 
         restoreGuiRenderState();
     }
-    *///?}
 
     protected final boolean isMouseOverSlot(int localMouseX, int localMouseY, int slotX, int slotY) {
         return localMouseX >= slotX && localMouseX < slotX + 16
@@ -461,53 +365,11 @@ public class Component extends Rectangle {
         return tooltips;
     }
 
-    //? if <1.20 {
-    @NotNull
     protected List<LocalizedComponent> collectSlotTooltip(int mouseX, int mouseY) {
         if (boundLayouts.isEmpty()) return Collections.emptyList();
 
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
-        Minecraft mc = Minecraft.getMinecraft();
-
-        for (ComponentSlotLayout layout : boundLayouts) {
-            List<? extends Slot> slots = layout.getSlots();
-            if (slots.isEmpty()) continue;
-            for (Slot slot : slots) {
-                if (!slot.isEnabled()) continue;
-
-                int sx = slot.xPos;
-                int sy = slot.yPos;
-                if (!isMouseOverSlot(localMouseX, localMouseY, sx, sy)) continue;
-
-                ItemStack stack = slot.getStack();
-                if (stack.isEmpty()) {
-                    return Collections.emptyList();
-                }
-
-                List<String> lines = stack.getTooltip(mc.player,
-                    mc.gameSettings.advancedItemTooltips
-                        ? ITooltipFlag.TooltipFlags.ADVANCED
-                        : ITooltipFlag.TooltipFlags.NORMAL);
-                if (lines.isEmpty()) {
-                    return Collections.emptyList();
-                }
-                List<LocalizedComponent> tips = new ObjectArrayList<>(lines.size());
-                for (String line : lines) {
-                    tips.add(() -> line);
-                }
-                return tips;
-            }
-        }
-
-        return Collections.emptyList();
-    }
-    //?} else {
-    /*protected List<LocalizedComponent> collectSlotTooltip(int mouseX, int mouseY) {
-        if (boundLayouts.isEmpty()) return Collections.emptyList();
-
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
+        int localMouseX = mouseX - gui.getGuiLeftPos();
+        int localMouseY = mouseY - gui.getGuiTopPos();
 
         for (ComponentSlotLayout layout : boundLayouts) {
             List<? extends Slot> slots = layout.getSlots();
@@ -535,34 +397,12 @@ public class Component extends Rectangle {
 
         return Collections.emptyList();
     }
-    *///?}
 
-    //? if <1.20 {
     protected final boolean hasBoundSlotAt(int mouseX, int mouseY) {
         if (boundLayouts.isEmpty()) return false;
 
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
-
-        for (ComponentSlotLayout layout : boundLayouts) {
-            List<? extends Slot> slots = layout.getSlots();
-            if (slots.isEmpty()) continue;
-            for (Slot slot : slots) {
-                if (!slot.isEnabled()) continue;
-                if (isMouseOverSlot(localMouseX, localMouseY, slot.xPos, slot.yPos)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-    //?} else {
-    /*protected final boolean hasBoundSlotAt(int mouseX, int mouseY) {
-        if (boundLayouts.isEmpty()) return false;
-
-        int localMouseX = mouseX - gui.getGuiLeft();
-        int localMouseY = mouseY - gui.getGuiTop();
+        int localMouseX = mouseX - gui.getGuiLeftPos();
+        int localMouseY = mouseY - gui.getGuiTopPos();
 
         for (ComponentSlotLayout layout : boundLayouts) {
             List<? extends Slot> slots = layout.getSlots();
@@ -577,7 +417,6 @@ public class Component extends Rectangle {
 
         return false;
     }
-    *///?}
 
     protected final boolean hasAnyBoundSlotAt(int mouseX, int mouseY) {
         if (hasBoundSlotAt(mouseX, mouseY)) {
@@ -755,7 +594,7 @@ public class Component extends Rectangle {
         int ax = getAbsoluteX();
         int ay = getAbsoluteY();
         for (ComponentSlotLayout layout : boundLayouts) {
-            layout.syncPositions(ax - gui.getGuiLeft(), ay - gui.getGuiTop(), isVisible());
+            layout.syncPositions(ax - gui.getGuiLeftPos(), ay - gui.getGuiTopPos(), isVisible());
         }
     }
 
@@ -787,47 +626,13 @@ public class Component extends Rectangle {
         }
     }
 
-    //? if <1.20 {
     protected final void restoreGuiRenderState() {
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.disableLighting();
-        GlStateManager.disableDepth();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.depthMask(true);
-        GlStateManager.enableAlpha();
-        GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(
-            GL11.GL_SRC_ALPHA,
-            GL11.GL_ONE_MINUS_SRC_ALPHA,
-            GL11.GL_ONE,
-            GL11.GL_ZERO
-        );
-        GlStateManager.colorMask(true, true, true, true);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
-        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
-        GlStateManager.enableTexture2D();
-        GlStateManager.matrixMode(GL11.GL_TEXTURE);
-        GlStateManager.loadIdentity();
-        GlStateManager.disableTexture2D();
-
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-        GlStateManager.enableTexture2D();
-        GlStateManager.matrixMode(GL11.GL_TEXTURE);
-        GlStateManager.loadIdentity();
-        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        RenderSystemCompat.enableBlend();
+        RenderSystemCompat.defaultBlendFunc();
+        RenderSystemCompat.disableDepthTest();
+        RenderSystemCompat.disableCull();
+        RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
-    //?} else {
-    /*protected final void restoreGuiRenderState() {
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-    }
-    *///?}
 
     public void setSize(int width, int height) {
         this.width = width;

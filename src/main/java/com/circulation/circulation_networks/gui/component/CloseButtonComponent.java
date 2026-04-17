@@ -39,8 +39,6 @@ public class CloseButtonComponent extends ButtonComponent {
     }
 
     private void closeCurrentGui() {
-        //~ if >=1.20 '.gui.mc.player.closeScreen()' -> '.gui.onClose()' {
-        this.gui.mc.player.closeScreen();
-        //~}
+        this.gui.onClose();
     }
 }

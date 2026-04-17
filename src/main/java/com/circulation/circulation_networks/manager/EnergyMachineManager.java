@@ -1,22 +1,22 @@
 package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IGrid;
-import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
+import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.IMachineNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
-import com.circulation.circulation_networks.packets.NodeNetworkRendering;
-import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.network.nodes.HubNode;
+import com.circulation.circulation_networks.packets.EnergyWarningRendering;
+import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
+import com.circulation.circulation_networks.utils.BlockPosCompat;
 import com.circulation.circulation_networks.utils.Functions;
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
@@ -37,25 +37,18 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
-//~ mc_imports
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if <1.20 {
-import net.minecraft.entity.player.EntityPlayerMP;
-//?} else {
-/*import net.minecraft.server.level.ServerPlayer;
- *///?}
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import net.minecraft.server.MinecraftServer;
 
 public final class EnergyMachineManager {
 
@@ -65,16 +58,15 @@ public final class EnergyMachineManager {
     private static final double WARNING_RENDER_DISTANCE_SQ = 48.0D * 48.0D;
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    private final Reference2ObjectMap<INode, Set<TileEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
-    private final Reference2ObjectOpenHashMap<TileEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<INode, Set<BlockEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectOpenHashMap<BlockEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
     private final Int2ObjectMap<LongSet> warningPositionsScratch = new Int2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
-    private final ReferenceSet<TileEntity> cache = new ReferenceOpenHashSet<>();
+    private final ReferenceSet<BlockEntity> cache = new ReferenceOpenHashSet<>();
     private final Int2ObjectMap<Long2LongMap> lastWarningTicks = new Int2ObjectOpenHashMap<>();
     private final LongOpenHashSet visibleWarningsScratch = new LongOpenHashSet();
     private long warningTickCounter;
@@ -159,98 +151,88 @@ public final class EnergyMachineManager {
             }
         }
     }
-    //~}
 
-    //? if <1.20 {
-    private static MinecraftServer getServer() {
-        return CirculationFlowNetworks.server;
-    }
-
-    private static boolean isClientWorld(World world) {
-        return world.isRemote;
-    }
-
-    private static int getDimensionId(World world) {
-        return world.provider.getDimension();
+    @Nullable
+    private static HubNode.HubMetadata getHubMetadata(@Nullable IGrid grid) {
+        if (grid == null) {
+            return null;
+        }
+        IHubNode hubNode = grid.getHubNode();
+        return hubNode != null ? hubNode.getHubData() : null;
     }
 
-    private static int getPlayerDimensionId(EntityPlayerMP player) {
-        return player.dimension;
+    static void recordGridTickTimeNanos(@Nullable IGrid grid, long durationNanos) {
+        if (grid == null || durationNanos <= 0L) {
+            return;
+        }
+        Objects.requireNonNull(getOrCreateInteraction(grid)).recordGridTickTimeNanos(durationNanos);
     }
 
-    private static double getPlayerDistanceSq(EntityPlayerMP player, BlockPos pos) {
-        return player.getDistanceSq(pos.getX() + 0.5D, pos.getY() + 1.25D, pos.getZ() + 0.5D);
+    static void recordDistributedGridTickTimeNanos(Collection<? extends IGrid> grids, long durationNanos) {
+        if (durationNanos <= 0L) {
+            return;
+        }
+        int gridCount = grids.size();
+        if (gridCount == 0) {
+            return;
+        }
+        long baseShare = durationNanos / gridCount;
+        long remainder = durationNanos % gridCount;
+        for (IGrid grid : grids) {
+            if (grid == null) {
+                continue;
+            }
+            long share = baseShare;
+            if (remainder > 0L) {
+                share++;
+                remainder--;
+            }
+            recordGridTickTimeNanos(grid, share);
+        }
     }
 
-    private static long getPackedPos(TileEntity blockEntity) {
-        return blockEntity.getPos().toLong();
-    }
-    //?} else if <1.21 {
-    /*private static MinecraftServer getServer() {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-    }
-
-    private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
-    }
-
-    private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
+    @Nullable
+    static Interaction getOrCreateInteraction(@Nullable IGrid grid) {
+        if (grid == null) {
+            return null;
+        }
+        Interaction interaction = INSTANCE.interaction.get(grid);
+        if (interaction == null) {
+            interaction = new Interaction();
+            INSTANCE.interaction.put(grid, interaction);
+        }
+        interaction.prepareForTick(INSTANCE.interactionEpoch);
+        return interaction;
     }
 
-    private static int getPlayerDimensionId(ServerPlayer player) {
-        return player.level().dimension().location().hashCode();
+    private static void syncBackParticipants(ReferenceSet<EnergyTransferParticipant> send,
+                                             ReferenceSet<EnergyTransferParticipant> storage,
+                                             ReferenceSet<EnergyTransferParticipant> receive,
+                                             Reference2ObjectMap<IGrid, GridTickData> tickGridData) {
+        for (var p : send) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.send.add(p);
+        }
+        for (var p : storage) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.storage.add(p);
+        }
+        for (var p : receive) {
+            var h = tickGridData.get(p.grid());
+            if (h != null) h.receive.add(p);
+        }
     }
 
-    private static double getPlayerDistanceSq(ServerPlayer player, BlockPos pos) {
-        double dx = player.getX() - (pos.getX() + 0.5D);
-        double dy = player.getY() - (pos.getY() + 1.25D);
-        double dz = player.getZ() - (pos.getZ() + 0.5D);
-        return dx * dx + dy * dy + dz * dz;
-    }
-    *///?} else {
-    /*private static MinecraftServer getServer() {
-        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-    }
-
-    private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
-    }
-
-    private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
-    }
-
-    private static int getPlayerDimensionId(ServerPlayer player) {
-        return player.level().dimension().location().hashCode();
-    }
-
-    private static double getPlayerDistanceSq(ServerPlayer player, BlockPos pos) {
-        double dx = player.getX() - (pos.getX() + 0.5D);
-        double dy = player.getY() - (pos.getY() + 1.25D);
-        double dz = player.getZ() - (pos.getZ() + 0.5D);
-        return dx * dx + dy * dy + dz * dz;
-    }
-    *///?}
-
-    //~ if >=1.20 '.fromLong(' -> '.of(' {
-    private static BlockPos blockPosFromLong(long posLong) {
-        return BlockPos.fromLong(posLong);
-    }
-    //~}
-
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public Map<TileEntity, ReferenceSet<INode>> getMachineGridMap() {
+    public Map<BlockEntity, ReferenceSet<INode>> getMachineGridMap() {
         return machineGridMap;
     }
-    //~}
 
     public Reference2ObjectMap<IGrid, Interaction> getInteraction() {
         return interaction;
     }
 
     public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
-        if (isClientWorld(event.getWorld())) return;
+        if (WorldResolveCompat.isClientWorld(event.getWorld())) return;
         if (NetworkManager.INSTANCE.isInit()) {
             addMachine(event.getBlockEntity());
             var node = API.getNodeAt(event.getWorld(), event.getPos());
@@ -261,12 +243,12 @@ public final class EnergyMachineManager {
     }
 
     public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
-        if (isClientWorld(event.getWorld())) return;
+        if (WorldResolveCompat.isClientWorld(event.getWorld())) return;
         removeMachine(event.getBlockEntity());
     }
 
     public void onServerTick() {
-        var server = getServer();
+        var server = WorldResolveCompat.currentServer();
         if (server == null || !NetworkManager.INSTANCE.isInit()) return;
         warningTickCounter++;
         interactionEpoch++;
@@ -276,15 +258,11 @@ public final class EnergyMachineManager {
         clearWarningPositionsScratch();
         for (var entry : machineGridMap.entrySet()) {
             var te = entry.getKey();
-            //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
-            //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
-            var world = te.getWorld();
-            var pos = te.getPos();
+            var world = te.getLevel();
+            var pos = te.getBlockPos();
             if (!Functions.isChunkLoaded(world, pos)) continue;
-            //~}
-            //~}
             if (CirculationShielderManager.INSTANCE.isBlockedByShielder(pos, world)) continue;
-            int dimId = getDimensionId(world);
+            int dimId = WorldResolveCompat.getDimensionId(world);
             var override = overrideManager == null ? null : overrideManager.getOverride(dimId, pos);
             WarningTarget warningTarget = null;
             for (var node : entry.getValue()) {
@@ -309,7 +287,7 @@ public final class EnergyMachineManager {
                 if (type == IEnergyHandler.EnergyType.RECEIVE) {
                     if (gridData.receiveTargets.get(participant) == null) {
                         if (warningTarget == null) {
-                            warningTarget = new WarningTarget(dimId, getPackedPos(te));
+                            warningTarget = new WarningTarget(dimId, WorldResolveCompat.getPackedPos(te));
                         }
                         gridData.receiveTargets.put(participant, warningTarget);
                     }
@@ -379,19 +357,13 @@ public final class EnergyMachineManager {
         activeTickGrids.clear();
     }
 
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public void addMachine(TileEntity blockEntity) {
-        //~}
+    public void addMachine(BlockEntity blockEntity) {
         if (!RegistryEnergyHandler.isEnergyTileEntity(blockEntity)) return;
         if (RegistryEnergyHandler.isBlack(blockEntity)) return;
-        //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
-        var pos = blockEntity.getPos();
-        //~}
+        var pos = blockEntity.getBlockPos();
         long chunkCoord = Functions.mergeChunkCoords(pos);
 
-        //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
-        var dim = getDimensionId(blockEntity.getWorld());
-        //~}
+        var dim = WorldResolveCompat.getDimensionId(blockEntity.getLevel());
         var map = scopeNode.get(dim);
         if (map == scopeNode.defaultReturnValue()) {
             scopeNode.put(dim, map = new Long2ObjectOpenHashMap<>());
@@ -424,9 +396,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public void removeMachine(TileEntity blockEntity) {
-        //~}
+    public void removeMachine(BlockEntity blockEntity) {
         var set = machineGridMap.remove(blockEntity);
         if (set == null || set.isEmpty()) return;
         for (var node : set) {
@@ -441,9 +411,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public void addMachineNode(IMachineNode iMachineNode, TileEntity blockEntity) {
-        //~}
+    public void addMachineNode(IMachineNode iMachineNode, BlockEntity blockEntity) {
         var allConnected = new ReferenceOpenHashSet<INode>();
         for (INode candidate : NetworkManager.INSTANCE.getNodesCoveringPosition(iMachineNode.getWorld(), iMachineNode.getPos())) {
             if (candidate.linkScopeCheck(iMachineNode) != INode.LinkType.DISCONNECT) {
@@ -478,7 +446,7 @@ public final class EnergyMachineManager {
             int maxChunkZ = (nodeZ + range) >> 4;
             LongSet chunksCovered = new LongOpenHashSet();
 
-            int dimId = getDimensionId(node.getWorld());
+            int dimId = WorldResolveCompat.getDimensionId(node.getWorld());
 
             Long2ObjectMap<ReferenceSet<IEnergySupplyNode>> map = scopeNode.get(dimId);
             if (map == scopeNode.defaultReturnValue()) {
@@ -498,14 +466,9 @@ public final class EnergyMachineManager {
                     }
                     set.add(energySupplyNode);
 
-                    //? if <1.20 {
-                    var chunk = node.getWorld().getChunkProvider().getLoadedChunk(cx, cz);
-                    if (chunk == null || chunk.isEmpty()) {
-                        continue;
-                    }
                     var set2 = gridMachineMap.get(node);
-                    for (var tileEntity : chunk.getTileEntityMap().values()) {
-                        if (!energySupplyNode.supplyScopeCheck(tileEntity.getPos())) continue;
+                    for (var tileEntity : WorldResolveCompat.getLoadedChunkBlockEntities(node.getWorld(), cx, cz)) {
+                        if (!energySupplyNode.supplyScopeCheck(tileEntity.getBlockPos())) continue;
                         if (RegistryEnergyHandler.isBlack(tileEntity)) continue;
                         if (energySupplyNode.isBlacklisted(tileEntity)) continue;
                         if (RegistryEnergyHandler.isEnergyTileEntity(tileEntity)) {
@@ -521,30 +484,6 @@ public final class EnergyMachineManager {
                             set3.add(energySupplyNode);
                         }
                     }
-                    //?} else {
-                    /*var chunk = node.getWorld().getChunkSource().getChunkNow(cx, cz);
-                    if (chunk == null) {
-                        continue;
-                    }
-                    var set2 = gridMachineMap.get(node);
-                    for (var blockEntity : chunk.getBlockEntities().values()) {
-                        if (!energySupplyNode.supplyScopeCheck(blockEntity.getBlockPos())) continue;
-                        if (RegistryEnergyHandler.isBlack(blockEntity)) continue;
-                        if (energySupplyNode.isBlacklisted(blockEntity)) continue;
-                        if (RegistryEnergyHandler.isEnergyTileEntity(blockEntity)) {
-                            if (set2 == gridMachineMap.defaultReturnValue()) {
-                                gridMachineMap.put(energySupplyNode, set2 = new ReferenceOpenHashSet<>());
-                            }
-                            set2.add(blockEntity);
-
-                            var set3 = machineGridMap.get(blockEntity);
-                            if (set3 == null) {
-                                machineGridMap.put(blockEntity, set3 = new ReferenceOpenHashSet<>());
-                            }
-                            set3.add(energySupplyNode);
-                        }
-                    }
-                    *///?}
                 }
             }
 
@@ -601,11 +540,7 @@ public final class EnergyMachineManager {
 
         for (var te : cache) {
             addMachine(te);
-            //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
-            //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
-            var node = API.getNodeAt(te.getWorld(), te.getPos());
-            //~}
-            //~}
+            var node = API.getNodeAt(te.getLevel(), te.getBlockPos());
             if (node instanceof IMachineNode im) {
                 addMachineNode(im, te);
             }
@@ -665,80 +600,17 @@ public final class EnergyMachineManager {
         interactionEpoch = 0L;
     }
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, BlockPos pos) {
+    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(Level world, BlockPos pos) {
         return getEnergyNodes(world, pos.getX() >> 4, pos.getZ() >> 4);
     }
-    //~}
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, int chunkX, int chunkZ) {
-        var map = scopeNode.get(getDimensionId(world));
+    public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(Level world, int chunkX, int chunkZ) {
+        var map = scopeNode.get(WorldResolveCompat.getDimensionId(world));
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
-    //~}
-    //? if >=1.20 {
-    /*private static long getPackedPos(BlockEntity blockEntity) {
-        return blockEntity.getBlockPos().asLong();
-    }
-    *///?}
 
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public @NotNull Set<TileEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
+    public @NotNull Set<BlockEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
         return gridMachineMap.getOrDefault(node, Collections.emptySet());
-    }
-
-    @Nullable
-    private static HubNode.HubMetadata getHubMetadata(@Nullable IGrid grid) {
-        if (grid == null) {
-            return null;
-        }
-        IHubNode hubNode = grid.getHubNode();
-        return hubNode != null ? hubNode.getHubData() : null;
-    }
-
-    static void recordGridTickTimeNanos(@Nullable IGrid grid, long durationNanos) {
-        if (grid == null || durationNanos <= 0L) {
-            return;
-        }
-        Objects.requireNonNull(getOrCreateInteraction(grid)).recordGridTickTimeNanos(durationNanos);
-    }
-
-    static void recordDistributedGridTickTimeNanos(Collection<? extends IGrid> grids, long durationNanos) {
-        if (durationNanos <= 0L) {
-            return;
-        }
-        int gridCount = grids.size();
-        if (gridCount == 0) {
-            return;
-        }
-        long baseShare = durationNanos / gridCount;
-        long remainder = durationNanos % gridCount;
-        for (IGrid grid : grids) {
-            if (grid == null) {
-                continue;
-            }
-            long share = baseShare;
-            if (remainder > 0L) {
-                share++;
-                remainder--;
-            }
-            recordGridTickTimeNanos(grid, share);
-        }
-    }
-
-    @Nullable
-    static Interaction getOrCreateInteraction(@Nullable IGrid grid) {
-        if (grid == null) {
-            return null;
-        }
-        Interaction interaction = INSTANCE.interaction.get(grid);
-        if (interaction == null) {
-            interaction = new Interaction();
-            INSTANCE.interaction.put(grid, interaction);
-        }
-        interaction.prepareForTick(INSTANCE.interactionEpoch);
-        return interaction;
     }
 
     private GridTickData getTickGridData(IGrid grid) {
@@ -814,16 +686,16 @@ public final class EnergyMachineManager {
         if (warningPositions.isEmpty()) {
             return;
         }
-        for (var player : server.getPlayerList().getPlayers()) {
-            int dimId = getPlayerDimensionId(player);
+        for (var player : WorldResolveCompat.getServerPlayers(server)) {
+            int dimId = WorldResolveCompat.getPlayerDimensionId(player);
             LongSet dimWarnings = warningPositions.get(dimId);
             if (dimWarnings == null || dimWarnings.isEmpty()) {
                 continue;
             }
             visibleWarningsScratch.clear();
             for (long posLong : dimWarnings) {
-                BlockPos pos = blockPosFromLong(posLong);
-                if (getPlayerDistanceSq(player, pos) <= WARNING_RENDER_DISTANCE_SQ) {
+                BlockPos pos = BlockPosCompat.fromLong(posLong);
+                if (WorldResolveCompat.getPlayerDistanceSq(player, pos) <= WARNING_RENDER_DISTANCE_SQ) {
                     visibleWarningsScratch.add(posLong);
                 }
             }
@@ -847,7 +719,6 @@ public final class EnergyMachineManager {
             }
         }
     }
-    //~}
 
     enum Status {
         EXTRACT,
@@ -880,27 +751,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    //? if <1.20
-    @Desugar
     private record WarningTarget(int dimId, long posLong) {
-    }
-
-    private static void syncBackParticipants(ReferenceSet<EnergyTransferParticipant> send,
-                                             ReferenceSet<EnergyTransferParticipant> storage,
-                                             ReferenceSet<EnergyTransferParticipant> receive,
-                                             Reference2ObjectMap<IGrid, GridTickData> tickGridData) {
-        for (var p : send) {
-            var h = tickGridData.get(p.grid());
-            if (h != null) h.send.add(p);
-        }
-        for (var p : storage) {
-            var h = tickGridData.get(p.grid());
-            if (h != null) h.storage.add(p);
-        }
-        for (var p : receive) {
-            var h = tickGridData.get(p.grid());
-            if (h != null) h.receive.add(p);
-        }
     }
 
     static final class GridTickData {
@@ -909,6 +760,12 @@ public final class EnergyMachineManager {
         final ReferenceSet<EnergyTransferParticipant> receive = new ReferenceOpenHashSet<>();
         final Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets = new Reference2ObjectOpenHashMap<>();
         boolean activeThisTick;
+
+        private static void recycle(ReferenceSet<EnergyTransferParticipant> handlers) {
+            for (var participant : handlers) {
+                participant.recycle();
+            }
+        }
 
         ReferenceSet<EnergyTransferParticipant> handlers(IEnergyHandler.EnergyType type) {
             return switch (type) {
@@ -936,12 +793,6 @@ public final class EnergyMachineManager {
             receive.clear();
             receiveTargets.clear();
             activeThisTick = false;
-        }
-
-        private static void recycle(ReferenceSet<EnergyTransferParticipant> handlers) {
-            for (var participant : handlers) {
-                participant.recycle();
-            }
         }
     }
 

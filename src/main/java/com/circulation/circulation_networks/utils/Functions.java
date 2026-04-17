@@ -5,17 +5,12 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.registry.NodeTypes;
-//~ mc_imports
-
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if >=1.21 {
-/*import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-*///?}
-
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public final class Functions {
@@ -30,22 +25,7 @@ public final class Functions {
         return (N) creator.apply(context);
     }
 
-    //? if <1.20 {
     @NotNull
-    public static NBTTagCompound getOrCreateTagCompound(ItemStack stack) {
-        var nbt = stack.getTagCompound();
-        if (nbt == null) {
-            stack.setTagCompound(nbt = new NBTTagCompound());
-        }
-        return nbt;
-    }
-    //?} else if <1.21 {
-    /*@NotNull
-    public static CompoundTag getOrCreateTagCompound(ItemStack stack) {
-        return stack.getOrCreateTag();
-    }
-    *///?} else {
-    /*@NotNull
     public static CompoundTag getOrCreateTagCompound(ItemStack stack) {
         return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     }
@@ -53,7 +33,6 @@ public final class Functions {
     public static void saveTagCompound(ItemStack stack, CompoundTag tag) {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
-    *///?}
 
     public static long mergeChunkCoords(int x, int z) {
         return ((long) x << 32) | (z & 0xFFFFFFFFL);
@@ -67,21 +46,13 @@ public final class Functions {
         return pos.getZ() >> 4;
     }
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public static boolean isChunkLoaded(World world, int chunkX, int chunkZ) {
-        //? if <1.20 {
-        return world.getChunkProvider().getLoadedChunk(chunkX, chunkZ) != null;
-        //?} else {
-        /*return world.getChunkSource().hasChunk(chunkX, chunkZ);
-        *///?}
+    public static boolean isChunkLoaded(Level world, int chunkX, int chunkZ) {
+        return WorldResolveCompat.isChunkLoaded(world, chunkX, chunkZ);
     }
-    //~}
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public static boolean isChunkLoaded(World world, BlockPos pos) {
+    public static boolean isChunkLoaded(Level world, BlockPos pos) {
         return isChunkLoaded(world, getChunkX(pos), getChunkZ(pos));
     }
-    //~}
 
     public static long mergeChunkCoords(BlockPos pos) {
         return mergeChunkCoords(getChunkX(pos), getChunkZ(pos));

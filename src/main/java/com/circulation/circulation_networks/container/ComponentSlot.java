@@ -1,32 +1,18 @@
 package com.circulation.circulation_networks.container;
 
-//? if <1.20 {
+import com.circulation.circulation_networks.inventory.CFNInternalInventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NonNull;
 
-import net.minecraft.inventory.IInventory;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.items.wrapper.InvWrapper;
-//?} else if <1.21 {
-/*import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
-*///?} else {
-/*import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
-
-public class ComponentSlot extends SlotItemHandler {
+public class ComponentSlot extends Slot {
 
     private final int relX;
     private final int relY;
     private boolean visible = true;
 
-    //? if <1.20 {
-    public ComponentSlot(IInventory inventory, int index, int relX, int relY) {
-        this(new InvWrapper(inventory), index, relX, relY);
-    }
-    //?}
-
-    public ComponentSlot(IItemHandler inventory, int index, int relX, int relY) {
+    public ComponentSlot(Container inventory, int index, int relX, int relY) {
         super(inventory, index, relX, relY);
         this.relX = relX;
         this.relY = relY;
@@ -45,9 +31,23 @@ public class ComponentSlot extends SlotItemHandler {
     }
 
     @Override
-        //~ if >=1.20 'isEnabled()' -> 'isActive()' {
-    public boolean isEnabled() {
-        //~}
+    public int getMaxStackSize() {
+        if (container instanceof CFNInternalInventory inventory) {
+            return inventory.getSlotLimit(getSlotIndex());
+        }
+        return super.getMaxStackSize();
+    }
+
+    @Override
+    public int getMaxStackSize(@NonNull ItemStack stack) {
+        if (container instanceof CFNInternalInventory inventory) {
+            return Math.min(inventory.getSlotLimit(getSlotIndex()), stack.getMaxStackSize());
+        }
+        return super.getMaxStackSize(stack);
+    }
+
+    @Override
+    public boolean isActive() {
         return visible;
     }
 }

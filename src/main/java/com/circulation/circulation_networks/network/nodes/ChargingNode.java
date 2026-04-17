@@ -3,19 +3,17 @@ package com.circulation.circulation_networks.network.nodes;
 import com.circulation.circulation_networks.api.node.IChargingNode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.registry.NodeTypes;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.nbt.CompoundTag;
 
 public final class ChargingNode extends Node implements IChargingNode {
 
     private final double chargingScope;
     private final double chargingScopeSq;
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.setDouble(' -> '.putDouble(' {
-    public ChargingNode(NBTTagCompound tag) {
+    public ChargingNode(CompoundTag tag) {
         super(NodeTypes.CHARGING_NODE, tag);
-        this.chargingScope = tag.getDouble("chargingScope");
+        this.chargingScope = NbtCompat.getDoubleOr(tag, "chargingScope", 0.0D);
         this.chargingScopeSq = chargingScope * chargingScope;
     }
 
@@ -36,11 +34,9 @@ public final class ChargingNode extends Node implements IChargingNode {
     }
 
     @Override
-    public NBTTagCompound serialize() {
+    public CompoundTag serialize() {
         var nbt = super.serialize();
-        nbt.setDouble("chargingScope", chargingScope);
+        NbtCompat.putDouble(nbt, "chargingScope", chargingScope);
         return nbt;
     }
-    //~}
-    //~}
 }

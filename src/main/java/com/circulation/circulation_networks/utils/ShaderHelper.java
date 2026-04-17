@@ -1,39 +1,17 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
-import net.minecraft.client.Minecraft;
-//~ mc_imports
-import net.minecraft.util.ResourceLocation;
-//? if <1.20 {
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else if <1.21 {
-/*import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-*///?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-
-//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
-@SideOnly(Side.CLIENT)
-//~}
 public final class ShaderHelper {
 
     private ShaderHelper() {
     }
 
-    public static int loadShader(ResourceLocation vertexLoc, ResourceLocation fragmentLoc, String... attribNames) {
-        String vertSource = readResource(vertexLoc);
-        String fragSource = readResource(fragmentLoc);
+    public static int loadShader(Object vertexLoc, Object fragmentLoc, String... attribNames) {
+        String vertSource = ShaderResourceCompat.readResource(vertexLoc);
+        String fragSource = ShaderResourceCompat.readResource(fragmentLoc);
         if (vertSource == null || fragSource == null) return 0;
 
         int vert = compileShader(GL20.GL_VERTEX_SHADER, vertSource, vertexLoc.toString());
@@ -109,24 +87,5 @@ public final class ShaderHelper {
             return 0;
         }
         return shader;
-    }
-
-    private static @Nullable String readResource(ResourceLocation loc) {
-        //? if <1.20 {
-        try (InputStream is = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
-             //?} else {
-            /*try (InputStream is = Minecraft.getInstance().getResourceManager().getResourceOrThrow(loc).open();
-             *///?}
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append('\n');
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            CirculationFlowNetworks.LOGGER.error("Failed to load shader resource: {}", loc, e);
-            return null;
-        }
     }
 }

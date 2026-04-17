@@ -2,8 +2,8 @@
 
 # Circulation Flow Networks
 
-A Minecraft energy network mod for 1.12.2 / 1.20.1 / 1.21.1. Build cross-distance, cross-dimension energy networks using
-nodes and hubs.
+A Minecraft energy network mod for NeoForge 26.1. Build cross-distance, cross-dimension energy networks using nodes and
+hubs.
 
 ---
 
@@ -18,7 +18,7 @@ the center of each network, connecting nearby **Port Nodes**, **Charging Nodes**
 automatically detects energy machines in range and handles energy collection and distribution. No manual wiring needed —
 nodes within link range connect automatically. Think power poles without the power lines.
 
-Supports Forge Energy (FE), IC2 EU (1.12.2 only), and provides an API for other mods to register custom energy handlers.
+Supports Forge Energy (FE) and provides an API for other mods to register custom energy handlers.
 
 ---
 
@@ -160,3 +160,7 @@ All node range parameters are adjustable in the config file. Additionally config
 ## Developer API
 
 See the [Developer API Documentation](docs/developer-api-en.md).
+
+## Migration Notes
+
+The repository keeps shared gameplay logic in `src/main/java` and concentrates Minecraft version touchpoints in compat, service, and backend helpers. See [Migration Architecture Guide](docs/migration-architecture.md).

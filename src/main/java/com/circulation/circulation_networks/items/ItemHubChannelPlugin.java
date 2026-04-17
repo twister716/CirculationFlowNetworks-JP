@@ -4,25 +4,18 @@ import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.UUID;
 
 public class ItemHubChannelPlugin extends BaseItem implements IHubPlugin {
 
-    //? if <1.20 {
-    public ItemHubChannelPlugin() {
-        super("hub_channel_plugin");
-        this.setMaxStackSize(1);
-    }
-    //?} else {
-    /*public ItemHubChannelPlugin(Properties properties) {
+    public ItemHubChannelPlugin(Properties properties) {
         super(properties.stacksTo(1));
     }
-    *///?}
 
     public static void setChannelInfo(ItemStack stack, UUID channelId, String name) {
         HubChannelPluginData.setChannelInfo(stack, channelId, name);

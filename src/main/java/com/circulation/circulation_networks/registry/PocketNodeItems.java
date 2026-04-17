@@ -3,16 +3,11 @@ package com.circulation.circulation_networks.registry;
 import com.circulation.circulation_networks.api.node.NodeType;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-//~ mc_imports
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-//? if <1.20 {
-import net.minecraft.block.Block;
-import net.minecraft.util.ResourceLocation;
-//?} else {
-/*import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.util.ResourceLocation;
-*///?}
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 public final class PocketNodeItems {
@@ -35,24 +30,11 @@ public final class PocketNodeItems {
         if (visualId == null || visualId.isEmpty()) {
             return null;
         }
-        //? if <1.20 {
-        ResourceLocation location = new ResourceLocation(visualId);
-        Block block = Block.REGISTRY.getObject(location);
-        if (block == null) {
-            return null;
-        }
-        return Item.getItemFromBlock(block);
-        //?} else if <1.21 {
-        /*ResourceLocation location = new ResourceLocation(visualId);
-        var block = BuiltInRegistries.BLOCK.get(location);
-        Item blockItem = Item.byBlock(block);
+        Identifier location = Identifier.parse(visualId);
+        var blockHolder = BuiltInRegistries.BLOCK.get(location).orElse(null);
+        Block block = blockHolder != null ? blockHolder.value() : null;
+        Item blockItem = block != null ? block.asItem() : net.minecraft.world.item.Items.AIR;
         return blockItem != net.minecraft.world.item.Items.AIR ? blockItem : null;
-        *///?} else {
-        /*ResourceLocation location = ResourceLocation.parse(visualId);
-        var block = BuiltInRegistries.BLOCK.get(location);
-        Item blockItem = Item.byBlock(block);
-        return blockItem != net.minecraft.world.item.Items.AIR ? blockItem : null;
-        *///?}
     }
 
     public static ItemStack createStack(NodeType<?> nodeType) {

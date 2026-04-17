@@ -3,28 +3,20 @@ package com.circulation.circulation_networks.manager;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
+import com.circulation.circulation_networks.utils.BlockPosCompat;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-//? if <1.20 {
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.util.Constants;
-//?} else {
-/*import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
-import net.minecraft.server.level.ServerPlayer;
-*///?}
 import net.minecraft.server.MinecraftServer;
-
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -61,53 +53,31 @@ public final class EnergyTypeOverrideManager {
         }
     }
 
-    //? if <1.20 {
     private static MinecraftServer getServer() {
-        return com.circulation.circulation_networks.CirculationFlowNetworks.server;
-    }
-
-    private static int getPlayerDimensionId(EntityPlayerMP player) {
-        return player.dimension;
-    }
-    //?} else if <1.21 {
-    /*private static MinecraftServer getServer() {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        return WorldResolveCompat.currentServer();
     }
 
     private static int getPlayerDimensionId(ServerPlayer player) {
-        return player.level().dimension().location().hashCode();
-    }
-    *///?} else {
-    /*private static MinecraftServer getServer() {
-        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        return WorldResolveCompat.getPlayerDimensionId(player);
     }
 
-    private static int getPlayerDimensionId(ServerPlayer player) {
-        return player.level().dimension().location().hashCode();
-    }
-    *///?}
-
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
+    private static boolean isClientWorld(net.minecraft.world.level.Level world) {
+        return WorldResolveCompat.isClientWorld(world);
     }
 
-    private static int getDimensionId(net.minecraft.world.World world) {
-        return world.provider.getDimension();
+    private static int getDimensionId(net.minecraft.world.level.Level world) {
+        return WorldResolveCompat.getDimensionId(world);
     }
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
     public void setOverride(int dim, BlockPos pos, IEnergyHandler.EnergyType type) {
-        overrides.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>()).put(pos.toLong(), type);
+        overrides.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>()).put(BlockPosCompat.toLong(pos), type);
         m = true;
     }
 
     public void clearOverride(int dim, BlockPos pos) {
         var dimMap = overrides.get(dim);
         if (dimMap != null) {
-            dimMap.remove(pos.toLong());
+            dimMap.remove(BlockPosCompat.toLong(pos));
             if (dimMap.isEmpty()) overrides.remove(dim);
         }
         m = true;
@@ -117,9 +87,8 @@ public final class EnergyTypeOverrideManager {
     public IEnergyHandler.EnergyType getOverride(int dim, BlockPos pos) {
         var dimMap = overrides.get(dim);
         if (dimMap == null) return null;
-        return dimMap.get(pos.toLong());
+        return dimMap.get(BlockPosCompat.toLong(pos));
     }
-    //~}
 
     @Nullable
     public Long2ObjectMap<IEnergyHandler.EnergyType> getOverridesForDim(int dim) {
@@ -133,87 +102,18 @@ public final class EnergyTypeOverrideManager {
         if (getOverride(dim, pos) != null) {
             MinecraftServer server = getServer();
             if (server != null) {
-                //~ if >=1.20 '.toLong()' -> '.asLong()' {
-                long packedPos = pos.toLong();
-                //~}
-                //~ if >=1.20 'EntityPlayerMP' -> 'ServerPlayer' {
-                for (EntityPlayerMP player : server.getPlayerList().getPlayers()) {
+                long packedPos = BlockPosCompat.toLong(pos);
+                for (ServerPlayer player : WorldResolveCompat.getServerPlayers(server)) {
                     if (getPlayerDimensionId(player) == dim) {
                         ConfigOverrideRendering.sendRemove(player, packedPos);
                     }
                 }
-                //~}
             }
         }
         clearOverride(dim, pos);
     }
-    //~}
-    //~}
-    //~}
 
-    //? if <1.20 {
     private void loadFromFile() {
-        File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
-        if (!saveFile.exists()) {
-            return;
-        }
-
-        try {
-            NBTTagCompound nbt = CompressedStreamTools.read(saveFile);
-            if (nbt == null) return;
-
-            overrides.clear();
-            NBTTagList dims = nbt.getTagList("overrides", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < dims.tagCount(); i++) {
-                NBTTagCompound dimTag = dims.getCompoundTagAt(i);
-                int dim = dimTag.getInteger("dim");
-                NBTTagList entries = dimTag.getTagList("entries", Constants.NBT.TAG_COMPOUND);
-                Long2ObjectMap<IEnergyHandler.EnergyType> dimMap = new Long2ObjectOpenHashMap<>();
-                for (int j = 0; j < entries.tagCount(); j++) {
-                    NBTTagCompound entry = entries.getCompoundTagAt(j);
-                    long pos = entry.getLong("pos");
-                    int type = entry.getInteger("type");
-                    var values = IEnergyHandler.EnergyType.values();
-                    if (type >= 0 && type < values.length) {
-                        dimMap.put(pos, values[type]);
-                    }
-                }
-                if (!dimMap.isEmpty()) overrides.put(dim, dimMap);
-            }
-        } catch (IOException ignored) {
-        }
-    }
-
-    private void saveToFile() {
-        if (overrides.isEmpty() && !m) {
-            return;
-        }
-
-        File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
-        NBTTagCompound nbt = new NBTTagCompound();
-
-        NBTTagList dims = new NBTTagList();
-        for (var dimEntry : overrides.int2ObjectEntrySet()) {
-            NBTTagCompound dimTag = new NBTTagCompound();
-            dimTag.setInteger("dim", dimEntry.getIntKey());
-            NBTTagList entries = new NBTTagList();
-            for (var posEntry : dimEntry.getValue().long2ObjectEntrySet()) {
-                NBTTagCompound entry = new NBTTagCompound();
-                entry.setLong("pos", posEntry.getLongKey());
-                entry.setInteger("type", posEntry.getValue().ordinal());
-                entries.appendTag(entry);
-            }
-            dimTag.setTag("entries", entries);
-            dims.appendTag(dimTag);
-        }
-        nbt.setTag("overrides", dims);
-
-        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "energy type override save");
-
-        m = false;
-    }
-    //?} else {
-    /*private void loadFromFile() {
         File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
         if (!saveFile.exists()) {
             return;
@@ -224,16 +124,16 @@ public final class EnergyTypeOverrideManager {
             if (nbt == null) return;
 
             overrides.clear();
-            ListTag dims = nbt.getList("overrides", Tag.TAG_COMPOUND);
+            ListTag dims = NbtCompat.getListOrEmpty(nbt, "overrides");
             for (int i = 0; i < dims.size(); i++) {
-                CompoundTag dimTag = dims.getCompound(i);
-                int dim = dimTag.getInt("dim");
-                ListTag entries = dimTag.getList("entries", Tag.TAG_COMPOUND);
+                CompoundTag dimTag = NbtCompat.getCompoundOrEmpty(dims, i);
+                int dim = NbtCompat.getIntOr(dimTag, "dim", 0);
+                ListTag entries = NbtCompat.getListOrEmpty(dimTag, "entries");
                 Long2ObjectMap<IEnergyHandler.EnergyType> dimMap = new Long2ObjectOpenHashMap<>();
                 for (int j = 0; j < entries.size(); j++) {
-                    CompoundTag entry = entries.getCompound(j);
-                    long pos = entry.getLong("pos");
-                    int type = entry.getInt("type");
+                    CompoundTag entry = NbtCompat.getCompoundOrEmpty(entries, j);
+                    long pos = NbtCompat.getLongOr(entry, "pos", 0L);
+                    int type = NbtCompat.getIntOr(entry, "type", -1);
                     var values = IEnergyHandler.EnergyType.values();
                     if (type >= 0 && type < values.length) {
                         dimMap.put(pos, values[type]);
@@ -276,5 +176,4 @@ public final class EnergyTypeOverrideManager {
 
         m = false;
     }
-    *///?}
 }

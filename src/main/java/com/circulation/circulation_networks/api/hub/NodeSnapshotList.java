@@ -7,19 +7,14 @@ import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//? if <1.20 {
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-//?} else {
-/*import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-*///?}
-
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -124,79 +119,36 @@ public final class NodeSnapshotList {
         if (displayStack.isEmpty()) {
             return "";
         }
-        //? if <1.20 {
-        ResourceLocation registryName = displayStack.getItem().getRegistryName();
-        return registryName != null ? registryName.toString() : "";
-        //?} else {
-        /*ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(displayStack.getItem());
+        Identifier registryName = BuiltInRegistries.ITEM.getKey(displayStack.getItem());
         return registryName.toString();
-        *///?}
     }
 
     private static ItemStack resolveVisualItemStack(String visualId) {
         if (visualId == null || visualId.isEmpty()) {
             return ItemStack.EMPTY;
         }
-        //? if <1.21 {
-        ResourceLocation location = new ResourceLocation(visualId);
-        //?} else {
-        /*ResourceLocation location = ResourceLocation.parse(visualId);
-        *///?}
-        //? if <1.20 {
-        Item item = Item.REGISTRY.getObject(location);
-        if (item != null) {
-            return new ItemStack(item);
-        }
-        Block block = Block.REGISTRY.getObject(location);
-        if (block == null) {
-            return ItemStack.EMPTY;
-        }
-        Item blockItem = Item.getItemFromBlock(block);
-        return blockItem != null ? new ItemStack(blockItem) : ItemStack.EMPTY;
-        //?} else if <1.21 {
-        /*Item item = BuiltInRegistries.ITEM.get(location);
+        Identifier location = Identifier.parse(visualId);
+        var itemHolder = BuiltInRegistries.ITEM.get(Identifier.parse(visualId)).orElse(null);
+        Item item = itemHolder != null ? itemHolder.value() : null;
         if (item != null && item != net.minecraft.world.item.Items.AIR) {
             return new ItemStack(item);
         }
-        var block = BuiltInRegistries.BLOCK.get(location);
-        Item blockItem = Item.byBlock(block);
+        var blockHolder = BuiltInRegistries.BLOCK.get(Identifier.parse(visualId)).orElse(null);
+        Block block = blockHolder != null ? blockHolder.value() : null;
+        Item blockItem = Item.BY_BLOCK.getOrDefault(block, Items.AIR);
         return blockItem != net.minecraft.world.item.Items.AIR ? new ItemStack(blockItem) : ItemStack.EMPTY;
-        *///?} else {
-        /*Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(visualId));
-        if (item != null && item != net.minecraft.world.item.Items.AIR) {
-            return new ItemStack(item);
-        }
-        var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(visualId));
-        Item blockItem = Item.byBlock(block);
-        return blockItem != net.minecraft.world.item.Items.AIR ? new ItemStack(blockItem) : ItemStack.EMPTY;
-        *///?}
     }
 
     private static int resolveItemIntId(String itemId) {
         if (itemId == null || itemId.isEmpty()) {
             return 0;
         }
-        //? if <1.20 {
-        Item item = Item.REGISTRY.getObject(new ResourceLocation(itemId));
-        return item != null ? Item.getIdFromItem(item) : 0;
-        //?} else if <1.21 {
-        /*return BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(new ResourceLocation(itemId)));
-         *///?} else {
-        /*return BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId)));
-         *///?}
+        var holder = BuiltInRegistries.ITEM.get(Identifier.parse(itemId)).orElse(null);
+        return holder != null ? BuiltInRegistries.ITEM.getId(holder.value()) : 0;
     }
 
     private static String resolveItemId(int itemId) {
-        //? if <1.20 {
-        Item item = Item.getItemById(itemId);
-        if (item == null) {
-            return "";
-        }
-        ResourceLocation registryName = item.getRegistryName();
-        return registryName != null ? registryName.toString() : "";
-        //?} else {
-        /*return BuiltInRegistries.ITEM.byId(itemId).builtInRegistryHolder().key().location().toString();
-         *///?}
+        return BuiltInRegistries.ITEM.getKey(BuiltInRegistries.ITEM.byId(itemId)).toString();
     }
 
     private static void writeNullableString(DataOutputStream data, @Nullable String value) throws IOException {

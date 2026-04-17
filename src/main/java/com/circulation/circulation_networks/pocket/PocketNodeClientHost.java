@@ -5,9 +5,8 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.circulation.circulation_networks.utils.Functions;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 public final class PocketNodeClientHost implements ClientTickMachine {
@@ -30,8 +29,7 @@ public final class PocketNodeClientHost implements ClientTickMachine {
         return renderStack;
     }
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public @Nullable INode getNode(World world) {
+    public @Nullable INode getNode(Level world) {
         if (node == null || node.getWorld() != world || node.getNodeType() != record.nodeType()) {
             try {
                 node = Functions.createNode(record.nodeType(), record.createNodeContext(world));
@@ -45,7 +43,6 @@ public final class PocketNodeClientHost implements ClientTickMachine {
         node.setActive(true);
         return node;
     }
-    //~}
 
     public void invalidateNode() {
         if (node != null) {

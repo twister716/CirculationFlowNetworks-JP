@@ -1,4 +1,3 @@
-// ...existing code...
 package com.circulation.circulation_networks.network.nodes;
 
 import com.circulation.circulation_networks.api.hub.ChargingDefinition;
@@ -7,49 +6,37 @@ import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.NodeContext;
+import com.circulation.circulation_networks.inventory.CFNInternalInventory;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubChannel;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.registry.NodeTypes;
+import com.circulation.circulation_networks.utils.NbtCompat;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-//? if <1.20 {
-import net.minecraftforge.common.util.Constants;
-//?} else {
-/*import net.minecraft.nbt.Tag;
- *///?}
-//? if <1.21 {
-import net.minecraftforge.items.IItemHandler;
-//?} else {
-/*import net.neoforged.neoforge.items.IItemHandler;
- *///?}
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
 public final class HubNode extends Node implements IHubNode {
 
-    @Override
-    public Map<UUID, ChargingPreference> getPlayerPreferences() {
-        return Collections.unmodifiableMap(playerPreferences);
-    }
-
     public static final UUID EMPTY = new UUID(0, 0);
+
     private final double energyScope;
     private final double energyScopeSq;
     private final double chargingScope;
     private final double chargingScopeSq;
-
     private final Map<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
     private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
     private final HubMetadata hubData = new HubMetadata();
+
     private PermissionMode permissionMode = PermissionMode.PUBLIC;
     @Nullable
     private UUID owner;
@@ -57,16 +44,14 @@ public final class HubNode extends Node implements IHubNode {
     private UUID channelId = EMPTY;
     @NotNull
     private String channelName = "";
-    private IItemHandler plugins = EmptyItemHandler.INSTANCE;
+    private CFNInternalInventory plugins = EmptyPluginsInventory.INSTANCE;
     private boolean syncingChannelState;
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    public HubNode(NBTTagCompound tag) {
-        //~}
+    public HubNode(CompoundTag tag) {
         super(NodeTypes.HUB, tag);
-        this.energyScope = tag.getDouble("energyScope");
+        this.energyScope = NbtCompat.getDoubleOr(tag, "energyScope", 0.0D);
+        this.chargingScope = NbtCompat.getDoubleOr(tag, "chargingScope", 0.0D);
         this.energyScopeSq = energyScope * energyScope;
-        this.chargingScope = tag.getDouble("chargingScope");
         this.chargingScopeSq = chargingScope * chargingScope;
         deserializeHubData(tag);
     }
@@ -79,8 +64,8 @@ public final class HubNode extends Node implements IHubNode {
         this.chargingScopeSq = chargingScope * chargingScope;
     }
 
-    public void bindPlugins(@Nullable IItemHandler plugins) {
-        this.plugins = plugins != null ? plugins : EmptyItemHandler.INSTANCE;
+    public void bindPlugins(@Nullable CFNInternalInventory plugins) {
+        this.plugins = plugins != null ? plugins : EmptyPluginsInventory.INSTANCE;
     }
 
     @Override
@@ -117,7 +102,7 @@ public final class HubNode extends Node implements IHubNode {
     }
 
     @Override
-    public IItemHandler getPlugins() {
+    public CFNInternalInventory getPlugins() {
         return plugins;
     }
 
@@ -212,7 +197,9 @@ public final class HubNode extends Node implements IHubNode {
     public @Nullable HubPermissionLevel getExplicitPermission(UUID playerId) {
         if (shouldSyncChannelManager()) {
             HubChannel channel = HubChannelManager.INSTANCE.getChannel(channelId);
-            if (channel != null) return channel.getExplicitPermission(playerId);
+            if (channel != null) {
+                return channel.getExplicitPermission(playerId);
+            }
         }
         return explicitPermissions.get(playerId);
     }
@@ -252,15 +239,20 @@ public final class HubNode extends Node implements IHubNode {
                 return channel.getPermissionLevel(playerId);
             }
         }
-
-        if (owner == null) return HubPermissionLevel.MEMBER;
-
+        if (owner == null) {
+            return HubPermissionLevel.MEMBER;
+        }
         return owner.equals(playerId) ? HubPermissionLevel.OWNER : HubPermissionLevel.MEMBER;
     }
 
     @Override
     public boolean canEditPermissions(UUID playerId) {
         return getPermissionLevel(playerId).canEditPermissions();
+    }
+
+    @Override
+    public Map<UUID, ChargingPreference> getPlayerPreferences() {
+        return Collections.unmodifiableMap(playerPreferences);
     }
 
     public void syncFromChannel(HubChannel channel) {
@@ -291,101 +283,15 @@ public final class HubNode extends Node implements IHubNode {
 
     private boolean shouldSyncChannelManager() {
         try {
-            //? if <1.20 {
-            return !getWorld().isRemote;
-            //?} else {
-            /*return !getWorld().isClientSide;
-             *///?}
+            return !getWorld().isClientSide();
         } catch (IllegalStateException ignored) {
             return false;
         }
     }
 
-    //? if <1.20 {
     @Override
-    public NBTTagCompound serialize() {
-        var nbt = super.serialize();
-        nbt.setDouble("energyScope", energyScope);
-        nbt.setDouble("chargingScope", chargingScope);
-        serializeHubData(nbt);
-        return nbt;
-    }
-
-    private void serializeHubData(NBTTagCompound nbt) {
-        nbt.setInteger("permissionMode", permissionMode.getId());
-
-        if (owner != null) {
-            nbt.setString("ownerUUID", owner.toString());
-        }
-
-        var permissionList = new NBTTagList();
-        for (var entry : explicitPermissions.entrySet()) {
-            var permissionNbt = new NBTTagCompound();
-            permissionNbt.setString("playerUUID", entry.getKey().toString());
-            permissionNbt.setInteger("permission", entry.getValue().getId());
-            permissionList.appendTag(permissionNbt);
-        }
-        nbt.setTag("hubPermissions", permissionList);
-
-        var prefList = new NBTTagList();
-        for (var entry : playerPreferences.entrySet()) {
-            var prefNbt = entry.getValue().serialize();
-            prefNbt.setString("playerUUID", entry.getKey().toString());
-            prefList.appendTag(prefNbt);
-        }
-        nbt.setTag("chargingPreferences", prefList);
-    }
-
-    private void deserializeHubData(NBTTagCompound nbt) {
-        permissionMode = PermissionMode.fromId(nbt.getInteger("permissionMode"));
-
-        if (nbt.hasKey("ownerUUID")) {
-            try {
-                owner = UUID.fromString(nbt.getString("ownerUUID"));
-            } catch (IllegalArgumentException ignored) {
-                owner = null;
-            }
-        }
-
-        explicitPermissions.clear();
-        if (nbt.hasKey("hubPermissions", Constants.NBT.TAG_LIST)) {
-            var permissionList = nbt.getTagList("hubPermissions", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < permissionList.tagCount(); i++) {
-                var permissionNbt = permissionList.getCompoundTagAt(i);
-                if (!permissionNbt.hasKey("playerUUID")) {
-                    continue;
-                }
-                try {
-                    UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
-                    HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInteger("permission"));
-                    explicitPermissions.put(playerId, permission);
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-        }
-
-        playerPreferences.clear();
-        if (nbt.hasKey("chargingPreferences", Constants.NBT.TAG_LIST)) {
-            var prefList = nbt.getTagList("chargingPreferences", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < prefList.tagCount(); i++) {
-                var prefNbt = prefList.getCompoundTagAt(i);
-                if (prefNbt.hasKey("playerUUID")) {
-                    try {
-                        var playerId = UUID.fromString(prefNbt.getString("playerUUID"));
-                        playerPreferences.put(playerId, ChargingPreference.deserialize(prefNbt));
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-            }
-        }
-
-        channelId = EMPTY;
-        channelName = "";
-    }
-    //?} else if <1.21 {
-    /*@Override
     public CompoundTag serialize() {
-        var nbt = super.serialize();
+        CompoundTag nbt = super.serialize();
         nbt.putDouble("energyScope", energyScope);
         nbt.putDouble("chargingScope", chargingScope);
         serializeHubData(nbt);
@@ -394,23 +300,22 @@ public final class HubNode extends Node implements IHubNode {
 
     private void serializeHubData(CompoundTag nbt) {
         nbt.putInt("permissionMode", permissionMode.getId());
-
         if (owner != null) {
             nbt.putString("ownerUUID", owner.toString());
         }
 
-        var permissionList = new ListTag();
+        ListTag permissionList = new ListTag();
         for (var entry : explicitPermissions.entrySet()) {
-            var permissionNbt = new CompoundTag();
+            CompoundTag permissionNbt = new CompoundTag();
             permissionNbt.putString("playerUUID", entry.getKey().toString());
             permissionNbt.putInt("permission", entry.getValue().getId());
             permissionList.add(permissionNbt);
         }
         nbt.put("hubPermissions", permissionList);
 
-        var prefList = new ListTag();
+        ListTag prefList = new ListTag();
         for (var entry : playerPreferences.entrySet()) {
-            var prefNbt = entry.getValue().serialize();
+            CompoundTag prefNbt = entry.getValue().serialize();
             prefNbt.putString("playerUUID", entry.getKey().toString());
             prefList.add(prefNbt);
         }
@@ -418,27 +323,27 @@ public final class HubNode extends Node implements IHubNode {
     }
 
     private void deserializeHubData(CompoundTag nbt) {
-        permissionMode = PermissionMode.fromId(nbt.getInt("permissionMode"));
+        permissionMode = PermissionMode.fromId(NbtCompat.getIntOr(nbt, "permissionMode", PermissionMode.PUBLIC.getId()));
 
         if (nbt.contains("ownerUUID")) {
             try {
-                owner = UUID.fromString(nbt.getString("ownerUUID"));
+                owner = UUID.fromString(NbtCompat.getStringOr(nbt, "ownerUUID", ""));
             } catch (IllegalArgumentException ignored) {
                 owner = null;
             }
         }
 
         explicitPermissions.clear();
-        if (nbt.contains("hubPermissions", Tag.TAG_LIST)) {
-            var permissionList = nbt.getList("hubPermissions", Tag.TAG_COMPOUND);
+        if (nbt.contains("hubPermissions")) {
+            ListTag permissionList = NbtCompat.getListOrEmpty(nbt, "hubPermissions");
             for (int i = 0; i < permissionList.size(); i++) {
-                var permissionNbt = permissionList.getCompound(i);
+                CompoundTag permissionNbt = NbtCompat.getCompoundOrEmpty(permissionList, i);
                 if (!permissionNbt.contains("playerUUID")) {
                     continue;
                 }
                 try {
-                    UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
-                    HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInt("permission"));
+                    UUID playerId = UUID.fromString(NbtCompat.getStringOr(permissionNbt, "playerUUID", ""));
+                    HubPermissionLevel permission = HubPermissionLevel.fromId(NbtCompat.getIntOr(permissionNbt, "permission", HubPermissionLevel.NONE.getId()));
                     explicitPermissions.put(playerId, permission);
                 } catch (IllegalArgumentException ignored) {
                 }
@@ -446,13 +351,13 @@ public final class HubNode extends Node implements IHubNode {
         }
 
         playerPreferences.clear();
-        if (nbt.contains("chargingPreferences", Tag.TAG_LIST)) {
-            var prefList = nbt.getList("chargingPreferences", Tag.TAG_COMPOUND);
+        if (nbt.contains("chargingPreferences")) {
+            ListTag prefList = NbtCompat.getListOrEmpty(nbt, "chargingPreferences");
             for (int i = 0; i < prefList.size(); i++) {
-                var prefNbt = prefList.getCompound(i);
+                CompoundTag prefNbt = NbtCompat.getCompoundOrEmpty(prefList, i);
                 if (prefNbt.contains("playerUUID")) {
                     try {
-                        var playerId = UUID.fromString(prefNbt.getString("playerUUID"));
+                        UUID playerId = UUID.fromString(NbtCompat.getStringOr(prefNbt, "playerUUID", ""));
                         playerPreferences.put(playerId, ChargingPreference.deserialize(prefNbt));
                     } catch (IllegalArgumentException ignored) {
                     }
@@ -463,90 +368,8 @@ public final class HubNode extends Node implements IHubNode {
         channelId = EMPTY;
         channelName = "";
     }
-    *///?} else {
-    /*@Override
-    public CompoundTag serialize() {
-        var nbt = super.serialize();
-        nbt.putDouble("energyScope", energyScope);
-        nbt.putDouble("chargingScope", chargingScope);
-        serializeHubData(nbt);
-        return nbt;
-    }
 
-    private void serializeHubData(CompoundTag nbt) {
-        nbt.putInt("permissionMode", permissionMode.getId());
-
-        if (owner != null) {
-            nbt.putString("ownerUUID", owner.toString());
-        }
-
-        var permissionList = new ListTag();
-        for (var entry : explicitPermissions.entrySet()) {
-            var permissionNbt = new CompoundTag();
-            permissionNbt.putString("playerUUID", entry.getKey().toString());
-            permissionNbt.putInt("permission", entry.getValue().getId());
-            permissionList.add(permissionNbt);
-        }
-        nbt.put("hubPermissions", permissionList);
-
-        var prefList = new ListTag();
-        for (var entry : playerPreferences.entrySet()) {
-            var prefNbt = entry.getValue().serialize();
-            prefNbt.putString("playerUUID", entry.getKey().toString());
-            prefList.add(prefNbt);
-        }
-        nbt.put("chargingPreferences", prefList);
-    }
-
-    private void deserializeHubData(CompoundTag nbt) {
-        permissionMode = PermissionMode.fromId(nbt.getInt("permissionMode"));
-
-        if (nbt.contains("ownerUUID")) {
-            try {
-                owner = UUID.fromString(nbt.getString("ownerUUID"));
-            } catch (IllegalArgumentException ignored) {
-                owner = null;
-            }
-        }
-
-        explicitPermissions.clear();
-        if (nbt.contains("hubPermissions", Tag.TAG_LIST)) {
-            var permissionList = nbt.getList("hubPermissions", Tag.TAG_COMPOUND);
-            for (int i = 0; i < permissionList.size(); i++) {
-                var permissionNbt = permissionList.getCompound(i);
-                if (!permissionNbt.contains("playerUUID")) {
-                    continue;
-                }
-                try {
-                    UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
-                    HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInt("permission"));
-                    explicitPermissions.put(playerId, permission);
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-        }
-
-        playerPreferences.clear();
-        if (nbt.contains("chargingPreferences", Tag.TAG_LIST)) {
-            var prefList = nbt.getList("chargingPreferences", Tag.TAG_COMPOUND);
-            for (int i = 0; i < prefList.size(); i++) {
-                var prefNbt = prefList.getCompound(i);
-                if (prefNbt.contains("playerUUID")) {
-                    try {
-                        var playerId = UUID.fromString(prefNbt.getString("playerUUID"));
-                        playerPreferences.put(playerId, ChargingPreference.deserialize(prefNbt));
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-            }
-        }
-
-        channelId = EMPTY;
-        channelName = "";
-    }
-    *///?}
-
-    public final static class HubMetadata {
+    public static final class HubMetadata {
 
         private final Reference2ReferenceMap<HubPluginCapability<?>, Object> capacityMap = new Reference2ReferenceOpenHashMap<>();
 
@@ -568,38 +391,11 @@ public final class HubNode extends Node implements IHubNode {
         }
     }
 
-    private static final class EmptyItemHandler implements IItemHandler {
+    private static final class EmptyPluginsInventory extends CFNInternalInventory {
+        private static final EmptyPluginsInventory INSTANCE = new EmptyPluginsInventory();
 
-        private static final EmptyItemHandler INSTANCE = new EmptyItemHandler();
-
-        @Override
-        public int getSlots() {
-            return 0;
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return stack;
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return 0;
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return false;
+        private EmptyPluginsInventory() {
+            super(null, 0);
         }
     }
 }

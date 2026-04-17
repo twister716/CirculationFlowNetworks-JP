@@ -1,10 +1,10 @@
 package com.circulation.circulation_networks.registry;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.NodeCreator;
 import com.circulation.circulation_networks.api.NodeDeserializer;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeType;
-import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.network.nodes.ChargingNode;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.network.nodes.Node;
@@ -12,17 +12,12 @@ import com.circulation.circulation_networks.network.nodes.PortNode;
 import com.circulation.circulation_networks.network.nodes.machine_node.ConsumerNode;
 import com.circulation.circulation_networks.network.nodes.machine_node.GeneratorNode;
 import com.circulation.circulation_networks.network.nodes.machine_node.StorageNode;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-//? if <1.20 {
-import net.minecraftforge.common.DimensionManager;
-//?} else {
-/*import net.minecraft.nbt.NBTTagCompound;
- *///?}
+import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
-
 import org.jetbrains.annotations.Nullable;
 
 public final class NodeTypes {
@@ -40,21 +35,10 @@ public final class NodeTypes {
         return nodeType;
     }
 
-    public static final NodeType<HubNode> HUB = type("hub", HubNode.class, false, "circulation_networks:hub", HubNode::new,
-        ctx -> new HubNode(ctx, CFNConfig.NODE.hub.energyScope, CFNConfig.NODE.hub.chargingScope, CFNConfig.NODE.hub.linkScope));
-
-    public static final NodeType<PortNode> PORT_NODE = type("port_node", PortNode.class, true, "circulation_networks:port_node", PortNode::new,
-        ctx -> new PortNode(ctx, CFNConfig.NODE.portNode.energyScope, CFNConfig.NODE.portNode.linkScope));
-
-    public static final NodeType<ChargingNode> CHARGING_NODE = type("charging_node", ChargingNode.class, true, "circulation_networks:charging_node", ChargingNode::new,
-        ctx -> new ChargingNode(ctx, CFNConfig.NODE.chargingNode.chargingScope, CFNConfig.NODE.chargingNode.linkScope));
-
-    public static final NodeType<Node> RELAY_NODE = type("relay_node", Node.class, true, "circulation_networks:relay_node", Node::new,
-        ctx -> new Node(NodeTypes.RELAY_NODE, ctx, CFNConfig.NODE.relayNode.linkScope));
-
     public static @Nullable NodeType<?> getById(@Nullable String id) {
         return id == null ? null : TYPES_BY_ID.get(id);
-    }
+    }    public static final NodeType<HubNode> HUB = type("hub", HubNode.class, false, "circulation_networks:hub", HubNode::new,
+        ctx -> new HubNode(ctx, CFNConfig.NODE.hub.energyScope, CFNConfig.NODE.hub.chargingScope, CFNConfig.NODE.hub.linkScope));
 
     public static <N extends INode> @NotNull NodeType<N> register(@NotNull NodeType<N> nodeType, @NotNull NodeDeserializer deserializer, @Nullable NodeCreator creator) {
         String typeId = nodeType.id();
@@ -68,40 +52,29 @@ public final class NodeTypes {
             registerTypeCreator(typeId, creator);
         }
         return nodeType;
-    }
+    }    public static final NodeType<PortNode> PORT_NODE = type("port_node", PortNode.class, true, "circulation_networks:port_node", PortNode::new,
+        ctx -> new PortNode(ctx, CFNConfig.NODE.portNode.energyScope, CFNConfig.NODE.portNode.linkScope));
 
     public static @Nullable NodeCreator getCreator(@NotNull String typeId) {
         return CREATORS_BY_TYPE_ID.get(typeId);
-    }
+    }    public static final NodeType<ChargingNode> CHARGING_NODE = type("charging_node", ChargingNode.class, true, "circulation_networks:charging_node", ChargingNode::new,
+        ctx -> new ChargingNode(ctx, CFNConfig.NODE.chargingNode.chargingScope, CFNConfig.NODE.chargingNode.linkScope));
 
-    public static final NodeType<GeneratorNode> GENERATOR = type("generator", GeneratorNode.class, false, "", GeneratorNode::new, null);
-
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.hasKey(' -> '.contains(' {
-    public static @Nullable INode deserialize(@Nullable NBTTagCompound tag) {
+    public static @Nullable INode deserialize(@Nullable CompoundTag tag) {
         if (tag == null) {
             return null;
         }
-        if (!tag.hasKey("type")) {
+        if (!tag.contains("type")) {
             return null;
         }
-        //? if <1.20 {
-        if (!tag.hasKey("dim") || !isRegisteredDimension(tag.getInteger("dim"))) {
+        if (!tag.contains("dim") || !isRegisteredDimension(NbtCompat.getStringOr(tag, "dim", ""))) {
             return null;
         }
-        //?} else {
-        /*if (!tag.hasKey("dim") || !isRegisteredDimension(tag.getString("dim"))) {
-            return null;
-        }
-        *///?}
 
-        NodeDeserializer deserializer = DESERIALIZERS_BY_TYPE_ID.get(tag.getString("type"));
+        NodeDeserializer deserializer = DESERIALIZERS_BY_TYPE_ID.get(NbtCompat.getStringOr(tag, "type", ""));
         return deserializer == null ? null : deserializer.apply(tag);
-    }
-    //~}
-    //~}
-
-    public static final NodeType<StorageNode> STORAGE = type("storage", StorageNode.class, false, "", StorageNode::new, null);
+    }    public static final NodeType<Node> RELAY_NODE = type("relay_node", Node.class, true, "circulation_networks:relay_node", Node::new,
+        ctx -> new Node(NodeTypes.RELAY_NODE, ctx, CFNConfig.NODE.relayNode.linkScope));
 
     private static void registerTypeDeserializer(String typeId, NodeDeserializer deserializer) {
         NodeDeserializer existing = DESERIALIZERS_BY_TYPE_ID.get(typeId);
@@ -119,41 +92,27 @@ public final class NodeTypes {
         CREATORS_BY_TYPE_ID.put(typeId, creator);
     }
 
-    public static final NodeType<ConsumerNode> CONSUMER = type("consumer", ConsumerNode.class, false, "", ConsumerNode::new, null);
+    private static boolean isRegisteredDimension(String dimKey) {
+        return WorldResolveCompat.isRegisteredDimension(dimKey);
+    }
 
-    //? if <1.20 {
-    private static boolean isRegisteredDimension(int dimId) {
-        return DimensionManager.isDimensionRegistered(dimId);
-    }
-    //?} else if <1.21 {
-    /*private static boolean isRegisteredDimension(String dimKey) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return false;
-        return server.getLevel(
-            net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION,
-                new net.minecraft.resources.ResourceLocation(dimKey)
-            )
-        ) != null;
-    }
-    *///?} else {
-    /*private static boolean isRegisteredDimension(String dimKey) {
-        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return false;
-        return server.getLevel(
-            net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION,
-                net.minecraft.resources.ResourceLocation.parse(dimKey)
-            )
-        ) != null;
-    }
-    *///?}
-
-    //? if <1.20
-    @com.github.bsideup.jabel.Desugar
     private record SimpleNodeType<N extends INode>(String id, Class<N> nodeClass, boolean allowsPocketNode,
                                                    String fallbackVisualId) implements NodeType<N> {
 
-    }
+    }    public static final NodeType<GeneratorNode> GENERATOR = type("generator", GeneratorNode.class, false, "", GeneratorNode::new, null);
+
+
+
+    public static final NodeType<StorageNode> STORAGE = type("storage", StorageNode.class, false, "", StorageNode::new, null);
+
+
+
+
+
+    public static final NodeType<ConsumerNode> CONSUMER = type("consumer", ConsumerNode.class, false, "", ConsumerNode::new, null);
+
+
+
+
 
 }

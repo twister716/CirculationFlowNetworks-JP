@@ -8,14 +8,15 @@ import com.circulation.circulation_networks.api.node.IMachineNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
+import com.circulation.circulation_networks.packets.NodeNetworkRendering;
+import com.circulation.circulation_networks.utils.BlockPosCompat;
+import com.circulation.circulation_networks.utils.CompressedNbtIoCompat;
 import com.circulation.circulation_networks.utils.EventHooks;
 import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
-import java.util.UUID;
-import java.nio.file.Path;
-
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -32,37 +33,28 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import com.circulation.circulation_networks.packets.NodeNetworkRendering;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if <1.20 {
-import com.github.bsideup.jabel.Desugar;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraftforge.common.DimensionManager;
-//?} else {
-/*import net.minecraft.nbt.NbtIo;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
-*///?}
-
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -133,17 +125,7 @@ public final class NetworkManager {
     }
 
     private static Path getGridSavePath() {
-        //? if <1.20 {
-        return DimensionManager.getWorld(0)
-                               .getSaveHandler()
-                               .getWorldDirectory()
-                               .toPath()
-                               .resolve("circulation_grids");
-        //?} else {
-        /*return getCurrentServer()
-                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
-                .resolve("circulation_grids");
-        *///?}
+        return WorldResolveCompat.getRootSavePath().resolve("circulation_grids");
     }
 
     static void tryCreateDirectories(Path path) {
@@ -154,189 +136,37 @@ public final class NetworkManager {
         }
     }
 
-    //? if <1.20 {
-    static @Nullable NBTTagCompound tryReadCompressedNbt(File file, String context) {
-        try {
-            return readCompressedNbt(file);
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to read {} from {}", context, file.getAbsolutePath(), e);
-            return null;
-        }
-    }
-
-    static boolean tryWriteCompressedNbt(NBTTagCompound nbt, File file, String context) {
-        try {
-            writeCompressedNbt(nbt, file);
-            return true;
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to write {} to {}", context, file.getAbsolutePath(), e);
-            return false;
-        }
-    }
-
-    static NBTTagCompound readCompressedNbt(File file) throws IOException {
-        return CompressedStreamTools.read(file);
-    }
-
-    static void writeCompressedNbt(NBTTagCompound nbt, File file) throws IOException {
-        synchronized (FILE_IO_LOCK) {
-            CompressedStreamTools.safeWrite(nbt, file);
-        }
-    }
-    //?} else {
-    /*static @Nullable CompoundTag tryReadCompressedNbt(File file, String context) {
-        try {
-            return readCompressedNbt(file);
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to read {} from {}", context, file.getAbsolutePath(), e);
-            return null;
-        }
+    static @Nullable CompoundTag tryReadCompressedNbt(File file, String context) {
+        return CompressedNbtIoCompat.tryReadCompressedNbt(file, context);
     }
 
     static boolean tryWriteCompressedNbt(CompoundTag nbt, File file, String context) {
-        try {
-            writeCompressedNbt(nbt, file);
-            return true;
-        } catch (IOException e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to write {} to {}", context, file.getAbsolutePath(), e);
-            return false;
-        }
+        return CompressedNbtIoCompat.tryWriteCompressedNbt(nbt, file, context, FILE_IO_LOCK);
     }
 
     static CompoundTag readCompressedNbt(File file) throws IOException {
-        //~ if >=1.21 'NbtIo.readCompressed(file)' -> 'NbtIo.readCompressed(file.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap())' {
-        return NbtIo.readCompressed(file);
-        //~}
+        return CompressedNbtIoCompat.readCompressedNbt(file);
     }
 
     static void writeCompressedNbt(CompoundTag nbt, File file) throws IOException {
-        synchronized (FILE_IO_LOCK) {
-            //~ if >=1.21 'NbtIo.writeCompressed(nbt, file)' -> 'NbtIo.writeCompressed(nbt, file.toPath())' {
-            NbtIo.writeCompressed(nbt, file);
-            //~}
-        }
-    }
-    *///?}
-
-    //? if >=1.20 {
-    /*private static @Nullable net.minecraft.server.MinecraftServer getCurrentServer() {
-        //~ if >=1.21 'net.minecraftforge.server.ServerLifecycleHooks' -> 'net.neoforged.neoforge.server.ServerLifecycleHooks' {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        //~}
+        CompressedNbtIoCompat.writeCompressedNbt(nbt, file, FILE_IO_LOCK);
     }
 
-    private static net.minecraft.resources.ResourceLocation parseDimensionLocation(String dimensionKey) {
-        //~ if >=1.21 'new net.minecraft.resources.ResourceLocation(dimensionKey)' -> 'net.minecraft.resources.ResourceLocation.parse(dimensionKey)' {
-        return new net.minecraft.resources.ResourceLocation(dimensionKey);
-        //~}
-    }
-    *///?}
-
-    //? if <1.20 {
-    private static int getDimensionId(World world) {
-        return world.provider.getDimension();
+    private static int getDimensionId(Level world) {
+        return WorldResolveCompat.getDimensionId(world);
     }
 
     private static int getDimensionId(INode node) {
         return node.getDimensionId();
-    }
-
-    private @Nullable World resolveWorld(int dimId) {
-        return DimensionManager.getWorld(dimId);
-    }
-
-    private static boolean isClientWorld(World world) {
-        return world.isRemote;
-    }
-
-    private static List<net.minecraft.entity.player.EntityPlayer> getPlayers(World world) {
-        return world.playerEntities;
-    }
-
-    private static BlockPos blockPosFromLong(long posLong) {
-        return BlockPos.fromLong(posLong);
-    }
-
-    @Nullable
-    private static TileEntity getBlockEntity(World world, BlockPos pos) {
-        return world.getTileEntity(pos);
-    }
-
-    private static void destroyBlock(World world, BlockPos pos) {
-        world.destroyBlock(pos, true);
-    }
-
-    private static boolean isRegisteredDimension(int dimId) {
-        return DimensionManager.isDimensionRegistered(dimId);
-    }
-    //?} else {
-    /*private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
-    }
-
-    private static int getDimensionId(INode node) {
-        return node.getDimensionId();
-    }
-
-    private @Nullable Level resolveWorld(int dimId) {
-        var server = getCurrentServer();
-        if (server == null) {
-            return null;
-        }
-
-        String dimensionKey = serializedDimensionKeys.get(dimId);
-        if (dimensionKey != null && !dimensionKey.isEmpty()) {
-            var level = server.getLevel(
-                net.minecraft.resources.ResourceKey.create(
-                    net.minecraft.core.registries.Registries.DIMENSION,
-                    parseDimensionLocation(dimensionKey)
-                )
-            );
-            if (level != null) {
-                return level;
-            }
-        }
-
-        for (Level level : server.getAllLevels()) {
-            if (level.dimension().location().hashCode() == dimId) {
-                return level;
-            }
-        }
-        return null;
     }
 
     private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
-    }
-
-    private static List<? extends Player> getPlayers(Level world) {
-        return world.players();
-    }
-
-    private static BlockPos blockPosFromLong(long posLong) {
-        return BlockPos.of(posLong);
-    }
-
-    @Nullable
-    private static BlockEntity getBlockEntity(Level world, BlockPos pos) {
-        return world.getBlockEntity(pos);
-    }
-
-    private static void destroyBlock(Level world, BlockPos pos) {
-        world.destroyBlock(pos, true, null);
+        return world.isClientSide();
     }
 
     private static boolean isRegisteredDimension(int dimId) {
-        return true;
-    }
-    *///?}
-
-    public ReferenceSet<INode> getActiveNodes() {
-        return activeNodes;
-    }
-
-    public boolean isInit() {
-        return init;
+        String dimensionKey = INSTANCE.serializedDimensionKeys.get(dimId);
+        return dimensionKey != null && !dimensionKey.isEmpty() && WorldResolveCompat.isRegisteredDimension(dimensionKey);
     }
 
     @Nullable
@@ -362,6 +192,49 @@ public final class NetworkManager {
         return dimId;
     }
 
+    private static void enqueueComponentNeighbor(
+        INode candidate,
+        ReferenceSet<INode> remaining,
+        ReferenceSet<INode> component,
+        Queue<INode> queue
+    ) {
+        if (candidate != null && remaining.remove(candidate)) {
+            component.add(candidate);
+            queue.add(candidate);
+        }
+    }
+
+    private static Object2ObjectMap<INode, ReferenceSet<INode>> buildIncomingNeighborMap(ReferenceSet<INode> nodes) {
+        Object2ObjectMap<INode, ReferenceSet<INode>> incomingNeighbors = new Object2ObjectOpenHashMap<>();
+        for (INode node : nodes) {
+            for (INode neighbor : node.getNeighbors()) {
+                if (neighbor == null || !nodes.contains(neighbor)) {
+                    continue;
+                }
+
+                ReferenceSet<INode> incoming = incomingNeighbors.get(neighbor);
+                if (incoming == null) {
+                    incoming = new ReferenceOpenHashSet<>();
+                    incomingNeighbors.put(neighbor, incoming);
+                }
+                incoming.add(node);
+            }
+        }
+        return incomingNeighbors;
+    }
+
+    private @Nullable Level resolveWorld(int dimId) {
+        return WorldResolveCompat.resolveWorld(serializedDimensionKeys, dimId);
+    }
+
+    public ReferenceSet<INode> getActiveNodes() {
+        return activeNodes;
+    }
+
+    public boolean isInit() {
+        return init;
+    }
+
     private void registerNodeIndices(int dimId, INode node) {
         rememberSerializedDimensionKey(dimId, node);
         BlockPos pos = node.getPos();
@@ -370,9 +243,7 @@ public final class NetworkManager {
         if (pMap == posNodes.defaultReturnValue()) {
             posNodes.put(dimId, pMap = new Long2ReferenceOpenHashMap<>());
         }
-        //~ if >=1.20 '.toLong()' -> '.asLong()' {
-        pMap.put(pos.toLong(), node);
-        //~}
+        pMap.put(BlockPosCompat.toLong(pos), node);
 
         long ownChunkCoord = Functions.mergeChunkCoords(pos);
         var locMap = nodeLocation.get(dimId);
@@ -427,9 +298,7 @@ public final class NetworkManager {
     }
 
     private void unregisterNodeIndices(int dimId, INode node) {
-        //~ if >=1.20 '.toLong()' -> '.asLong()' {
-        posNodes.get(dimId).remove(node.getPos().toLong());
-        //~}
+        posNodes.get(dimId).remove(BlockPosCompat.toLong(node.getPos()));
 
         long ownChunkCoord = Functions.mergeChunkCoords(node.getPos());
         nodeLocation.get(dimId).get(ownChunkCoord).remove(node);
@@ -446,13 +315,9 @@ public final class NetworkManager {
         }
     }
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public @Nullable INode getNodeFromPos(World world, BlockPos pos) {
-        return posNodes.get(getDimensionId(world)).get(pos.toLong());
+    public @Nullable INode getNodeFromPos(Level world, BlockPos pos) {
+        return posNodes.get(getDimensionId(world)).get(BlockPosCompat.toLong(pos));
     }
-    //~}
-    //~}
 
     public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
         if (isClientWorld(event.getWorld())) return;
@@ -488,13 +353,11 @@ public final class NetworkManager {
         removeNode(dimId, event.getPos());
     }
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public void validatePendingNodesInChunk(World world, int x, int z) {
+    public void validatePendingNodesInChunk(Level world, int x, int z) {
         validatePendingNodesInChunk(world, Functions.mergeChunkCoords(x, z));
     }
 
-    public void validatePendingNodesInChunk(World world, long chunkCoord) {
-        //~}
+    public void validatePendingNodesInChunk(Level world, long chunkCoord) {
         if (isClientWorld(world)) return;
 
         int dimId = getDimensionId(world);
@@ -507,9 +370,9 @@ public final class NetworkManager {
         LongArrayList toRemove = new LongArrayList();
         for (int idx = 0; idx < pendingSnapshot.size(); idx++) {
             long posLong = pendingSnapshot.getLong(idx);
-            var pos = blockPosFromLong(posLong);
+            var pos = BlockPosCompat.fromLong(posLong);
             INode mapped = posNodes.get(dimId).get(posLong);
-            var blockEntity = getBlockEntity(world, pos);
+            var blockEntity = WorldResolveCompat.getBlockEntity(world, pos);
 
             if (blockEntity instanceof INodeBlockEntity nbe) {
                 nbe.syncNodeAfterNetworkInit();
@@ -544,7 +407,6 @@ public final class NetworkManager {
         validationTracker.batchRemovePending(dimId, toRemove);
     }
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
     public void validatePendingNodesInLoadedWorlds() {
         if (!init || validationTracker.isPendingEmpty()) {
             return;
@@ -573,29 +435,24 @@ public final class NetworkManager {
             }
         }
     }
-    //~}
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
+    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(Level world, BlockPos pos) {
         return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(pos));
     }
 
-    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, int chunkX, int chunkY) {
+    public @NotNull ReferenceSet<INode> getNodesCoveringPosition(Level world, int chunkX, int chunkY) {
         return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(chunkX, chunkY));
     }
 
-    public @NotNull ReferenceSet<INode> getNodesInChunk(World world, int chunkX, int chunkZ) {
+    public @NotNull ReferenceSet<INode> getNodesInChunk(Level world, int chunkX, int chunkZ) {
         var map = nodeLocation.get(getDimensionId(world));
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
-    //~}
 
     public void removeNode(int dim, BlockPos pos) {
         var pMap = posNodes.get(dim);
         if (pMap != null && pMap != posNodes.defaultReturnValue()) {
-            //~ if >=1.20 '.toLong()' -> '.asLong()' {
-            removeNode(pMap.get(pos.toLong()));
-            //~}
+            removeNode(pMap.get(BlockPosCompat.toLong(pos)));
         }
     }
 
@@ -712,44 +569,11 @@ public final class NetworkManager {
         EventHooks.postRemoveNodePost(removedNode);
     }
 
-    private static void enqueueComponentNeighbor(
-        INode candidate,
-        ReferenceSet<INode> remaining,
-        ReferenceSet<INode> component,
-        Queue<INode> queue
-    ) {
-        if (candidate != null && remaining.remove(candidate)) {
-            component.add(candidate);
-            queue.add(candidate);
-        }
-    }
-
-    private static Object2ObjectMap<INode, ReferenceSet<INode>> buildIncomingNeighborMap(ReferenceSet<INode> nodes) {
-        Object2ObjectMap<INode, ReferenceSet<INode>> incomingNeighbors = new Object2ObjectOpenHashMap<>();
-        for (INode node : nodes) {
-            for (INode neighbor : node.getNeighbors()) {
-                if (neighbor == null || !nodes.contains(neighbor)) {
-                    continue;
-                }
-
-                ReferenceSet<INode> incoming = incomingNeighbors.get(neighbor);
-                if (incoming == null) {
-                    incoming = new ReferenceOpenHashSet<>();
-                    incomingNeighbors.put(neighbor, incoming);
-                }
-                incoming.add(node);
-            }
-        }
-        return incomingNeighbors;
-    }
-
     public @NotNull AddNodeResult addNode(INode newNode) {
         return addNode(newNode, null);
     }
 
-    //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    public @NotNull AddNodeResult addNode(INode newNode, TileEntity blockEntity) {
-        //~}
+    public @NotNull AddNodeResult addNode(INode newNode, BlockEntity blockEntity) {
         if (newNode == null) {
             return AddNodeResult.failure(AddNodeResult.Status.NULL_NODE);
         }
@@ -811,21 +635,13 @@ public final class NetworkManager {
             newNode.setActive(false);
             var world = newNode.getWorld();
             var pos = newNode.getPos();
-            for (var player : getPlayers(world)) {
-                //? if <1.20 {
-                if (player.getDistanceSq(pos) < 36) {
-                    //?} else {
-                    /*if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) < 36) {
-                     *///?}
-                    //? if <1.20 {
-                    player.sendMessage(new TextComponentTranslation("message.circulation_networks.hub_conflict"));
-                    //?} else {
-                    /*player.displayClientMessage(Component.translatable("message.circulation_networks.hub_conflict"), false);
-                     *///?}
+            for (var player : WorldResolveCompat.getPlayers(world)) {
+                if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) < 36) {
+                    player.sendSystemMessage(Component.translatable("message.circulation_networks.hub_conflict"));
                 }
             }
             if (blockEntity != null) {
-                destroyBlock(world, pos);
+                WorldResolveCompat.destroyBlock(world, pos);
             }
             return AddNodeResult.failure(AddNodeResult.Status.HUB_CONFLICT);
         }
@@ -964,17 +780,9 @@ public final class NetworkManager {
             if (nbt == null) {
                 continue;
             }
-            //? if <1.20 {
-            if (!nbt.hasKey("dim")) continue;
-            //?} else {
-            /*if (!nbt.contains("dim")) continue;
-            var dimLoc = parseDimensionLocation(nbt.getString("dim"));
-            var dimResKey = net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION, dimLoc);
-            var server = getCurrentServer();
-            if (server == null || server.getLevel(dimResKey) == null) continue;
-            int dimId = dimLoc.hashCode();
-            *///?}
+            if (!nbt.contains("dim")) continue;
+            String dimKey = NbtCompat.getStringOr(nbt, "dim", "");
+            if (dimKey.isEmpty() || !WorldResolveCompat.isRegisteredDimension(dimKey)) continue;
             var grid = Grid.deserialize(nbt);
             if (grid == null) continue;
             if (grid.getNodes().isEmpty()) {
@@ -999,9 +807,7 @@ public final class NetworkManager {
             boolean collision = false;
             for (INode node : grid.getNodes()) {
                 var l = posNodes.get(entry.dimId);
-                //~ if >=1.20 '.toLong()' -> '.asLong()' {
-                var p = node.getPos().toLong();
-                //~}
+                var p = BlockPosCompat.toLong(node.getPos());
                 if (l.containsKey(p)) {
                     collision = true;
                     break;
@@ -1043,17 +849,13 @@ public final class NetworkManager {
             if (positions == null) {
                 early.put(dimId, positions = new LongOpenHashSet());
             }
-            //~ if >=1.20 '.toLong()' -> '.asLong()' {
-            positions.add(pos.toLong());
-            //~}
+            positions.add(BlockPosCompat.toLong(pos));
         }
 
         void clearEarly(int dimId, BlockPos pos) {
             var positions = early.get(dimId);
             if (positions != null) {
-                //~ if >=1.20 '.toLong()' -> '.asLong()' {
-                positions.remove(pos.toLong());
-                //~}
+                positions.remove(BlockPosCompat.toLong(pos));
                 if (positions.isEmpty()) {
                     early.remove(dimId);
                 }
@@ -1064,9 +866,7 @@ public final class NetworkManager {
             for (var entry : early.int2ObjectEntrySet()) {
                 int dimId = entry.getIntKey();
                 for (long posLong : entry.getValue()) {
-                    //~ if >=1.20 '.fromLong(' -> '.of(' {
-                    markPending(dimId, BlockPos.fromLong(posLong));
-                    //~}
+                    markPending(dimId, BlockPosCompat.fromLong(posLong));
                 }
             }
             early.clear();
@@ -1084,23 +884,17 @@ public final class NetworkManager {
             if (positions == dimMap.defaultReturnValue()) {
                 dimMap.put(chunkCoord, positions = new LongOpenHashSet());
             }
-            //~ if >=1.20 '.toLong()' -> '.asLong()' {
-            positions.add(pos.toLong());
-            //~}
+            positions.add(BlockPosCompat.toLong(pos));
         }
 
         void removePending(int dimId, BlockPos pos) {
-            //~ if >=1.20 '.toLong()' -> '.asLong()' {
-            long posLong = pos.toLong();
-            //~}
+            long posLong = BlockPosCompat.toLong(pos);
             long chunkCoord = Functions.mergeChunkCoords(pos);
             removePendingInternal(dimId, posLong, chunkCoord);
         }
 
         void removePending(int dimId, long posLong) {
-            //~ if >=1.20 '.fromLong(' -> '.of(' {
-            long chunkCoord = Functions.mergeChunkCoords(BlockPos.fromLong(posLong));
-            //~}
+            long chunkCoord = Functions.mergeChunkCoords(BlockPosCompat.fromLong(posLong));
             removePendingInternal(dimId, posLong, chunkCoord);
         }
 
@@ -1115,9 +909,7 @@ public final class NetworkManager {
         }
 
         void removeIfRegistered(int dimId, BlockPos pos, Long2ReferenceMap<INode> posNodesForDim, INode node) {
-            //~ if >=1.20 '.toLong()' -> '.asLong()' {
-            if (node != null && posNodesForDim.get(pos.toLong()) == node) {
-                //~}
+            if (node != null && posNodesForDim.get(BlockPosCompat.toLong(pos)) == node) {
                 removePending(dimId, pos);
             }
         }
@@ -1154,6 +946,7 @@ public final class NetworkManager {
         private final Status status;
         @Nullable
         private final IGrid grid;
+
         private AddNodeResult(Status status, @Nullable IGrid grid) {
             this.status = status;
             this.grid = grid;
@@ -1190,9 +983,6 @@ public final class NetworkManager {
         }
     }
 
-    //? if <1.20 {
-    @Desugar
-        //?}
     record GridEntry(int dimId, IGrid grid) {
     }
 }

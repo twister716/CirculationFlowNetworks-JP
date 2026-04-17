@@ -1,17 +1,8 @@
 package com.circulation.circulation_networks.container;
 
-//~ mc_imports
-import net.minecraft.item.ItemStack;
-//? if <1.20 {
-import net.minecraft.entity.player.EntityPlayer;
-//?} else {
-/*import net.minecraft.world.entity.player.Player;
- *///?}
-//? if <1.21 {
-import net.minecraftforge.items.IItemHandler;
-//?} else {
-/*import net.neoforged.neoforge.items.IItemHandler;
- *///?}
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BooleanSupplier;
@@ -20,7 +11,7 @@ public class HubPluginSlot extends ComponentSlot {
 
     private final BooleanSupplier canModifySupplier;
 
-    public HubPluginSlot(BooleanSupplier canModifySupplier, IItemHandler inventory, int index, int relX, int relY) {
+    public HubPluginSlot(BooleanSupplier canModifySupplier, Container inventory, int index, int relX, int relY) {
         super(inventory, index, relX, relY);
         this.canModifySupplier = canModifySupplier;
     }
@@ -29,17 +20,13 @@ public class HubPluginSlot extends ComponentSlot {
         return canModifySupplier.getAsBoolean();
     }
 
-    //~ if >=1.20 'canTakeStack(@NotNull EntityPlayer' -> 'mayPickup(@NotNull Player' {
-    //~ if >=1.20 'isItemValid(' -> 'mayPlace(' {
     @Override
-    public boolean canTakeStack(@NotNull EntityPlayer player) {
+    public boolean mayPickup(@NotNull Player player) {
         return canModify();
     }
 
     @Override
-    public boolean isItemValid(@NotNull ItemStack stack) {
-        return canModify() && super.isItemValid(stack);
+    public boolean mayPlace(@NotNull ItemStack stack) {
+        return canModify() && super.mayPlace(stack);
     }
-    //~}
-    //~}
 }

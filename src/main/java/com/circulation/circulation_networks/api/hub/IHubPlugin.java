@@ -1,11 +1,7 @@
 package com.circulation.circulation_networks.api.hub;
 
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
-//? if <1.20 {
-import net.minecraft.util.ResourceLocation;
-//?} else {
-/*import net.minecraft.resources.ResourceLocation;
-*///?}
+import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +16,7 @@ public interface IHubPlugin {
 
     HubPluginCapability<?> getCapability();
 
-    default @Nullable ResourceLocation getHubModelLocation() {
+    default @Nullable Identifier getHubModelLocation() {
         return null;
     }
 

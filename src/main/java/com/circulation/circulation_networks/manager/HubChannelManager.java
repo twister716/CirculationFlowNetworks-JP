@@ -17,45 +17,34 @@ import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubChannel;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
+import com.circulation.circulation_networks.utils.NbtCompat;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
-//~ mc_imports
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-//? if <1.20 {
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraftforge.common.util.Constants;
-//?} else {
-/*import net.minecraft.nbt.Tag;
- *///?}
-
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.circulation.circulation_networks.network.nodes.HubNode.EMPTY;
 
 public final class HubChannelManager {
 
-    private static final int MAX_CHANNEL_NAME_LENGTH = 32;
-
     public static final HubChannelManager INSTANCE = new HubChannelManager();
-
+    private static final int MAX_CHANNEL_NAME_LENGTH = 32;
     private final Map<UUID, HubChannel> channels = new Object2ReferenceOpenHashMap<>();
     private final Reference2ObjectMap<IHubNode, UUID> hubChannels = new Reference2ObjectOpenHashMap<>();
     private long snapshotVersion = 1L;
@@ -66,10 +55,78 @@ public final class HubChannelManager {
         hubChannels.defaultReturnValue(EMPTY);
     }
 
-    //~ if >=1.20 'net.minecraft.world.World' -> 'net.minecraft.world.level.Level' {
-    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
-    private static boolean isClientWorld(net.minecraft.world.World world) {
-        return world.isRemote;
+    private static boolean isClientWorld(net.minecraft.world.level.Level world) {
+        return world.isClientSide();
+    }
+
+    private static String normalizeChannelName(String rawName) {
+        if (rawName == null) {
+            return "";
+        }
+
+        String trimmed = rawName.trim();
+        if (trimmed.length() <= MAX_CHANNEL_NAME_LENGTH) {
+            return trimmed;
+        }
+        return trimmed.substring(0, MAX_CHANNEL_NAME_LENGTH);
+    }
+
+    private static String formatOfflinePlayerName(UUID playerId) {
+        String raw = playerId != null ? playerId.toString() : "unknown";
+        return "#" + raw.substring(0, Math.min(8, raw.length())).toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean canChangePermission(HubChannel channel,
+                                               UUID actorId,
+                                               HubPermissionLevel actorPermission,
+                                               UUID targetId,
+                                               HubPermissionLevel targetPermission,
+                                               @Nullable HubPermissionLevel requestedPermission,
+                                               boolean privilegedOverride) {
+        if (actorId.equals(targetId)) {
+            return false;
+        }
+        if (channel.getOwner() != null && channel.getOwner().equals(targetId)) {
+            return false;
+        }
+        if (requestedPermission == HubPermissionLevel.OWNER) {
+            return false;
+        }
+        if (privilegedOverride) {
+            return true;
+        }
+
+        return switch (actorPermission) {
+            case OWNER -> true;
+            case ADMIN -> targetPermission != HubPermissionLevel.ADMIN
+                && targetPermission != HubPermissionLevel.OWNER
+                && requestedPermission != HubPermissionLevel.ADMIN;
+            default -> false;
+        };
+    }
+
+    private static void persistChannelPluginData(IHubNode hub) {
+        if (hub == null || !hub.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) {
+            return;
+        }
+
+        var plugins = hub.getPlugins();
+        if (plugins == null) {
+            return;
+        }
+
+        HubChannelPluginData.ChannelInfo channelInfo = HubChannelPluginData.getChannelInfo(hub);
+        for (int slot = 0; slot < plugins.getSlots(); slot++) {
+            var stack = plugins.getStackInSlot(slot);
+            if (stack.isEmpty() || !(stack.getItem() instanceof IHubPlugin plugin)) {
+                continue;
+            }
+            if (plugin.getCapability() != HubCapabilitys.CHANNEL_CAPABILITY) {
+                continue;
+            }
+            HubCapabilitys.CHANNEL_CAPABILITY.saveData(channelInfo, stack);
+            break;
+        }
     }
 
     public void bindHub(IHubNode hub) {
@@ -268,6 +325,7 @@ public final class HubChannelManager {
         return true;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean createChannel(IHubNode hub, UUID playerId, String rawName, PermissionMode permissionMode) {
         ensureLoaded();
         if (hub == null || playerId == null) {
@@ -526,7 +584,7 @@ public final class HubChannelManager {
     }
 
     private List<IHubNode> getBoundHubs(UUID channelId) {
-        List<IHubNode> boundHubs = new ArrayList<>();
+        List<IHubNode> boundHubs = new ObjectArrayList<>();
         for (var entry : hubChannels.reference2ObjectEntrySet()) {
             if (channelId.equals(entry.getValue())) {
                 boundHubs.add(entry.getKey());
@@ -542,76 +600,6 @@ public final class HubChannelManager {
         }
         UUID channelId = hub.getChannelId();
         return channelId == null || channelId.equals(EMPTY) ? null : channels.get(channelId);
-    }
-
-    private static String normalizeChannelName(String rawName) {
-        if (rawName == null) {
-            return "";
-        }
-
-        String trimmed = rawName.trim();
-        if (trimmed.length() <= MAX_CHANNEL_NAME_LENGTH) {
-            return trimmed;
-        }
-        return trimmed.substring(0, MAX_CHANNEL_NAME_LENGTH);
-    }
-
-    private static String formatOfflinePlayerName(UUID playerId) {
-        String raw = playerId != null ? playerId.toString() : "unknown";
-        return "#" + raw.substring(0, Math.min(8, raw.length())).toLowerCase(Locale.ROOT);
-    }
-
-    private static boolean canChangePermission(HubChannel channel,
-                                               UUID actorId,
-                                               HubPermissionLevel actorPermission,
-                                               UUID targetId,
-                                               HubPermissionLevel targetPermission,
-                                               @Nullable HubPermissionLevel requestedPermission,
-                                               boolean privilegedOverride) {
-        if (actorId.equals(targetId)) {
-            return false;
-        }
-        if (channel.getOwner() != null && channel.getOwner().equals(targetId)) {
-            return false;
-        }
-        if (requestedPermission == HubPermissionLevel.OWNER) {
-            return false;
-        }
-        if (privilegedOverride) {
-            return true;
-        }
-
-        return switch (actorPermission) {
-            case OWNER -> true;
-            case ADMIN -> targetPermission != HubPermissionLevel.ADMIN
-                && targetPermission != HubPermissionLevel.OWNER
-                && requestedPermission != HubPermissionLevel.ADMIN;
-            default -> false;
-        };
-    }
-
-    private static void persistChannelPluginData(IHubNode hub) {
-        if (hub == null || !hub.hasPluginCapability(HubCapabilitys.CHANNEL_CAPABILITY)) {
-            return;
-        }
-
-        var plugins = hub.getPlugins();
-        if (plugins == null) {
-            return;
-        }
-
-        HubChannelPluginData.ChannelInfo channelInfo = HubChannelPluginData.getChannelInfo(hub);
-        for (int slot = 0; slot < plugins.getSlots(); slot++) {
-            var stack = plugins.getStackInSlot(slot);
-            if (stack.isEmpty() || !(stack.getItem() instanceof IHubPlugin plugin)) {
-                continue;
-            }
-            if (plugin.getCapability() != HubCapabilitys.CHANNEL_CAPABILITY) {
-                continue;
-            }
-            HubCapabilitys.CHANNEL_CAPABILITY.saveData(channelInfo, stack);
-            break;
-        }
     }
 
     private void schedulePersistAsync() {
@@ -652,85 +640,7 @@ public final class HubChannelManager {
         return snapshot;
     }
 
-    //? if <1.20 {
     private void loadFromFile() {
-        File saveFile = new File(NetworkManager.getSaveFile(), "HubChannels.dat");
-        if (!saveFile.exists()) {
-            return;
-        }
-
-        try {
-            NBTTagCompound nbt = CompressedStreamTools.read(saveFile);
-            if (nbt == null) {
-                return;
-            }
-
-            channels.clear();
-            NBTTagList channelList = nbt.getTagList("channels", Constants.NBT.TAG_COMPOUND);
-            for (int i = 0; i < channelList.tagCount(); i++) {
-                NBTTagCompound channelNbt = channelList.getCompoundTagAt(i);
-                if (!channelNbt.hasKey("channelId") || !channelNbt.hasKey("name")) {
-                    continue;
-                }
-                try {
-                    UUID channelId = UUID.fromString(channelNbt.getString("channelId"));
-                    String name = channelNbt.getString("name");
-                    PermissionMode permissionMode = PermissionMode.fromId(channelNbt.getInteger("permissionMode"));
-                    UUID owner = null;
-                    if (channelNbt.hasKey("ownerUUID")) {
-                        owner = UUID.fromString(channelNbt.getString("ownerUUID"));
-                    }
-                    HubChannel channel = new HubChannel(channelId, name, owner, permissionMode, Collections.emptyMap());
-                    if (channelNbt.hasKey("permissions", Constants.NBT.TAG_LIST)) {
-                        NBTTagList permissionList = channelNbt.getTagList("permissions", Constants.NBT.TAG_COMPOUND);
-                        for (int j = 0; j < permissionList.tagCount(); j++) {
-                            NBTTagCompound permissionNbt = permissionList.getCompoundTagAt(j);
-                            if (!permissionNbt.hasKey("playerUUID")) {
-                                continue;
-                            }
-                            UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
-                            HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInteger("permission"));
-                            channel.setExplicitPermission(playerId, permission);
-                        }
-                    }
-                    if (channelNbt.hasKey("chargingPreferences", Constants.NBT.TAG_LIST)) {
-                        NBTTagList chargingList = channelNbt.getTagList("chargingPreferences", Constants.NBT.TAG_COMPOUND);
-                        for (int j = 0; j < chargingList.tagCount(); j++) {
-                            NBTTagCompound chargingNbt = chargingList.getCompoundTagAt(j);
-                            if (!chargingNbt.hasKey("playerUUID")) {
-                                continue;
-                            }
-                            UUID playerId = UUID.fromString(chargingNbt.getString("playerUUID"));
-                            ChargingPreference pref = new ChargingPreference(chargingNbt.getByte("prefs"));
-                            channel.setChargingPreference(playerId, pref);
-                        }
-                    }
-                    channels.put(channelId, channel);
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-        } catch (IOException ignored) {
-        }
-    }
-
-    private void saveToFile() {
-        if (!dirty) {
-            return;
-        }
-
-        File saveFile = getSaveFile();
-        List<ChannelDataSnapshot> snapshot = snapshotChannels();
-        if (snapshot.isEmpty()) {
-            NetworkManager.deleteFile(saveFile);
-            dirty = false;
-            return;
-        }
-
-        writeSnapshot(saveFile, snapshot);
-        dirty = false;
-    }
-    //?} else {
-    /*private void loadFromFile() {
         File saveFile = new File(NetworkManager.getSaveFile(), "HubChannels.dat");
         if (!saveFile.exists()) {
             return;
@@ -743,42 +653,42 @@ public final class HubChannelManager {
             }
 
             channels.clear();
-            ListTag channelList = nbt.getList("channels", Tag.TAG_COMPOUND);
+            ListTag channelList = NbtCompat.getListOrEmpty(nbt, "channels");
             for (int i = 0; i < channelList.size(); i++) {
-                CompoundTag channelNbt = channelList.getCompound(i);
+                CompoundTag channelNbt = NbtCompat.getCompoundOrEmpty(channelList, i);
                 if (!channelNbt.contains("channelId") || !channelNbt.contains("name")) {
                     continue;
                 }
                 try {
-                    UUID channelId = UUID.fromString(channelNbt.getString("channelId"));
-                    String name = channelNbt.getString("name");
-                    PermissionMode permissionMode = PermissionMode.fromId(channelNbt.getInt("permissionMode"));
+                    UUID channelId = UUID.fromString(NbtCompat.getStringOr(channelNbt, "channelId", ""));
+                    String name = NbtCompat.getStringOr(channelNbt, "name", "");
+                    PermissionMode permissionMode = PermissionMode.fromId(NbtCompat.getIntOr(channelNbt, "permissionMode", PermissionMode.PUBLIC.getId()));
                     UUID owner = null;
                     if (channelNbt.contains("ownerUUID")) {
-                        owner = UUID.fromString(channelNbt.getString("ownerUUID"));
+                        owner = UUID.fromString(NbtCompat.getStringOr(channelNbt, "ownerUUID", ""));
                     }
                     HubChannel channel = new HubChannel(channelId, name, owner, permissionMode, Collections.emptyMap());
-                    if (channelNbt.contains("permissions", Tag.TAG_LIST)) {
-                        ListTag permissionList = channelNbt.getList("permissions", Tag.TAG_COMPOUND);
+                    if (channelNbt.contains("permissions")) {
+                        ListTag permissionList = NbtCompat.getListOrEmpty(channelNbt, "permissions");
                         for (int j = 0; j < permissionList.size(); j++) {
-                            CompoundTag permissionNbt = permissionList.getCompound(j);
+                            CompoundTag permissionNbt = NbtCompat.getCompoundOrEmpty(permissionList, j);
                             if (!permissionNbt.contains("playerUUID")) {
                                 continue;
                             }
-                            UUID playerId = UUID.fromString(permissionNbt.getString("playerUUID"));
-                            HubPermissionLevel permission = HubPermissionLevel.fromId(permissionNbt.getInt("permission"));
+                            UUID playerId = UUID.fromString(NbtCompat.getStringOr(permissionNbt, "playerUUID", ""));
+                            HubPermissionLevel permission = HubPermissionLevel.fromId(NbtCompat.getIntOr(permissionNbt, "permission", HubPermissionLevel.NONE.getId()));
                             channel.setExplicitPermission(playerId, permission);
                         }
                     }
-                    if (channelNbt.contains("chargingPreferences", Tag.TAG_LIST)) {
-                        ListTag chargingList = channelNbt.getList("chargingPreferences", Tag.TAG_COMPOUND);
+                    if (channelNbt.contains("chargingPreferences")) {
+                        ListTag chargingList = NbtCompat.getListOrEmpty(channelNbt, "chargingPreferences");
                         for (int j = 0; j < chargingList.size(); j++) {
-                            CompoundTag chargingNbt = chargingList.getCompound(j);
+                            CompoundTag chargingNbt = NbtCompat.getCompoundOrEmpty(chargingList, j);
                             if (!chargingNbt.contains("playerUUID")) {
                                 continue;
                             }
-                            UUID playerId = UUID.fromString(chargingNbt.getString("playerUUID"));
-                            ChargingPreference pref = new ChargingPreference(chargingNbt.getByte("prefs"));
+                            UUID playerId = UUID.fromString(NbtCompat.getStringOr(chargingNbt, "playerUUID", ""));
+                            ChargingPreference pref = new ChargingPreference(NbtCompat.getByteOr(chargingNbt, "prefs", (byte) 0));
                             channel.setChargingPreference(playerId, pref);
                         }
                     }
@@ -846,53 +756,10 @@ public final class HubChannelManager {
         } catch (IOException ignored) {
         }
     }
-    *///?}
 
-    //? if <1.20 {
-    private void writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        NBTTagList channelList = new NBTTagList();
-        for (ChannelDataSnapshot channel : snapshot) {
-            NBTTagCompound channelNbt = new NBTTagCompound();
-            channelNbt.setString("channelId", channel.channelId.toString());
-            channelNbt.setString("name", channel.name);
-            channelNbt.setInteger("permissionMode", channel.permissionMode.getId());
-            if (channel.owner != null) {
-                channelNbt.setString("ownerUUID", channel.owner.toString());
-            }
 
-            NBTTagList permissionList = new NBTTagList();
-            for (var entry : channel.explicitPermissions.entrySet()) {
-                NBTTagCompound permissionNbt = new NBTTagCompound();
-                permissionNbt.setString("playerUUID", entry.getKey().toString());
-                permissionNbt.setInteger("permission", entry.getValue().getId());
-                permissionList.appendTag(permissionNbt);
-            }
-            channelNbt.setTag("permissions", permissionList);
-
-            NBTTagList chargingList = new NBTTagList();
-            for (var entry : channel.chargingPreferences.entrySet()) {
-                NBTTagCompound chargingNbt = new NBTTagCompound();
-                chargingNbt.setString("playerUUID", entry.getKey().toString());
-                chargingNbt.setByte("prefs", entry.getValue().toByte());
-                chargingList.appendTag(chargingNbt);
-            }
-            channelNbt.setTag("chargingPreferences", chargingList);
-
-            channelList.appendTag(channelNbt);
-        }
-        nbt.setTag("channels", channelList);
-
-        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "hub channel save");
-    }
-    //?}
-
-    //? if <1.20
-    @Desugar
     private record ChannelDataSnapshot(UUID channelId, String name, PermissionMode permissionMode, @Nullable UUID owner,
                                        Map<UUID, HubPermissionLevel> explicitPermissions,
                                        Map<UUID, ChargingPreference> chargingPreferences) {
     }
-    //~}
-    //~}
 }

@@ -1,7 +1,6 @@
 package com.circulation.circulation_networks.network.hub;
 
-//~ mc_imports
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class MarkPluginCapability extends HubPluginCapability<Object> {

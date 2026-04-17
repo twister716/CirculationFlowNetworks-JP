@@ -1,11 +1,7 @@
 package com.circulation.circulation_networks.math;
 
 import org.jetbrains.annotations.NotNull;
-//? if <1.20 {
-import com.github.bsideup.jabel.Desugar;
 
-@Desugar
-//?}
 public record Vec3i(int x, int y, int z) {
 
     public double distanceSquared(double x, double y, double z) {
@@ -24,10 +20,10 @@ public record Vec3i(int x, int y, int z) {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Vec3i other)) {
+        if (!(obj instanceof Vec3i(int x1, int y1, int z1))) {
             return false;
         }
-        return x == other.x && y == other.y && z == other.z;
+        return x == x1 && y == y1 && z == z1;
     }
 
     @Override

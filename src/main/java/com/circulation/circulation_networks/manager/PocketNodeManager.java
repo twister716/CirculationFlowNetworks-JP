@@ -11,42 +11,33 @@ import com.circulation.circulation_networks.pocket.PocketNodeHostRules;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
 import com.circulation.circulation_networks.registry.NodeTypes;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
+import com.circulation.circulation_networks.utils.DimensionHelper;
 import com.circulation.circulation_networks.utils.Functions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if <1.20 {
-import net.minecraft.entity.item.EntityItem;
-import net.minecraftforge.common.DimensionManager;
-import net.minecraftforge.common.util.Constants;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.ResourceLocation;
-//?} else {
-/*import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.World;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.nbt.Tag;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-*///?}
-
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.util.Objects;
 
+@SuppressWarnings("resource")
 public final class PocketNodeManager {
 
     public static final PocketNodeManager INSTANCE = new PocketNodeManager();
@@ -57,6 +48,7 @@ public final class PocketNodeManager {
     private final LongArrayList chunkLoadIterationScratch = new LongArrayList();
     private boolean loaded;
     private boolean dirty;
+
     private PocketNodeManager() {
     }
 
@@ -91,8 +83,7 @@ public final class PocketNodeManager {
         return chunkMap == null ? null : chunkMap.get(chunkCoord);
     }
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    private static boolean shouldDiscardPendingRecord(World world, PocketNodeRecord record, INode node, NetworkManager.AddNodeResult addResult) {
+    private static boolean shouldDiscardPendingRecord(Level world, PocketNodeRecord record, INode node, NetworkManager.AddNodeResult addResult) {
         if (!node.isActive()) {
             return true;
         }
@@ -102,10 +93,8 @@ public final class PocketNodeManager {
         return addResult.getStatus() == NetworkManager.AddNodeResult.Status.HUB_CONFLICT;
     }
 
-    //~}
 
-    //~ if >=1.20 '(World ' -> '(Level ' {
-    private static boolean canAdoptLoadedPocketNode(World world, PocketNodeRecord record, INode node) {
+    private static boolean canAdoptLoadedPocketNode(Level world, PocketNodeRecord record, INode node) {
         if (node == null || !node.isActive()) {
             return false;
         }
@@ -115,7 +104,7 @@ public final class PocketNodeManager {
         return resolveValidatedRecord(world, record) != null && isRecoverablePocketNode(world, node);
     }
 
-    private static boolean isRecoverablePocketNode(World world, INode node) {
+    private static boolean isRecoverablePocketNode(Level world, INode node) {
         if (world == null || node == null || !node.getNodeType().allowsPocketNode()) {
             return false;
         }
@@ -125,28 +114,8 @@ public final class PocketNodeManager {
         }
         return API.getNodeAt(world, pos) == node;
     }
-    //~}
 
-    //? if <1.20 {
     @Nullable
-    private static net.minecraft.util.EnumFacing inferAttachmentFace(World world, BlockPos pos) {
-        if (world == null || !Functions.isChunkLoaded(world, pos)) {
-            return null;
-        }
-        for (net.minecraft.util.EnumFacing face : net.minecraft.util.EnumFacing.values()) {
-            BlockPos adjacentPos = pos.offset(face);
-            if (!Functions.isChunkLoaded(world, adjacentPos)) {
-                continue;
-            }
-            var adjacentState = world.getBlockState(adjacentPos);
-            if (adjacentState.getBlock().isAir(adjacentState, world, adjacentPos)) {
-                return face;
-            }
-        }
-        return net.minecraft.util.EnumFacing.UP;
-    }
-    //?} else {
-    /*@Nullable
     private static net.minecraft.core.Direction inferAttachmentFace(Level world, BlockPos pos) {
         if (world == null || !Functions.isChunkLoaded(world, pos)) {
             return null;
@@ -163,85 +132,18 @@ public final class PocketNodeManager {
         }
         return net.minecraft.core.Direction.UP;
     }
-    *///?}
 
-    //? if >=1.20 {
-    /*private static @Nullable MinecraftServer getCurrentServer() {
-        //~ if >=1.21 'net.minecraftforge.server.ServerLifecycleHooks' -> 'net.neoforged.neoforge.server.ServerLifecycleHooks' {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        //~}
-    }
-    *///?}
-
-    //? if <1.20 {
-    private static @Nullable World resolveWorld(int dimId) {
-        return DimensionManager.getWorld(dimId);
+    private static @Nullable MinecraftServer getCurrentServer() {
+        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
     }
 
-    private static int getDimensionId(World world) {
-        return world.provider.getDimension();
-    }
-
-    private static boolean isClientWorld(World world) {
-        return world.isRemote;
-    }
-
-    private static boolean isHostChunkLoaded(World world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos);
-    }
-
-    private static boolean hasHostBlock(World world, BlockPos pos) {
-        return getCurrentHostBlockId(world, pos) != null;
-    }
-
-    private static boolean isAirBlock(World world, BlockPos pos) {
-        if (!Functions.isChunkLoaded(world, pos)) {
-            return false;
-        }
-        var state = world.getBlockState(pos);
-        return state.getBlock().isAir(state, world, pos);
-    }
-
-    private static boolean hasNodeBlockEntity(World world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos) && world.getTileEntity(pos) instanceof INodeBlockEntity;
-    }
-
-    private static @Nullable String getCurrentHostBlockId(World world, BlockPos pos) {
-        if (!Functions.isChunkLoaded(world, pos)) {
-            return null;
-        }
-        var state = world.getBlockState(pos);
-        if (state.getBlock().isAir(state, world, pos) || world.getTileEntity(pos) instanceof INodeBlockEntity) {
-            return null;
-        }
-        ResourceLocation registryName = state.getBlock().getRegistryName();
-        return registryName == null ? null : registryName.toString();
-    }
-
-    private static @Nullable PocketNodeRecord resolveValidatedRecord(World world, PocketNodeRecord record) {
-        if (!isHostChunkLoaded(world, record.pos())) {
-            return record;
-        }
-        boolean isAir = isAirBlock(world, record.pos());
-        boolean hasNodeBlockEntity = hasNodeBlockEntity(world, record.pos());
-        String currentHostBlockId = getCurrentHostBlockId(world, record.pos());
-        String resolvedHostBlockId = PocketNodeHostRules.resolveHostBlockId(record.hostBlockId(), currentHostBlockId, isAir, hasNodeBlockEntity);
-        if (!PocketNodeHostRules.isHostStateValid(resolvedHostBlockId, currentHostBlockId, isAir, hasNodeBlockEntity)) {
-            return null;
-        }
-        if (Objects.equals(resolvedHostBlockId, record.hostBlockId())) {
-            return record;
-        }
-        return record.withHostBlockId(resolvedHostBlockId);
-    }
-    //?} else {
-    /*private static @Nullable Level resolveWorld(int dimId) {
+    private static @Nullable Level resolveWorld(int dimId) {
         MinecraftServer server = getCurrentServer();
         if (server == null) {
             return null;
         }
         for (Level level : server.getAllLevels()) {
-            if (level.dimension().location().hashCode() == dimId) {
+            if (DimensionHelper.getDimensionHash(level) == dimId) {
                 return level;
             }
         }
@@ -249,11 +151,11 @@ public final class PocketNodeManager {
     }
 
     private static int getDimensionId(Level world) {
-        return world.dimension().location().hashCode();
+        return DimensionHelper.getDimensionHash(world);
     }
 
     private static boolean isClientWorld(Level world) {
-        return world.isClientSide;
+        return world.isClientSide();
     }
 
     private static boolean isHostChunkLoaded(Level world, BlockPos pos) {
@@ -280,7 +182,7 @@ public final class PocketNodeManager {
         if (state.isAir() || world.getBlockEntity(pos) instanceof INodeBlockEntity) {
             return null;
         }
-        ResourceLocation registryName = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        Identifier registryName = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return registryName == null ? null : registryName.toString();
     }
 
@@ -300,10 +202,7 @@ public final class PocketNodeManager {
         }
         return record.withHostBlockId(resolvedHostBlockId);
     }
-    *///?}
 
-    //~ if >=1.20 'NBTTagList' -> 'ListTag' {
-    //~ if >=1.20 '.tagCount()' -> '.size()' {
     public void load() {
         if (loaded) {
             return;
@@ -317,22 +216,14 @@ public final class PocketNodeManager {
             return;
         }
 
-        //~ if >=1.20 'NBTTagCompound ' -> 'CompoundTag ' {
-        NBTTagCompound nbt = NetworkManager.tryReadCompressedNbt(saveFile, "pocket node save");
-        //~}
+        CompoundTag nbt = NetworkManager.tryReadCompressedNbt(saveFile, "pocket node save");
         if (nbt == null) {
             return;
         }
 
-        //? if <1.20 {
-        NBTTagList nodes = nbt.getTagList("nodes", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < nodes.tagCount(); i++) {
-            PocketNodeRecord record = PocketNodeRecord.deserialize(nodes.getCompoundTagAt(i));
-            //?} else {
-        /*NBTTagList nodes = nbt.getList("nodes", Tag.TAG_COMPOUND);
-        for (int i = 0; i < nodes.tagCount(); i++) {
-            PocketNodeRecord record = PocketNodeRecord.deserialize(nodes.getCompound(i));
-        *///?}
+        ListTag nodes = nbt.getListOrEmpty("nodes");
+        for (int i = 0; i < nodes.size(); i++) {
+            PocketNodeRecord record = PocketNodeRecord.deserialize(nodes.getCompoundOrEmpty(i));
             if (record != null) {
                 putPending(record);
             }
@@ -346,43 +237,33 @@ public final class PocketNodeManager {
 
         recoverPocketHostsFromLoadedNodes();
     }
-    //~}
-    //~}
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 'NBTTagList' -> 'ListTag' {
-    //~ if >=1.20 '.appendTag(' -> '.add(' {
-    //~ if >=1.20 '.setTag(' -> '.put(' {
     public void save() {
         if (!loaded || (!dirty && activeHosts.isEmpty() && pendingHosts.isEmpty())) {
             return;
         }
 
         File saveFile = getSaveFile();
-        NBTTagCompound nbt = new NBTTagCompound();
-        NBTTagList list = new NBTTagList();
+        CompoundTag nbt = new CompoundTag();
+        ListTag list = new ListTag();
 
         for (var dimEntry : activeHosts.int2ObjectEntrySet()) {
             for (var host : dimEntry.getValue().values()) {
-                list.appendTag(host.toRecord().serialize());
+                list.add(host.toRecord().serialize());
             }
         }
         for (var dimEntry : pendingHosts.int2ObjectEntrySet()) {
             for (var record : dimEntry.getValue().values()) {
-                list.appendTag(record.serialize());
+                list.add(record.serialize());
             }
         }
 
-        nbt.setTag("nodes", list);
+        nbt.put("nodes", list);
 
         if (NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "pocket node save")) {
             dirty = false;
         }
     }
-    //~}
-    //~}
-    //~}
-    //~}
 
     public void onServerStop() {
         clearState();
@@ -396,8 +277,7 @@ public final class PocketNodeManager {
         }
     }
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public void onChunkLoad(World world, int chunkX, int chunkZ) {
+    public void onChunkLoad(Level world, int chunkX, int chunkZ) {
         if (!loaded || isClientWorld(world)) {
             return;
         }
@@ -444,18 +324,14 @@ public final class PocketNodeManager {
             }
         }
     }
-    //~}
 
-    //~ if >=1.20 'net.minecraft.util.EnumFacing' -> 'net.minecraft.core.Direction' {
-    //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public RegisterPocketNodeResult registerPocketNodeDetailed(World world, BlockPos pos, NodeType<?> nodeType, @Nullable net.minecraft.util.EnumFacing attachmentFace, @Nullable String customName) {
+    public RegisterPocketNodeResult registerPocketNodeDetailed(Level world, BlockPos pos, NodeType<?> nodeType, @Nullable net.minecraft.core.Direction attachmentFace, @Nullable String customName) {
         if (isClientWorld(world) || nodeType == null || !nodeType.allowsPocketNode() || NodeTypes.getById(nodeType.id()) != nodeType) {
             return RegisterPocketNodeResult.FAILED;
         }
 
         int dimId = getDimensionId(world);
-        long posLong = pos.toLong();
+        long posLong = pos.asLong();
         if (getActiveDimMap(dimId).containsKey(posLong) || getPendingDimMap(dimId).containsKey(posLong)) {
             return RegisterPocketNodeResult.OCCUPIED;
         }
@@ -479,18 +355,13 @@ public final class PocketNodeManager {
         }
         return activated;
     }
-    //~}
-    //~}
-    //~}
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public boolean removePocketNode(World world, BlockPos pos, boolean dropItem) {
+    public boolean removePocketNode(Level world, BlockPos pos, boolean dropItem) {
         if (!loaded) {
             return false;
         }
         int dimId = getDimensionId(world);
-        long posLong = pos.toLong();
+        long posLong = pos.asLong();
         PocketNodeHost activeHost = removeActiveHost(dimId, posLong);
         if (activeHost != null) {
             NetworkManager.INSTANCE.removeNode(activeHost.node());
@@ -512,24 +383,20 @@ public final class PocketNodeManager {
         }
         return false;
     }
-    //~}
-    //~}
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public void onHostBlockBroken(World world, BlockPos pos) {
+    public void onHostBlockBroken(Level world, BlockPos pos) {
         if (!loaded || isClientWorld(world)) {
             return;
         }
         onHostBlockStateChanged(world, pos);
     }
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public void onHostBlockStateChanged(World world, BlockPos pos) {
+    public void onHostBlockStateChanged(Level world, BlockPos pos) {
         if (!loaded || isClientWorld(world)) {
             return;
         }
         int dimId = getDimensionId(world);
-        long posLong = pos.toLong();
+        long posLong = pos.asLong();
 
         Long2ObjectMap<PocketNodeHost> activeDimMap = activeHosts.get(dimId);
         PocketNodeHost activeHost = activeDimMap == null ? null : activeDimMap.get(posLong);
@@ -561,7 +428,6 @@ public final class PocketNodeManager {
             dirty = true;
         }
     }
-    //~}
 
     public ObjectList<PocketNodeRecord> getActiveRecords(int dimId) {
         ObjectList<PocketNodeRecord> result = new ObjectArrayList<>();
@@ -574,11 +440,8 @@ public final class PocketNodeManager {
         }
         return result;
     }
-    //~}
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public boolean isActivePocketNode(World world, BlockPos pos, @Nullable NodeType<?> nodeType) {
+    public boolean isActivePocketNode(Level world, BlockPos pos, @Nullable NodeType<?> nodeType) {
         if (!loaded || world == null || isClientWorld(world)) {
             return false;
         }
@@ -593,16 +456,13 @@ public final class PocketNodeManager {
         if (dimMap == null) {
             return false;
         }
-        PocketNodeHost host = dimMap.get(pos.toLong());
+        PocketNodeHost host = dimMap.get(pos.asLong());
         if (host == null) {
             return false;
         }
         return nodeType == null || host.record().nodeType() == nodeType;
     }
-    //~}
-    //~}
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
     private RegisterPocketNodeResult tryActivate(PocketNodeRecord record, boolean dropItemOnConflict) {
         var world = resolveWorld(record.dimensionId());
         if (world == null) {
@@ -610,7 +470,7 @@ public final class PocketNodeManager {
         }
 
         int dimId = record.dimensionId();
-        long posLong = record.pos().toLong();
+        long posLong = record.pos().asLong();
 
         PocketNodeRecord resolvedRecord = resolveValidatedRecord(world, record);
         if (resolvedRecord == null) {
@@ -679,12 +539,10 @@ public final class PocketNodeManager {
         putActive(new PocketNodeHost(record, node));
         return RegisterPocketNodeResult.SUCCESS;
     }
-    //~}
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
     private void putActive(PocketNodeHost host) {
         int dimId = host.record().dimensionId();
-        long posLong = host.record().pos().toLong();
+        long posLong = host.record().pos().asLong();
         long chunkCoord = Functions.mergeChunkCoords(host.record().pos());
         getActiveDimMap(dimId).put(posLong, host);
         indexChunkPosition(getChunkIndex(activeChunkIndex, dimId), chunkCoord, posLong);
@@ -705,12 +563,10 @@ public final class PocketNodeManager {
         }
         return removed;
     }
-    //~}
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
     private void putPending(PocketNodeRecord record) {
         int dimId = record.dimensionId();
-        long posLong = record.pos().toLong();
+        long posLong = record.pos().asLong();
         long chunkCoord = Functions.mergeChunkCoords(record.pos());
         getPendingDimMap(dimId).put(posLong, record);
         indexChunkPosition(getChunkIndex(pendingChunkIndex, dimId), chunkCoord, posLong);
@@ -739,10 +595,8 @@ public final class PocketNodeManager {
     private Long2ObjectMap<PocketNodeRecord> getPendingDimMap(int dimId) {
         return pendingHosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
-    //~}
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    private void dropItem(World world, PocketNodeRecord record) {
+    private void dropItem(Level world, PocketNodeRecord record) {
         ItemStack stack = PocketNodeItems.createStack(record.nodeType());
         if (stack.isEmpty()) {
             return;
@@ -750,13 +604,8 @@ public final class PocketNodeManager {
         double x = record.pos().getX() + 0.5D;
         double y = record.pos().getY() + 0.5D;
         double z = record.pos().getZ() + 0.5D;
-        //? if <1.20 {
-        world.spawnEntity(new EntityItem(world, x, y, z, stack));
-        //?} else {
-        /*world.addFreshEntity(new ItemEntity(world, x, y, z, stack));
-         *///?}
+        world.addFreshEntity(new ItemEntity(world, x, y, z, stack));
     }
-    //~}
 
     private void syncAdd(PocketNodeRecord record) {
         syncToDimensionPlayers(record.dimensionId(), new PocketNodeRendering(record));
@@ -766,29 +615,18 @@ public final class PocketNodeManager {
         syncToDimensionPlayers(dimId, new PocketNodeRendering(dimId, pos));
     }
 
-    //~ if >=1.20 'EntityPlayerMP' -> 'ServerPlayer' {
     private void syncToDimensionPlayers(int dimId, PocketNodeRendering packet) {
         var world = resolveWorld(dimId);
         if (world == null) {
             return;
         }
-        //? if <1.20 {
-        for (var player : world.playerEntities) {
-            if (player instanceof EntityPlayerMP serverPlayer) {
+        for (var player : world.players()) {
+            if (player instanceof ServerPlayer serverPlayer) {
                 CirculationFlowNetworks.sendToPlayer(packet, serverPlayer);
             }
         }
-        //?} else {
-        /*for (var player : world.players()) {
-            if (player instanceof EntityPlayerMP serverPlayer) {
-                CirculationFlowNetworks.sendToPlayer(packet, serverPlayer);
-            }
-        }
-        *///?}
     }
-    //~}
 
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
     private void recoverPocketHostsFromLoadedNodes() {
         for (INode node : new ObjectArrayList<>(NetworkManager.INSTANCE.getActiveNodes())) {
             var world = node.getWorld();
@@ -796,7 +634,7 @@ public final class PocketNodeManager {
                 continue;
             }
             int dimId = getDimensionId(world);
-            long posLong = node.getPos().toLong();
+            long posLong = node.getPos().asLong();
             if (getActiveDimMap(dimId).containsKey(posLong) || getPendingDimMap(dimId).containsKey(posLong)) {
                 continue;
             }
@@ -818,7 +656,6 @@ public final class PocketNodeManager {
             );
         }
     }
-    //~}
 
     private void clearState() {
         activeHosts.clear();

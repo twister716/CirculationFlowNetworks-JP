@@ -1,8 +1,7 @@
 package com.circulation.circulation_networks.api.hub;
 
-//~ mc_imports
-
-import net.minecraft.nbt.NBTTagCompound;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.nbt.CompoundTag;
 
 public class ChargingPreference {
 
@@ -36,10 +35,8 @@ public class ChargingPreference {
         return new ChargingPreference((byte) 0b00111111);
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.setByte(' -> '.putByte(' {
-    public static ChargingPreference deserialize(NBTTagCompound nbt) {
-        return new ChargingPreference(nbt.getByte("prefs"));
+    public static ChargingPreference deserialize(CompoundTag nbt) {
+        return new ChargingPreference(NbtCompat.getByteOr(nbt, "prefs", (byte) 0));
     }
 
     public void setPrefs(byte prefs) {
@@ -75,11 +72,9 @@ public class ChargingPreference {
         return this.prefs;
     }
 
-    public NBTTagCompound serialize() {
-        var nbt = new NBTTagCompound();
-        nbt.setByte("prefs", this.prefs);
+    public CompoundTag serialize() {
+        var nbt = new CompoundTag();
+        nbt.putByte("prefs", this.prefs);
         return nbt;
     }
-    //~}
-    //~}
 }

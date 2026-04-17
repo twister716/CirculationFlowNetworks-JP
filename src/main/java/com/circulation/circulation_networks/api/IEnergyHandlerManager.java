@@ -1,14 +1,12 @@
 package com.circulation.circulation_networks.api;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 
 public interface IEnergyHandlerManager extends Comparable<IEnergyHandlerManager> {
 
-    //~ if >=1.20 'TileEntity ' -> 'BlockEntity ' {
-    boolean isAvailable(TileEntity tileEntity);
+    boolean isAvailable(BlockEntity tileEntity);
 
     boolean isAvailable(ItemStack itemStack);
 
@@ -17,7 +15,6 @@ public interface IEnergyHandlerManager extends Comparable<IEnergyHandlerManager>
     int getPriority();
 
     IEnergyHandler newBlockEntityInstance();
-    //~}
 
     IEnergyHandler newItemInstance();
 

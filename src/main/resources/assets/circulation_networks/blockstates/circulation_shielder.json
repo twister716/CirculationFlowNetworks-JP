@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "circulation_networks:block/circulation_shielder"
+    }
+  }
+}

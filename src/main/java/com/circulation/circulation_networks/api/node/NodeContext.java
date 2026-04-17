@@ -1,61 +1,44 @@
 package com.circulation.circulation_networks.api.node;
 
-//~ mc_imports
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
-//? if <1.20 {
-import net.minecraft.util.ResourceLocation;
-//?} else {
-/*import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.util.ResourceLocation;
-*///?}
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class NodeContext {
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    private final World world;
-    //~}
+    private final Level world;
     private final BlockPos pos;
     private final String defaultName;
     private final String visualId;
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    private NodeContext(World world, BlockPos pos, String defaultName, String visualId) {
+    private NodeContext(Level world, BlockPos pos, String defaultName, String visualId) {
         this.world = world;
         this.pos = pos;
         this.defaultName = defaultName;
         this.visualId = visualId;
     }
-    //~}
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public static NodeContext fromWorld(@NotNull World world, @NotNull BlockPos pos) {
+    public static NodeContext fromWorld(@NotNull Level world, @NotNull BlockPos pos) {
         return new NodeContext(world, pos, resolveDefaultName(world, pos), resolveVisualId(world, pos));
     }
 
-    public static NodeContext of(@NotNull World world, @NotNull BlockPos pos, @NotNull String defaultName, @NotNull String visualId) {
+    public static NodeContext of(@NotNull Level world, @NotNull BlockPos pos, @Nullable String defaultName, @NotNull String visualId) {
         return new NodeContext(world, pos, defaultName, visualId);
     }
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    private static String resolveDefaultName(World world, BlockPos pos) {
+    private static String resolveDefaultName(Level world, BlockPos pos) {
         return null;
     }
 
-    private static String resolveVisualId(World world, BlockPos pos) {
-        //? if <1.20 {
-        ResourceLocation registryName = world.getBlockState(pos).getBlock().getRegistryName();
-        //?} else {
-        /*ResourceLocation registryName = BuiltInRegistries.BLOCK.getKey(world.getBlockState(pos).getBlock());
-         *///?}
-        return registryName != null ? registryName.toString() : "";
+    private static String resolveVisualId(Level world, BlockPos pos) {
+        return WorldResolveCompat.getBlockVisualId(world, pos);
     }
 
-    public @NotNull World getWorld() {
+    public @NotNull Level getWorld() {
         return world;
     }
 
@@ -66,10 +49,8 @@ public final class NodeContext {
     public @NotNull String getDefaultName() {
         return defaultName;
     }
-    //~}
 
     public @NotNull String getVisualId() {
         return visualId;
     }
-    //~}
 }

@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Deque;
 import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * Mutable pooled energy value that stays in {@code long} mode for the common

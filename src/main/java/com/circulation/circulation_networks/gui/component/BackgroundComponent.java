@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class BackgroundComponent extends Component {
 
     public BackgroundComponent(@NotNull String bgSprite, @NotNull CFNBaseGui<?> gui) {
-        this(gui.getXSize(), gui.getYSize(), bgSprite, gui);
+        this(gui.getGuiWidth(), gui.getGuiHeight(), bgSprite, gui);
     }
 
     public BackgroundComponent(int width, int height, @NotNull String bgSprite, @NotNull CFNBaseGui<?> gui) {

@@ -3,19 +3,17 @@ package com.circulation.circulation_networks.network.nodes;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.registry.NodeTypes;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.nbt.CompoundTag;
 
 public final class PortNode extends Node implements IEnergySupplyNode {
 
     private final double energyScope;
     private final double energyScopeSq;
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.set' -> '.put' {
-    public PortNode(NBTTagCompound tag) {
+    public PortNode(CompoundTag tag) {
         super(NodeTypes.PORT_NODE, tag);
-        energyScope = tag.getDouble("energyScope");
+        energyScope = NbtCompat.getDoubleOr(tag, "energyScope", 0.0D);
         energyScopeSq = energyScope * energyScope;
     }
 
@@ -36,11 +34,9 @@ public final class PortNode extends Node implements IEnergySupplyNode {
     }
 
     @Override
-    public NBTTagCompound serialize() {
+    public CompoundTag serialize() {
         var tag = super.serialize();
-        tag.setDouble("energyScope", energyScope);
+        NbtCompat.putDouble(tag, "energyScope", energyScope);
         return tag;
     }
-    //~}
-    //~}
 }

@@ -1,31 +1,27 @@
 package com.circulation.circulation_networks.inventory;
 
-//~ mc_imports
-
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-//? if <1.21 {
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
-//?} else {
-/*import net.neoforged.neoforge.items.ItemHandlerHelper;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
-*///?}
-
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Objects;
 
-//? if <1.20
-@SuppressWarnings("unused")
-public class CFNInternalInventory extends ItemStackHandler implements Iterable<ItemStack> {
+public class CFNInternalInventory extends ItemStacksResourceHandler implements Iterable<ItemStack>, Container {
 
     protected final int[] maxStack;
-    protected ItemStack previousStack = ItemStack.EMPTY;
+    protected final ItemStack[] lastKnownStacks;
     @Nullable
     protected CFNInternalInventoryInputFilter inFilter;
     @Nullable
@@ -43,7 +39,10 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         this.host = host;
         this.ignoreItemStackLimit = ignoreItemStackLimit;
         this.maxStack = new int[size];
+        this.lastKnownStacks = new ItemStack[size];
         Arrays.fill(this.maxStack, maxStack);
+        Arrays.fill(this.lastKnownStacks, ItemStack.EMPTY);
+        syncKnownStacks();
     }
 
     public CFNInternalInventory(@Nullable CFNInternalInventoryHost host, int size, int maxStack) {
@@ -59,29 +58,69 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     private static ItemStack copyStackWithSize(ItemStack stack, int size) {
-        //? if <1.21 {
-        return ItemHandlerHelper.copyStackWithSize(stack, size);
-        //?} else {
-        /*return stack.copyWithCount(size);
-         *///?}
+        return stack.copyWithCount(size);
     }
 
     private static boolean canItemStacksStack(ItemStack left, ItemStack right) {
-        //? if <1.21 {
-        return ItemHandlerHelper.canItemStacksStack(left, right);
-        //?} else {
-        /*return ItemStack.isSameItemSameComponents(left, right);
-         *///?}
+        return ItemStack.isSameItemSameComponents(left, right);
     }
 
     private static boolean sameStackType(ItemStack left, ItemStack right) {
-        //? if <1.20 {
-        return ItemStack.areItemsEqual(left, right) && ItemStack.areItemStackTagsEqual(left, right);
-        //?} else if <1.21 {
-        /*return ItemStack.isSameItemSameTags(left, right);
-         *///?} else {
-        /*return ItemStack.isSameItemSameComponents(left, right);
-         *///?}
+        return ItemStack.isSameItemSameComponents(left, right);
+    }
+
+    private void validateSlotIndex(int slot) {
+        Objects.checkIndex(slot, getSlots());
+    }
+
+    private void syncKnownStacks() {
+        for (int i = 0; i < getSlots(); i++) {
+            lastKnownStacks[i] = getStackInSlot(i).copy();
+        }
+    }
+
+    private void syncKnownStack(int slot) {
+        lastKnownStacks[slot] = getStackInSlot(slot).copy();
+    }
+
+    private void notifyContentsChanged(int slot, ItemStack oldStack) {
+        ItemStack newStack = getStackInSlot(slot).copy();
+        if (ItemStack.matches(oldStack, newStack)) {
+            syncKnownStack(slot);
+            return;
+        }
+
+        if (host != null && !dirtyFlag) {
+            dirtyFlag = true;
+            ItemStack previous = oldStack.copy();
+            ItemStack current = newStack.copy();
+            CFNInventoryChangeOperation operation = CFNInventoryChangeOperation.SET;
+
+            if (previous.isEmpty() && !current.isEmpty()) {
+                operation = CFNInventoryChangeOperation.INSERT;
+            } else if (!previous.isEmpty() && current.isEmpty()) {
+                operation = CFNInventoryChangeOperation.EXTRACT;
+            } else if (sameStackType(previous, current) && previous.getCount() != current.getCount()) {
+                if (current.getCount() > previous.getCount()) {
+                    ItemStack inserted = current.copy();
+                    inserted.shrink(previous.getCount());
+                    previous = ItemStack.EMPTY;
+                    current = inserted;
+                    operation = CFNInventoryChangeOperation.INSERT;
+                } else {
+                    ItemStack extracted = previous.copy();
+                    extracted.shrink(current.getCount());
+                    previous = extracted;
+                    current = ItemStack.EMPTY;
+                    operation = CFNInventoryChangeOperation.EXTRACT;
+                }
+            }
+
+            host.onChangeInventory(this, slot, operation, previous, current);
+            dirtyFlag = false;
+        }
+
+        syncKnownStack(slot);
     }
 
     public CFNInternalInventory setInputFilter(@Nullable CFNInternalInventoryInputFilter filter) {
@@ -106,20 +145,28 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         this.ignoreItemStackLimit = ignoreItemStackLimit;
     }
 
-    @Override
+    public int getSlots() {
+        return size();
+    }
+
+    public @NotNull ItemStack getStackInSlot(int slot) {
+        validateSlotIndex(slot);
+        return stacks.get(slot);
+    }
+
     public int getSlotLimit(int slot) {
+        validateSlotIndex(slot);
         return maxStack[slot];
     }
 
     public void setMaxStackSize(int slot, int size) {
+        validateSlotIndex(slot);
         this.maxStack[slot] = size;
     }
 
-    @Override
     public void setStackInSlot(int slot, @NotNull ItemStack stack) {
-        if (stack != getStackInSlot(slot)) {
-            previousStack = getStackInSlot(slot).copy();
-        }
+        validateSlotIndex(slot);
+        ItemStack oldStack = getStackInSlot(slot).copy();
         ItemStack toSet = stack;
         if (!stack.isEmpty()) {
             int limit = getEffectiveStackLimit(slot, stack);
@@ -127,11 +174,12 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
                 toSet = copyStackWithSize(stack, limit);
             }
         }
-        super.setStackInSlot(slot, toSet);
+        stacks.set(slot, toSet.isEmpty() ? ItemStack.EMPTY : toSet.copy());
+        notifyContentsChanged(slot, oldStack);
     }
 
-    @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+        validateSlotIndex(slot);
         if (maxStack[slot] == 0) {
             return false;
         }
@@ -139,22 +187,25 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
     }
 
     @Override
-    @NotNull
-    public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+    public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+        return isItemValid(slot, stack);
+    }
+
+    @Override
+    public boolean isValid(int index, ItemResource resource) {
+        return !resource.isEmpty() && isItemValid(index, resource.toStack());
+    }
+
+    public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
-
         if (inFilter != null && !inFilter.allowInsert(this, slot, stack)) {
             return stack;
         }
 
         validateSlotIndex(slot);
-
-        if (!simulate) {
-            previousStack = getStackInSlot(slot).copy();
-        }
-
+        ItemStack oldStack = getStackInSlot(slot).copy();
         ItemStack existing = stacks.get(slot);
         int limit = getEffectiveStackLimit(slot, stack);
 
@@ -170,36 +221,28 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         }
 
         boolean reachedLimit = stack.getCount() > limit;
-
         if (!simulate) {
             if (existing.isEmpty()) {
                 stacks.set(slot, reachedLimit ? copyStackWithSize(stack, limit) : stack.copy());
             } else {
                 existing.grow(reachedLimit ? limit : stack.getCount());
             }
-            onContentsChanged(slot);
+            notifyContentsChanged(slot, oldStack);
         }
 
         return reachedLimit ? copyStackWithSize(stack, stack.getCount() - limit) : ItemStack.EMPTY;
     }
 
-    @Override
-    @NotNull
-    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+    public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
         if (amount == 0) {
             return ItemStack.EMPTY;
         }
-
         if (outFilter != null && !outFilter.allowExtract(this, slot, amount)) {
             return ItemStack.EMPTY;
         }
 
         validateSlotIndex(slot);
-
-        if (!simulate) {
-            previousStack = getStackInSlot(slot).copy();
-        }
-
+        ItemStack oldStack = getStackInSlot(slot).copy();
         ItemStack existing = stacks.get(slot);
         if (existing.isEmpty()) {
             return ItemStack.EMPTY;
@@ -213,7 +256,7 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         if (existing.getCount() <= toExtract) {
             if (!simulate) {
                 stacks.set(slot, ItemStack.EMPTY);
-                onContentsChanged(slot);
+                notifyContentsChanged(slot, oldStack);
             }
             return existing.copy();
         }
@@ -221,110 +264,34 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         ItemStack extracted = copyStackWithSize(existing, toExtract);
         if (!simulate) {
             stacks.set(slot, copyStackWithSize(existing, existing.getCount() - toExtract));
-            onContentsChanged(slot);
+            notifyContentsChanged(slot, oldStack);
         }
 
         return extracted;
     }
 
     @Override
-    protected void onContentsChanged(int slot) {
-        if (host != null && !dirtyFlag) {
-            dirtyFlag = true;
-            ItemStack newStack = getStackInSlot(slot).copy();
-            ItemStack oldStack = previousStack.copy();
-            CFNInventoryChangeOperation operation = CFNInventoryChangeOperation.SET;
-
-            if (oldStack.isEmpty() && !newStack.isEmpty()) {
-                operation = CFNInventoryChangeOperation.INSERT;
-            } else if (!oldStack.isEmpty() && newStack.isEmpty()) {
-                operation = CFNInventoryChangeOperation.EXTRACT;
-            } else if (sameStackType(oldStack, newStack) && oldStack.getCount() != newStack.getCount()) {
-                if (newStack.getCount() > oldStack.getCount()) {
-                    ItemStack inserted = newStack.copy();
-                    inserted.shrink(oldStack.getCount());
-                    oldStack = ItemStack.EMPTY;
-                    newStack = inserted;
-                    operation = CFNInventoryChangeOperation.INSERT;
-                } else {
-                    ItemStack extracted = oldStack.copy();
-                    extracted.shrink(newStack.getCount());
-                    oldStack = extracted;
-                    newStack = ItemStack.EMPTY;
-                    operation = CFNInventoryChangeOperation.EXTRACT;
-                }
-            }
-
-            host.onChangeInventory(this, slot, operation, oldStack, newStack);
-            previousStack = ItemStack.EMPTY;
-            dirtyFlag = false;
-        }
-        super.onContentsChanged(slot);
+    protected void onContentsChanged(int slot, ItemStack previousContents) {
+        notifyContentsChanged(slot, previousContents.copy());
     }
 
-    //? if <1.20 {
-    public void writeToNBT(final NBTTagCompound data, final String name) {
-        data.setTag(name, serializeNBT());
-    }
-
-    public void readFromNBT(final NBTTagCompound data, final String name) {
-        final NBTTagCompound compound = data.getCompoundTag(name);
-        if (compound != null) {
-            readFromNBT(compound);
-        }
-    }
-
-    public void readFromNBT(final NBTTagCompound data) {
-        deserializeNBT(data);
-    }
-    //?} else if <1.21 {
-    /*public void writeToNBT(final CompoundTag data, final String name) {
-        data.put(name, serializeNBT());
-    }
-
-    public void readFromNBT(final CompoundTag data, final String name) {
-        if (data.contains(name)) {
-            readFromNBT(data.getCompound(name));
-        }
-    }
-
-    public void readFromNBT(final CompoundTag data) {
-        deserializeNBT(data);
-    }
-    *///?} else {
-    /*public void writeToNBT(final CompoundTag data, final String name, net.minecraft.core.HolderLookup.Provider provider) {
-        data.put(name, serializeNBT(provider));
+    public void writeToNBT(final CompoundTag data, final String name, net.minecraft.core.HolderLookup.Provider provider) {
+        ProblemReporter.Collector reporter = new ProblemReporter.Collector();
+        TagValueOutput output = TagValueOutput.createWithContext(reporter, provider);
+        serialize(output);
+        data.put(name, output.buildResult());
     }
 
     public void readFromNBT(final CompoundTag data, final String name, net.minecraft.core.HolderLookup.Provider provider) {
         if (data.contains(name)) {
-            readFromNBT(data.getCompound(name), provider);
+            readFromNBT(NbtCompat.getCompoundOrEmpty(data, name), provider);
         }
     }
 
     public void readFromNBT(final CompoundTag data, net.minecraft.core.HolderLookup.Provider provider) {
-        deserializeNBT(provider, data);
+        deserialize(TagValueInput.create(new ProblemReporter.Collector(), provider, data));
+        syncKnownStacks();
     }
-    *///?}
-
-    //? if <1.20 {
-    @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagList itemList = new NBTTagList();
-        for (int i = 0; i < stacks.size(); i++) {
-            ItemStack stack = stacks.get(i);
-            if (!stack.isEmpty()) {
-                NBTTagCompound itemTag = stack.serializeNBT();
-                itemTag.setInteger("Slot", i);
-                itemList.appendTag(itemTag);
-            }
-        }
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setTag("Items", itemList);
-        nbt.setInteger("Size", stacks.size());
-        return nbt;
-    }
-    //?}
 
     @Override
     public @NotNull Iterator<ItemStack> iterator() {
@@ -335,15 +302,75 @@ public class CFNInternalInventory extends ItemStackHandler implements Iterable<I
         return ignoreItemStackLimit ? getSlotLimit(slot) : Math.min(getSlotLimit(slot), stack.getMaxStackSize());
     }
 
+    @Override
+    public int getContainerSize() {
+        return getSlots();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        for (ItemStack stack : stacks) {
+            if (!stack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public @NotNull ItemStack getItem(int slot) {
+        return getStackInSlot(slot);
+    }
+
+    @Override
+    public @NotNull ItemStack removeItem(int slot, int amount) {
+        return extractItem(slot, amount, false);
+    }
+
+    @Override
+    public @NotNull ItemStack removeItemNoUpdate(int slot) {
+        validateSlotIndex(slot);
+        ItemStack existing = getStackInSlot(slot);
+        if (existing.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        stacks.set(slot, ItemStack.EMPTY);
+        lastKnownStacks[slot] = ItemStack.EMPTY;
+        return existing;
+    }
+
+    @Override
+    public void setItem(int slot, @NotNull ItemStack stack) {
+        setStackInSlot(slot, stack);
+    }
+
+    @Override
+    public void setChanged() {
+        for (int i = 0; i < getSlots(); i++) {
+            ItemStack oldStack = lastKnownStacks[i];
+            if (!ItemStack.matches(oldStack, getStackInSlot(i))) {
+                notifyContentsChanged(i, oldStack.copy());
+            }
+        }
+    }
+
+    @Override
+    public boolean stillValid(@NotNull Player player) {
+        return true;
+    }
+
+    @Override
+    public void clearContent() {
+        for (int i = 0; i < getSlots(); i++) {
+            setStackInSlot(i, ItemStack.EMPTY);
+        }
+    }
+
     public interface CFNInternalInventoryInputFilter {
-
         boolean allowInsert(CFNInternalInventory inventory, int slot, ItemStack stack);
-
     }
 
     public interface CFNInternalInventoryOutputFilter {
-
         boolean allowExtract(CFNInternalInventory inventory, int slot, int amount);
-
     }
 }

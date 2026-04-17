@@ -48,7 +48,7 @@ public final class GeneratedComponentAtlasRegistration {
      * No-op placeholder method for IDE symbol resolution.
      *
      * <p>The generated runtime class provides the real method body and emits the
-    * actual registration calls for atlas textures. This placeholder accepts
+     * actual registration calls for atlas textures. This placeholder accepts
      * {@link Object} intentionally so it does not depend on main-source types
      * during API-source compilation.
      *

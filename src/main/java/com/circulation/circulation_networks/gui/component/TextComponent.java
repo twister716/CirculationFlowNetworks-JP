@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.gui.component;
 
+import com.circulation.circulation_networks.client.compat.GuiGraphicsCompat;
 import com.circulation.circulation_networks.gui.CFNBaseGui;
 import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.utils.ScrollingTextHelper;
@@ -46,26 +47,7 @@ public class TextComponent extends Component {
             return;
         }
 
-        //? if <1.20 {
-        Minecraft mc = Minecraft.getMinecraft();
-        int textWidth = mc.fontRenderer.getStringWidth(text);
-        setSize(maxWidth > 0 ? Math.min(textWidth, maxWidth) : textWidth, FONT_HEIGHT);
-        if (maxWidth > 0 && textWidth > maxWidth) {
-            long tick = mc.world != null ? mc.world.getTotalWorldTime() : 0;
-            float offset = ScrollingTextHelper.getScrollOffset(textWidth, maxWidth, tick, partialTicks);
-            int absX = getAbsoluteX();
-            int absY = getAbsoluteY();
-            net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(mc);
-            int sf = sr.getScaleFactor();
-            org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
-            org.lwjgl.opengl.GL11.glScissor(absX * sf, mc.displayHeight - (absY + FONT_HEIGHT) * sf, maxWidth * sf, FONT_HEIGHT * sf);
-            mc.fontRenderer.drawString(text, absX - (int) offset, absY, color, shadow);
-            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
-        } else {
-            mc.fontRenderer.drawString(text, getAbsoluteX(), getAbsoluteY(), color, shadow);
-        }
-        //?} else {
-        /*Minecraft mc = Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         int textWidth = mc.font.width(text);
         setSize(maxWidth > 0 ? Math.min(textWidth, maxWidth) : textWidth, FONT_HEIGHT);
         var guiGraphics = getCurrentGuiGraphics();
@@ -76,11 +58,10 @@ public class TextComponent extends Component {
             int absX = getAbsoluteX();
             int absY = getAbsoluteY();
             guiGraphics.enableScissor(absX, absY, absX + maxWidth, absY + FONT_HEIGHT);
-            guiGraphics.drawString(mc.font, text, absX - (int) offset, absY, color, shadow);
+            GuiGraphicsCompat.drawString(guiGraphics, mc.font, text, absX - (int) offset, absY, color, shadow);
             guiGraphics.disableScissor();
         } else {
-            guiGraphics.drawString(mc.font, text, getAbsoluteX(), getAbsoluteY(), color, shadow);
+            GuiGraphicsCompat.drawString(guiGraphics, mc.font, text, getAbsoluteX(), getAbsoluteY(), color, shadow);
         }
-        *///?}
     }
 }

@@ -4,26 +4,15 @@ import com.circulation.circulation_networks.api.hub.ChargingDefinition;
 import com.circulation.circulation_networks.api.hub.ChargingPreference;
 import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
+import com.circulation.circulation_networks.inventory.CFNInternalInventory;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.network.nodes.HubNode;
-//? if <1.21 {
-import net.minecraftforge.items.IItemHandler;
-//?} else {
-/*import net.neoforged.neoforge.items.IItemHandler;
- *///?}
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * 中枢节点接口，一个网络中只能存在一个中枢节点。
- * 中枢节点同时具有能量供应和玩家充能能力。
- * 实际上是唯一单例而不是API接口
- * <p>
- * Hub node interface. Only one hub node can exist per network.
- * Hub nodes have both energy supply and player charging capabilities.
- */
 @SuppressWarnings("unused")
 public interface IHubNode extends IEnergySupplyNode, IChargingNode {
 
@@ -31,7 +20,7 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
 
     void setPermissionMode(PermissionMode mode);
 
-    IItemHandler getPlugins();
+    CFNInternalInventory getPlugins();
 
     HubNode.HubMetadata getHubData();
 
@@ -80,8 +69,5 @@ public interface IHubNode extends IEnergySupplyNode, IChargingNode {
 
     boolean canEditPermissions(UUID playerId);
 
-    /**
-     * 获取所有本地玩家充能配置（无频道时用）
-     */
     Map<UUID, ChargingPreference> getPlayerPreferences();
 }

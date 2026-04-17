@@ -9,12 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class HorizontalSliderComponent extends Component {
 
-    public interface HorizontalSliderParent {
-        void onSliderChanged(HorizontalSliderComponent slider);
-    }
-
     private static final int MIN = 0;
-
     private final HorizontalSliderParent sliderParent;
     private final SliderKnobComponent button;
     private int max;
@@ -45,8 +40,17 @@ public class HorizontalSliderComponent extends Component {
         setValueInternal(initialValue, false);
     }
 
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public int getValue() {
         return value;
+    }
+
+    public HorizontalSliderComponent setValue(int value) {
+        setValueInternal(value, false);
+        return this;
     }
 
     public int getMax() {
@@ -60,11 +64,6 @@ public class HorizontalSliderComponent extends Component {
         this.max = max;
         updateButtonBounds();
         button.setEnabled(this.max > MIN && isEnabled());
-        setValueInternal(value, false);
-        return this;
-    }
-
-    public HorizontalSliderComponent setValue(int value) {
         setValueInternal(value, false);
         return this;
     }
@@ -201,8 +200,8 @@ public class HorizontalSliderComponent extends Component {
         return clamp(value, MIN, max);
     }
 
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+    public interface HorizontalSliderParent {
+        void onSliderChanged(HorizontalSliderComponent slider);
     }
 
     private final class SliderKnobComponent extends DraggableComponent {

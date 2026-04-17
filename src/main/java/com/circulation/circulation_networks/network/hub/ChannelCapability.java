@@ -1,9 +1,8 @@
 package com.circulation.circulation_networks.network.hub;
 
 import com.circulation.circulation_networks.items.HubChannelPluginData;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
 
 public final class ChannelCapability extends HubPluginCapability<HubChannelPluginData.ChannelInfo> {
 

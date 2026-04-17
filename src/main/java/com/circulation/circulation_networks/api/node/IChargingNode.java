@@ -1,8 +1,7 @@
 package com.circulation.circulation_networks.api.node;
 
-//~ mc_imports
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 /**
  * 标识符，确定节点可用于向玩家传输能量

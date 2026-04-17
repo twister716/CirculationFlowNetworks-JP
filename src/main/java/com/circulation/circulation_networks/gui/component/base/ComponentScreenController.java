@@ -1,13 +1,9 @@
 package com.circulation.circulation_networks.gui.component.base;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//? if <1.20 {
-import net.minecraft.client.renderer.GlStateManager;
-//?} else {
-/*import com.mojang.blaze3d.systems.RenderSystem;
- *///?}
-
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -86,32 +82,14 @@ public final class ComponentScreenController {
     }
 
     public void renderPhase(RenderPhase phase, int mouseX, int mouseY, float partialTicks) {
-        //? if <1.20 {
-        GlStateManager.pushMatrix();
-        //?} else {
-        /*var modelView = RenderSystem.getModelViewStack();
-        //? if <1.21 {
-        modelView.pushPose();
-        RenderSystem.applyModelViewMatrix();
-        //?} else {
-        /^modelView.pushMatrix();
-        ^///?}
-        *///?}
+        var modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
         Component[] components = phaseComponents[phase.ordinal()];
         for (Component component : components) {
             component.renderComponent(mouseX, mouseY, partialTicks);
             component.renderComponentItems(mouseX, mouseY);
         }
-        //? if <1.20 {
-        GlStateManager.popMatrix();
-        //?} else {
-        /*//? if <1.21 {
-        modelView.popPose();
-        RenderSystem.applyModelViewMatrix();
-        //?} else {
-        /^modelView.popMatrix();
-        ^///?}
-        *///?}
+        modelView.popMatrix();
     }
 
     public void updateComponents() {

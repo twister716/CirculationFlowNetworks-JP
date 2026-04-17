@@ -1,19 +1,7 @@
 package com.circulation.circulation_networks.gui.component.base;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//? if <1.20 {
-import net.minecraftforge.fml.common.eventhandler.Event;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else if <1.21 {
-/*import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} else {
-/*import net.neoforged.bus.api.Event;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+import net.neoforged.bus.api.Event;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,9 +18,6 @@ import java.util.List;
  * <p>All atlas sprites, including full-screen GUI backgrounds, must be located at
  * {@code assets/circulation_networks/textures/gui/component/<name>.png}.
  */
-//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
-@SideOnly(Side.CLIENT)
-//~}
 public final class RegisterComponentSpritesEvent extends Event {
 
     private final List<String> sprites = new ObjectArrayList<>();

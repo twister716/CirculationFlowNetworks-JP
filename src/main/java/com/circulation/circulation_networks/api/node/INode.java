@@ -2,11 +2,11 @@ package com.circulation.circulation_networks.api.node;
 
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.math.Vec3d;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,24 +18,16 @@ public interface INode {
     @NotNull
     Vec3d getVec3d();
 
-    //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 'NBTTagCompound ' -> 'CompoundTag ' {
     @NotNull
-    World getWorld();
+    Level getWorld();
 
-    //~ if >=1.20 '.provider.getDimension()' -> '.dimension().location().hashCode()' {
     default int getDimensionId() {
-        return getWorld().provider.getDimension();
+        return WorldResolveCompat.getDimensionId(getWorld());
     }
-    //~}
 
     @NotNull
     default String getSerializedDimensionKey() {
-        //? if <1.20 {
-        return Integer.toString(getWorld().provider.getDimension());
-        //?} else {
-        /*return getWorld().dimension().location().toString();
-         *///?}
+        return WorldResolveCompat.getSerializedDimensionKey(getWorld());
     }
 
     @NotNull
@@ -44,9 +36,7 @@ public interface INode {
     @NotNull
     String getVisualId();
 
-    NBTTagCompound serialize();
-    //~}
-    //~}
+    CompoundTag serialize();
 
     boolean isActive();
 

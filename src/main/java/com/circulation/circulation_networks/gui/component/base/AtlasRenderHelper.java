@@ -1,72 +1,37 @@
 package com.circulation.circulation_networks.gui.component.base;
 
-//? if <1.20 {
-
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
-//?} else {
-/*import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-*///?}
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 public final class AtlasRenderHelper {
 
+    private static final RenderType COLOR_QUAD_RENDER_TYPE = RenderType.create(
+        "cfn_gui_color_quad",
+        RenderSetup.builder(RenderPipelines.GUI).createRenderSetup()
+    );
     private static int batchDepth;
-    //? if >=1.21 {
-    /*private static BufferBuilder batchBuffer;
-    *///?}
+    private static BufferBuilder batchBuffer;
+    private static ComponentAtlas batchAtlas;
 
     private AtlasRenderHelper() {
     }
 
-    // ── Batch API ─────────────────────────────────────────────────────────────
-
     public static void beginBatch(ComponentAtlas atlas) {
         if (batchDepth++ > 0) return;
-        atlas.bind();
-        //? if <1.20 {
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        Tessellator.getInstance().getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        //?} else {
-            /*RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.disableDepthTest();
-            RenderSystem.disableCull();
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            //? if <1.21 {
-            Tesselator.getInstance().getBuilder().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            //?} else {
-            /^batchBuffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            ^///?}
-        *///?}
+        batchAtlas = atlas;
+        batchBuffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
 
     public static void endBatch() {
         if (batchDepth <= 0) return;
         if (--batchDepth > 0) return;
-        //? if <1.20 {
-        Tessellator.getInstance().draw();
-        //?} else if <1.21 {
-        /*Tesselator.getInstance().end();
-        *///?} else {
-        /*if (batchBuffer != null) {
-            com.mojang.blaze3d.vertex.MeshData mesh = batchBuffer.build();
-            if (mesh != null) {
-                com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(mesh);
-            }
-            batchBuffer = null;
-        }
-        *///?}
+        flushCurrentBatch();
     }
 
     public static void flushBatch(ComponentAtlas atlas) {
@@ -83,51 +48,24 @@ public final class AtlasRenderHelper {
         return batchDepth > 0;
     }
 
-    // ── Draw API ──────────────────────────────────────────────────────────────
-
     public static void drawRegion(ComponentAtlas atlas, AtlasRegion region, int screenX, int screenY, int renderW, int renderH) {
-        if (batchDepth > 0) {
-            appendQuad(region.u0(), region.v0(), region.u1(), region.v1(), screenX, screenY, renderW, renderH);
+        drawRegion(atlas, region, (float) screenX, (float) screenY, (float) renderW, (float) renderH, 255, 255, 255, 255);
+    }
+
+    public static void drawRegion(ComponentAtlas atlas, AtlasRegion region, float screenX, float screenY, float renderW, float renderH) {
+        drawRegion(atlas, region, screenX, screenY, renderW, renderH, 255, 255, 255, 255);
+    }
+
+    public static void drawRegion(ComponentAtlas atlas, AtlasRegion region, float screenX, float screenY, float renderW, float renderH,
+                                  int red, int green, int blue, int alpha) {
+        if (batchDepth > 0 && alpha == 255 && red == 255 && green == 255 && blue == 255 && atlas == batchAtlas) {
+            appendQuad(region.u0(), region.v0(), region.u1(), region.v1(), screenX, screenY, renderW, renderH, red, green, blue, alpha);
             return;
         }
-        atlas.bind();
-        //? if <1.20 {
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        buf.pos(screenX, screenY + renderH, 0).tex(region.u0(), region.v1()).endVertex();
-        buf.pos(screenX + renderW, screenY + renderH, 0).tex(region.u1(), region.v1()).endVertex();
-        buf.pos(screenX + renderW, screenY, 0).tex(region.u1(), region.v0()).endVertex();
-        buf.pos(screenX, screenY, 0).tex(region.u0(), region.v0()).endVertex();
-        tess.draw();
-        //?} else {
-            /*RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.disableDepthTest();
-            RenderSystem.disableCull();
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            Tesselator tess = Tesselator.getInstance();
-            //? if <1.21 {
-            BufferBuilder buf = tess.getBuilder();
-            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            buf.vertex(screenX, screenY + renderH, 0).uv(region.u0(), region.v1()).endVertex();
-            buf.vertex(screenX + renderW, screenY + renderH, 0).uv(region.u1(), region.v1()).endVertex();
-            buf.vertex(screenX + renderW, screenY, 0).uv(region.u1(), region.v0()).endVertex();
-            buf.vertex(screenX, screenY, 0).uv(region.u0(), region.v0()).endVertex();
-            tess.end();
-            //?} else {
-            /^BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            buf.addVertex(screenX, screenY + renderH, 0).setUv(region.u0(), region.v1());
-            buf.addVertex(screenX + renderW, screenY + renderH, 0).setUv(region.u1(), region.v1());
-            buf.addVertex(screenX + renderW, screenY, 0).setUv(region.u1(), region.v0());
-            buf.addVertex(screenX, screenY, 0).setUv(region.u0(), region.v0());
-            com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buf.buildOrThrow());
-            ^///?}
-        *///?}
+
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        appendQuad(buffer, region.u0(), region.v0(), region.u1(), region.v1(), screenX, screenY, renderW, renderH, red, green, blue, alpha);
+        drawMesh(atlas.guiRenderType(), buffer.buildOrThrow());
     }
 
     public static void drawSubRegion(ComponentAtlas atlas,
@@ -152,74 +90,61 @@ public final class AtlasRenderHelper {
         float u1 = (float) (region.x + srcX + srcW) / region.atlasWidth;
         float v1 = (float) (region.y + srcY + srcH) / region.atlasHeight;
 
-        if (batchDepth > 0) {
-            appendQuad(u0, v0, u1, v1, screenX, screenY, renderW, renderH);
+        if (batchDepth > 0 && atlas == batchAtlas) {
+            appendQuad(u0, v0, u1, v1, screenX, screenY, renderW, renderH, 255, 255, 255, 255);
             return;
         }
 
-        atlas.bind();
-        //? if <1.20 {
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        buf.pos(screenX, screenY + renderH, 0).tex(u0, v1).endVertex();
-        buf.pos(screenX + renderW, screenY + renderH, 0).tex(u1, v1).endVertex();
-        buf.pos(screenX + renderW, screenY, 0).tex(u1, v0).endVertex();
-        buf.pos(screenX, screenY, 0).tex(u0, v0).endVertex();
-        tess.draw();
-        //?} else {
-            /*RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.disableDepthTest();
-            RenderSystem.disableCull();
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            Tesselator tess = Tesselator.getInstance();
-            //? if <1.21 {
-            BufferBuilder buf = tess.getBuilder();
-            buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            buf.vertex(screenX, screenY + renderH, 0).uv(u0, v1).endVertex();
-            buf.vertex(screenX + renderW, screenY + renderH, 0).uv(u1, v1).endVertex();
-            buf.vertex(screenX + renderW, screenY, 0).uv(u1, v0).endVertex();
-            buf.vertex(screenX, screenY, 0).uv(u0, v0).endVertex();
-            tess.end();
-            //?} else {
-            /^BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            buf.addVertex(screenX, screenY + renderH, 0).setUv(u0, v1);
-            buf.addVertex(screenX + renderW, screenY + renderH, 0).setUv(u1, v1);
-            buf.addVertex(screenX + renderW, screenY, 0).setUv(u1, v0);
-            buf.addVertex(screenX, screenY, 0).setUv(u0, v0);
-            com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buf.buildOrThrow());
-            ^///?}
-        *///?}
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        appendQuad(buffer, u0, v0, u1, v1, screenX, screenY, renderW, renderH, 255, 255, 255, 255);
+        drawMesh(atlas.guiRenderType(), buffer.buildOrThrow());
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
+    public static void drawColoredQuad(float x1, float y1, float x2, float y2, int argb) {
+        int alpha = (argb >>> 24) & 0xFF;
+        int red = (argb >>> 16) & 0xFF;
+        int green = (argb >>> 8) & 0xFF;
+        int blue = argb & 0xFF;
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        buffer.addVertex(x1, y2, 0.0F).setColor(red, green, blue, alpha);
+        buffer.addVertex(x2, y2, 0.0F).setColor(red, green, blue, alpha);
+        buffer.addVertex(x2, y1, 0.0F).setColor(red, green, blue, alpha);
+        buffer.addVertex(x1, y1, 0.0F).setColor(red, green, blue, alpha);
+        drawMesh(COLOR_QUAD_RENDER_TYPE, buffer.buildOrThrow());
+    }
+
+    private static void flushCurrentBatch() {
+        if (batchBuffer == null || batchAtlas == null) {
+            batchBuffer = null;
+            batchAtlas = null;
+            return;
+        }
+        MeshData mesh = batchBuffer.build();
+        if (mesh != null) {
+            drawMesh(batchAtlas.guiRenderType(), mesh);
+        }
+        batchBuffer = null;
+        batchAtlas = null;
+    }
+
+    private static void drawMesh(RenderType renderType, MeshData mesh) {
+        renderType.draw(mesh);
+    }
 
     private static void appendQuad(float u0, float v0, float u1, float v1,
-                                   int screenX, int screenY, int renderW, int renderH) {
-        //? if <1.20 {
-        BufferBuilder buf = Tessellator.getInstance().getBuffer();
-        buf.pos(screenX, screenY + renderH, 0).tex(u0, v1).endVertex();
-        buf.pos(screenX + renderW, screenY + renderH, 0).tex(u1, v1).endVertex();
-        buf.pos(screenX + renderW, screenY, 0).tex(u1, v0).endVertex();
-        buf.pos(screenX, screenY, 0).tex(u0, v0).endVertex();
-        //?} else if <1.21 {
-        /*BufferBuilder buf = Tesselator.getInstance().getBuilder();
-        buf.vertex(screenX, screenY + renderH, 0).uv(u0, v1).endVertex();
-        buf.vertex(screenX + renderW, screenY + renderH, 0).uv(u1, v1).endVertex();
-        buf.vertex(screenX + renderW, screenY, 0).uv(u1, v0).endVertex();
-        buf.vertex(screenX, screenY, 0).uv(u0, v0).endVertex();
-        *///?} else {
-        /*if (batchBuffer != null) {
-            batchBuffer.addVertex(screenX, screenY + renderH, 0).setUv(u0, v1);
-            batchBuffer.addVertex(screenX + renderW, screenY + renderH, 0).setUv(u1, v1);
-            batchBuffer.addVertex(screenX + renderW, screenY, 0).setUv(u1, v0);
-            batchBuffer.addVertex(screenX, screenY, 0).setUv(u0, v0);
+                                   float screenX, float screenY, float renderW, float renderH,
+                                   int red, int green, int blue, int alpha) {
+        if (batchBuffer != null) {
+            appendQuad(batchBuffer, u0, v0, u1, v1, screenX, screenY, renderW, renderH, red, green, blue, alpha);
         }
-        *///?}
+    }
+
+    private static void appendQuad(BufferBuilder buffer, float u0, float v0, float u1, float v1,
+                                   float screenX, float screenY, float renderW, float renderH,
+                                   int red, int green, int blue, int alpha) {
+        buffer.addVertex(screenX, screenY + renderH, 0.0F).setUv(u0, v1).setColor(red, green, blue, alpha);
+        buffer.addVertex(screenX + renderW, screenY + renderH, 0.0F).setUv(u1, v1).setColor(red, green, blue, alpha);
+        buffer.addVertex(screenX + renderW, screenY, 0.0F).setUv(u1, v0).setColor(red, green, blue, alpha);
+        buffer.addVertex(screenX, screenY, 0.0F).setUv(u0, v0).setColor(red, green, blue, alpha);
     }
 }

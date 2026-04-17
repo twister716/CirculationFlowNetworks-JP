@@ -5,9 +5,8 @@
 Circulation Flow Networks provides a complete API for integrating custom energy systems, extending node types, and
 querying network state.
 
-This mod uses [Stonecutter](https://stonecutter.kikugie.dev/) for multi-version preprocessing. In this document, 1.12.2
-class names such as `TileEntity`, `World`, and `NBTTagCompound` correspond to `BlockEntity`, `Level`, and `CompoundTag`
-on 1.20+.
+This branch is authored directly for `26.1`. This document therefore uses the current source names directly, such as
+`BlockEntity`, `Level`, and `CompoundTag`.
 
 **Package path**: `com.circulation.circulation_networks.api`
 
@@ -68,8 +67,7 @@ import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.node.INode;
 
 // Register a custom energy handler manager
-// 1.12.2: call during init, before the postInit lock
-// 1.20.1 / 1.21.1: call during mod construction and common registration, before the FMLLoadCompleteEvent lock
+// Registration must finish before RegistryEnergyHandler.lock()
 API.registerEnergyHandler(myEnergyHandlerManager);
 
 // Query the energy handler manager for a block entity
@@ -99,21 +97,21 @@ names should not be renamed.
 
 | Signature                                                                                          | Description                                                                        |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| `@Nullable INode getNodeAt(@Nonnull World world, @Nonnull BlockPos pos)`                           | Returns the node at the given position. Works even if the chunk is not loaded.     |
+| `@Nullable INode getNodeAt(@Nonnull Level world, @Nonnull BlockPos pos)`                           | Returns the node at the given position. Works even if the chunk is not loaded.     |
 | `@Nonnull ReferenceSet<INode> getAllNodes()`                                                       | Returns all currently active nodes.                                                |
 | `@Nonnull Collection<IGrid> getAllGrids()`                                                         | Returns all currently available grids.                                             |
-| `@Nonnull ReferenceSet<INode> getNodesCoveringPos(@Nonnull World world, @Nonnull BlockPos pos)`    | Returns all nodes whose link range covers the chunk containing the given position. |
-| `@Nonnull ReferenceSet<INode> getNodesCoveringChunk(@Nonnull World world, int chunkX, int chunkZ)` | Returns all nodes whose link range covers the given chunk.                         |
-| `@Nonnull ReferenceSet<INode> getNodesInChunk(@Nonnull World world, int chunkX, int chunkZ)`       | Returns all active nodes located in the given chunk.                               |
+| `@Nonnull ReferenceSet<INode> getNodesCoveringPos(@Nonnull Level world, @Nonnull BlockPos pos)`    | Returns all nodes whose link range covers the chunk containing the given position. |
+| `@Nonnull ReferenceSet<INode> getNodesCoveringChunk(@Nonnull Level world, int chunkX, int chunkZ)` | Returns all nodes whose link range covers the given chunk.                         |
+| `@Nonnull ReferenceSet<INode> getNodesInChunk(@Nonnull Level world, int chunkX, int chunkZ)`       | Returns all active nodes located in the given chunk.                               |
 
 ### Energy Supply Nodes
 
 | Signature                                                                                                          | Description                                                                                                                    |
 |--------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull BlockPos pos)`             | Returns all energy supply nodes whose energy range covers the chunk containing the given position.                             |
-| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, int chunkX, int chunkZ)`            | Returns all energy supply nodes whose energy range covers the given chunk.                                                     |
-| `@Deprecated @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull ChunkPos pos)` | Deprecated. Use the chunk-coordinate or `BlockPos` overload instead.                                                           |
-| `@Nonnull Set<TileEntity> getMachinesSuppliedBy(@Nonnull IEnergySupplyNode node)`                                  | Returns all machines currently supplied by the given node. The result may include entities that also implement `IMachineNode`. |
+| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, @Nonnull BlockPos pos)`             | Returns all energy supply nodes whose energy range covers the chunk containing the given position.                             |
+| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, int chunkX, int chunkZ)`            | Returns all energy supply nodes whose energy range covers the given chunk.                                                     |
+| `@Deprecated @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, @Nonnull ChunkPos pos)` | Deprecated. Use the chunk-coordinate or `BlockPos` overload instead.                                                           |
+| `@Nonnull Set<BlockEntity> getMachinesSuppliedBy(@Nonnull IEnergySupplyNode node)`                                 | Returns all machines currently supplied by the given node. The result may include entities that also implement `IMachineNode`. |
 
 ### Hub Channels
 
@@ -125,18 +123,18 @@ names should not be renamed.
 
 | Signature                                                                           | Description                                                                                                                                                   |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `boolean isEnergyBlacklisted(@Nonnull TileEntity blockEntity)`                      | Checks whether a block entity is on the global energy blacklist. Blacklisted entities are never recognized as energy containers.                              |
-| `boolean isSupplyBlacklisted(@Nonnull TileEntity blockEntity)`                      | Checks whether a block entity is on the supply-node blacklist. Blacklisted entities can only be connected by specialized nodes that override `isBlacklisted`. |
+| `boolean isEnergyBlacklisted(@Nonnull BlockEntity blockEntity)`                     | Checks whether a block entity is on the global energy blacklist. Blacklisted entities are never recognized as energy containers.                              |
+| `boolean isSupplyBlacklisted(@Nonnull BlockEntity blockEntity)`                     | Checks whether a block entity is on the supply-node blacklist. Blacklisted entities can only be connected by specialized nodes that override `isBlacklisted`. |
 | `boolean isEnergyItem(@Nonnull ItemStack stack)`                                    | Checks whether an item stack is handled as an energy item by a registered manager.                                                                            |
-| `boolean isEnergyTileEntity(@Nonnull TileEntity blockEntity)`                       | Checks whether a block entity is handled as an energy container by a registered manager.                                                                      |
-| `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull TileEntity blockEntity)` | Returns the matching energy handler manager for a block entity, or `null` if none applies.                                                                    |
+| `boolean isEnergyTileEntity(@Nonnull BlockEntity blockEntity)`                      | Checks whether a block entity is handled as an energy container by a registered manager.                                                                      |
+| `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull BlockEntity blockEntity)` | Returns the matching energy handler manager for a block entity, or `null` if none applies.                                                                    |
 | `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull ItemStack stack)`        | Returns the matching energy handler manager for an item stack, or `null` if none applies.                                                                     |
 
 ### Registration
 
 | Signature                                                                                                                               | Description                                                                          |
 |-----------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | Registers a custom energy handler manager. It must be registered before `RegistryEnergyHandler.lock()`; that means before `postInit` on 1.12.2, and before `FMLLoadCompleteEvent` on 1.20.1 / 1.21.1. |
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | Registers a custom energy handler manager. Registration must finish before `RegistryEnergyHandler.lock()`. |
 | `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | Registers a custom node type together with its NBT deserializer and runtime creator. Node types that can be created in the world should provide a `NodeCreator`. |
 | `void registerPocketNodeItem(@Nonnull NodeType<? extends INode> nodeType, @Nonnull Item item)`                                          | Registers the mapping from a node type to its pocket-node item. Only types that allow pocket-node form should register this mapping.                         |
 
@@ -154,12 +152,12 @@ The base interface for all nodes. It defines node position, world, link range, n
 |-----------------------------------|------------------------|---------------------------------------------------------------|
 | `getPos()`                        | `@Nonnull BlockPos`    | The node's block position.                                    |
 | `getVec3d()`                      | `@Nonnull Vec3d`       | The node's precise position vector.                           |
-| `getWorld()`                      | `@Nonnull World`       | The world the node belongs to.                                |
+| `getWorld()`                      | `@Nonnull Level`       | The world the node belongs to.                                |
 | `getDimensionId()`                | `int`                  | Default implementation: returns the dimension ID.             |
 | `getSerializedDimensionKey()`     | `@Nonnull String`      | Default implementation: returns the serialized dimension key. |
 | `getNodeType()`                   | `@Nonnull NodeType<?>` | The node type identifier.                                     |
 | `getVisualId()`                   | `@Nonnull String`      | The visual identifier, usually a registry ID.                 |
-| `serialize()`                     | `NBTTagCompound`       | Serializes the node to NBT.                                   |
+| `serialize()`                     | `CompoundTag`          | Serializes the node to NBT.                                   |
 | `isActive()`                      | `boolean`              | Whether the node is active.                                   |
 | `setActive(boolean)`              | `void`                 | Sets the active state.                                        |
 | `getLinkScope()`                  | `double`               | The node's link range in blocks.                              |
@@ -215,7 +213,7 @@ Marks a node that can interact with nearby energy devices inside its energy rang
 | `getEnergyScope()`           | `double`    | The energy detection range in blocks.                                               |
 | `getEnergyScopeSq()`         | `double`    | The squared energy detection range.                                                 |
 | `supplyScopeCheck(BlockPos)` | `boolean`   | Default implementation: checks whether a position is inside the energy range.       |
-| `isBlacklisted(TileEntity)`  | `boolean`   | Default implementation: checks whether the block entity is on the supply blacklist. |
+| `isBlacklisted(BlockEntity)` | `boolean`   | Default implementation: checks whether the block entity is on the supply blacklist. |
 
 ---
 
@@ -297,9 +295,9 @@ Node creation context. Wraps the world, position, default name, and visual ident
 
 | Method                                | Return Type          | Description                                                          |
 |---------------------------------------|----------------------|----------------------------------------------------------------------|
-| `fromWorld(World, BlockPos)`          | `static NodeContext` | Resolves the default name and visual ID from the world and position. |
-| `of(World, BlockPos, String, String)` | `static NodeContext` | Creates a context with all fields provided manually.                 |
-| `getWorld()`                          | `@NotNull World`     | Returns the world.                                                   |
+| `fromWorld(Level, BlockPos)`          | `static NodeContext` | Resolves the default name and visual ID from the world and position. |
+| `of(Level, BlockPos, String, String)` | `static NodeContext` | Creates a context with all fields provided manually.                 |
+| `getWorld()`                          | `@NotNull Level`     | Returns the world.                                                   |
 | `getPos()`                            | `@NotNull BlockPos`  | Returns the position.                                                |
 | `getDefaultName()`                    | `@NotNull String`    | Returns the default name, usually the block's localized name.        |
 | `getVisualId()`                       | `@NotNull String`    | Returns the visual identifier, usually the block registry ID.        |
@@ -310,7 +308,7 @@ Node creation context. Wraps the world, position, default name, and visual ident
 
 `com.circulation.circulation_networks.api.NodeDeserializer`
 
-A functional interface extending `Function<NBTTagCompound, INode>` used to deserialize nodes from NBT.
+A functional interface extending `Function<CompoundTag, INode>` used to deserialize nodes from NBT.
 
 Register it through `API.registerNodeType()`.
 
@@ -338,9 +336,10 @@ The base interface for block entities that are linked to a node.
 |--------------------|-------------|---------------------------------------------------------------------------|
 | `getNode()`        | `INode`     | Returns the associated node.                                              |
 | `getNodePos()`     | `BlockPos`  | Returns the node position.                                                |
-| `getNodeWorld()`   | `World`     | Returns the world containing the node.                                    |
+| `getNodeWorld()`   | `Level`     | Returns the world containing the node.                                    |
 | `nodeValidate()`   | `void`      | Lifecycle callback when the node block entity is validated or loaded.     |
 | `nodeInvalidate()` | `void`      | Lifecycle callback when the node block entity is invalidated or unloaded. |
+| `syncNodeAfterNetworkInit()` | `void` | Synchronizes node state after the network manager finishes initialization. |
 
 ---
 
@@ -399,9 +398,9 @@ An energy handler that wraps a specific energy system such as FE or EU. Instance
 
 | Method                             | Return Type                       | Description                                                                         |
 |------------------------------------|-----------------------------------|-------------------------------------------------------------------------------------|
-| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | Obtains a pooled handler for a block entity, or creates one if the pool is empty.   |
+| `release(BlockEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | Obtains a pooled handler for a block entity, or creates one if the pool is empty.   |
 | `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | Obtains a pooled handler for an item stack, or creates one if the pool is empty.    |
-| `init(TileEntity, HubMetadata)`    | `IEnergyHandler`                  | Initializes the handler from a block entity and returns `this`.                     |
+| `init(BlockEntity, HubMetadata)`   | `IEnergyHandler`                  | Initializes the handler from a block entity and returns `this`.                     |
 | `init(ItemStack, HubMetadata)`     | `IEnergyHandler`                  | Initializes the handler from an item stack and returns `this`.                      |
 | `clear()`                          | `void`                            | Clears internal state only. This lifecycle reset no longer depends on hub metadata. |
 | `recycle()`                        | `void`                            | Calls `clear()` and returns the handler to the pool.                                |
@@ -438,7 +437,7 @@ Energy handler manager interface. Each energy system must implement this interfa
 
 | Method                     | Return Type                       | Description                                            |
 |----------------------------|-----------------------------------|--------------------------------------------------------|
-| `isAvailable(TileEntity)`  | `boolean`                         | Whether a block entity is handled by this manager.     |
+| `isAvailable(BlockEntity)` | `boolean`                         | Whether a block entity is handled by this manager.     |
 | `isAvailable(ItemStack)`   | `boolean`                         | Whether an item stack is handled by this manager.      |
 | `getEnergyHandlerClass()`  | `Class<? extends IEnergyHandler>` | Returns the associated handler implementation class.   |
 | `getPriority()`            | `int`                             | Manager priority. Lower values are checked first.      |
@@ -453,8 +452,8 @@ Energy handler manager interface. Each energy system must implement this interfa
 public class MyEnergyManager implements IEnergyHandlerManager {
 
     @Override
-    public boolean isAvailable(TileEntity tile) {
-        return tile.hasCapability(MY_ENERGY_CAP, null);
+    public boolean isAvailable(BlockEntity blockEntity) {
+        return MyEnergyCompat.isSupported(blockEntity);
     }
 
     @Override
@@ -708,12 +707,12 @@ Player charging preference stored as a bit mask.
 | `ChargingPreference(boolean, boolean, boolean, boolean, boolean, boolean)` | Constructor                 | Creates a preference in INVENTORY, HOTBAR, ACCESSORY, MAIN_HAND, OFF_HAND, ARMOR order. |
 | `ChargingPreference(byte)`                                                 | Constructor                 | Creates a preference from a raw bit mask.                                               |
 | `defaultAll()`                                                             | `static ChargingPreference` | Enables every slot.                                                                     |
-| `deserialize(NBTTagCompound)`                                              | `static ChargingPreference` | Deserializes from NBT.                                                                  |
+| `deserialize(CompoundTag)`                                                 | `static ChargingPreference` | Deserializes from NBT.                                                                  |
 | `getPreference(ChargingDefinition)`                                        | `boolean`                   | Checks whether a slot category is enabled.                                              |
 | `setPreference(ChargingDefinition, boolean)`                               | `void`                      | Enables or disables a slot category.                                                    |
 | `setPrefs(byte)`                                                           | `void`                      | Sets the raw bit mask directly.                                                         |
 | `toByte()`                                                                 | `byte`                      | Exports the raw bit mask.                                                               |
-| `serialize()`                                                              | `NBTTagCompound`            | Serializes to NBT.                                                                      |
+| `serialize()`                                                              | `CompoundTag`               | Serializes to NBT.                                                                      |
 
 ---
 
@@ -811,7 +810,7 @@ A grid represents a connected subgraph formed by a set of linked nodes.
 |------------------------|-----------------------|--------------------------------------------------------|
 | `getId()`              | `UUID`                | The grid's unique ID.                                  |
 | `getNodes()`           | `ReferenceSet<INode>` | All nodes in the grid.                                 |
-| `serialize()`          | `NBTTagCompound`      | Serializes the grid to NBT.                            |
+| `serialize()`          | `CompoundTag`         | Serializes the grid to NBT.                            |
 | `getHubNode()`         | `IHubNode`            | The grid's hub node, or `null` if absent.              |
 | `setHubNode(IHubNode)` | `void`                | Sets the hub node.                                     |
 | `getSnapshotVersion()` | `long`                | Snapshot version used for incremental synchronization. |

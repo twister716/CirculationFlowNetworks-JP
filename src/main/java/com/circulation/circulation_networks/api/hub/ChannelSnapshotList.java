@@ -63,39 +63,6 @@ public final class ChannelSnapshotList {
         }
     }
 
-    public List<ChannelSnapshotEntry> getEntries() {
-        return entries;
-    }
-
-    public String toJson() {
-        if (json == null) {
-            json = GSON.toJson(this);
-        }
-        return json;
-    }
-
-    public byte[] toBytes() {
-        if (bytes == null) {
-            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-                 DataOutputStream data = new DataOutputStream(output)) {
-                writeVarInt(data, entries.size());
-                for (ChannelSnapshotEntry entry : entries) {
-                    UUID id = entry.id();
-                    data.writeLong(id.getMostSignificantBits());
-                    data.writeLong(id.getLeastSignificantBits());
-                    data.writeByte(entry.permissionMode().getId());
-                    data.writeByte(entry.permission().getId());
-                    data.writeBoolean(entry.connected());
-                    writeString(data, entry.name());
-                }
-                bytes = output.toByteArray();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to encode channel snapshot", e);
-            }
-        }
-        return bytes.clone();
-    }
-
     private static void writeString(DataOutputStream data, String value) throws IOException {
         byte[] encoded = value != null ? value.getBytes(StandardCharsets.UTF_8) : new byte[0];
         writeVarInt(data, encoded.length);
@@ -135,5 +102,38 @@ public final class ChannelSnapshotList {
                 throw new IOException("VarInt is too big");
             }
         }
+    }
+
+    public List<ChannelSnapshotEntry> getEntries() {
+        return entries;
+    }
+
+    public String toJson() {
+        if (json == null) {
+            json = GSON.toJson(this);
+        }
+        return json;
+    }
+
+    public byte[] toBytes() {
+        if (bytes == null) {
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+                 DataOutputStream data = new DataOutputStream(output)) {
+                writeVarInt(data, entries.size());
+                for (ChannelSnapshotEntry entry : entries) {
+                    UUID id = entry.id();
+                    data.writeLong(id.getMostSignificantBits());
+                    data.writeLong(id.getLeastSignificantBits());
+                    data.writeByte(entry.permissionMode().getId());
+                    data.writeByte(entry.permission().getId());
+                    data.writeBoolean(entry.connected());
+                    writeString(data, entry.name());
+                }
+                bytes = output.toByteArray();
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to encode channel snapshot", e);
+            }
+        }
+        return bytes.clone();
     }
 }

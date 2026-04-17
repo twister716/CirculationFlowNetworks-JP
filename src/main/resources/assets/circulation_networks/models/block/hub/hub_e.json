@@ -7,7 +7,7 @@
 		"8": "circulation_networks:block/node/hub/hub_body_secondary",
 		"9": "circulation_networks:block/node/hub/hub_body_tertiary",
 		"10": "circulation_networks:block/node/hub/hub_body_emissive",
-		"particle": "circulation_networks:block/node/particle/node_particle"
+		"particle": "circulation_networks:block/particle/node_particle"
 	},
 	"elements": [
 		{

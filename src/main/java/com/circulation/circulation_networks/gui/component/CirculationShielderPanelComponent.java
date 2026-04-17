@@ -1,21 +1,16 @@
 package com.circulation.circulation_networks.gui.component;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.client.compat.FontCompat;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.gui.CFNBaseGui;
 import com.circulation.circulation_networks.gui.component.base.Component;
 import com.circulation.circulation_networks.packets.CirculationShielderSyncPacket;
+import com.circulation.circulation_networks.tiles.BlockEntityCirculationShielder;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.NotNull;
-//? if <1.20 {
-import com.circulation.circulation_networks.tiles.TileEntityCirculationShielder;
-import net.minecraft.client.Minecraft;
-//?} else {
-/*import com.circulation.circulation_networks.tiles.CirculationShielderBlockEntity;
-import net.minecraft.client.Minecraft;
-*///?}
 
 import java.util.List;
 
@@ -43,11 +38,7 @@ public class CirculationShielderPanelComponent extends Component implements Hori
     private static final int REDSTONE_Y = 27;
 
     private final ContainerCirculationShielder container;
-    //? if <1.20 {
-    private final TileEntityCirculationShielder shielder;
-    //?} else {
-    /*private final CirculationShielderBlockEntity shielder;
-     *///?}
+    private final BlockEntityCirculationShielder shielder;
     private final HorizontalSliderComponent slider;
     private final ButtonComponent redstoneOff;
     private final ButtonComponent redstoneOffRe;
@@ -57,11 +48,7 @@ public class CirculationShielderPanelComponent extends Component implements Hori
     private boolean lastRedstoneMode;
     private boolean lastPowered;
 
-    //? if <1.20 {
-    public CirculationShielderPanelComponent(ContainerCirculationShielder container, TileEntityCirculationShielder shielder, CFNBaseGui<?> gui) {
-    //?} else {
-    /*public CirculationShielderPanelComponent(ContainerCirculationShielder container, CirculationShielderBlockEntity shielder, CFNBaseGui<?> gui) {
-    *///?}
+    public CirculationShielderPanelComponent(ContainerCirculationShielder container, BlockEntityCirculationShielder shielder, CFNBaseGui<?> gui) {
         super(0, 0, GUI_WIDTH, GUI_HEIGHT, gui);
         this.container = container;
         this.shielder = shielder;
@@ -109,6 +96,17 @@ public class CirculationShielderPanelComponent extends Component implements Hori
         lastRedstoneMode = shielder != null && shielder.getRedstoneMode();
         lastPowered = isRedstonePowered();
         syncToggleButtons(true);
+    }
+
+    private static int clampScope(int value, int maxScope) {
+        if (maxScope < 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(maxScope, value));
+    }
+
+    private static String trimToWidth(String text, int width) {
+        return FontCompat.trimToWidth(text, width);
     }
 
     @Override
@@ -184,11 +182,7 @@ public class CirculationShielderPanelComponent extends Component implements Hori
         if (shielder == null) {
             return false;
         }
-        //? if <1.20 {
-        return shielder.getWorld() != null && shielder.getWorld().isBlockPowered(shielder.getPos());
-        //?} else {
-        /*return shielder.getLevel() != null && shielder.getLevel().hasNeighborSignal(shielder.getBlockPos());
-        *///?}
+        return shielder.isReceivingRedstoneSignal();
     }
 
     private String getScopeText() {
@@ -230,21 +224,5 @@ public class CirculationShielderPanelComponent extends Component implements Hori
 
     private int getMaxScope() {
         return Math.max(0, container.maxScope);
-    }
-
-    private static int clampScope(int value, int maxScope) {
-        if (maxScope < 0) {
-            return 0;
-        }
-        return Math.max(0, Math.min(maxScope, value));
-    }
-
-    private static String trimToWidth(String text, int width) {
-        String safe = text == null ? "" : text;
-        //? if <1.20 {
-        return Minecraft.getMinecraft().fontRenderer.trimStringToWidth(safe, width);
-        //?} else {
-        /*return Minecraft.getInstance().font.plainSubstrByWidth(safe, width);
-        *///?}
     }
 }

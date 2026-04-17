@@ -4,17 +4,6 @@ import com.circulation.circulation_networks.math.Vec3i;
 
 public final class HubRenderLayout {
 
-    private static final double HUB_CRYSTAL_Y_OFFSET = 3.0D;
-    private static final double HUB_RING_Y_OFFSET = 3.0D;
-    private static final double HUB_CHANNEL_Y_OFFSET = 5.0D;
-    private static final double HUB_CHANNEL_BEAM_DOWN_Y_OFFSET = 6.0D;
-    private static final double HUB_CHANNEL_BEAM_MID_Y_OFFSET = 9.0D;
-    private static final double HUB_CHANNEL_BEAM_TOP_Y_OFFSET = 12.0D;
-    private static final int HUB_RENDER_BOUNDS_MIN_XZ = -1;
-    private static final int HUB_RENDER_BOUNDS_MAX_XZ = 2;
-    private static final int HUB_RENDER_BOUNDS_MIN_Y = 0;
-    private static final int HUB_RENDER_BOUNDS_MAX_Y = 8;
-
     public static final String HUB_BASE_MODEL = "hub/hub_base";
     public static final String HUB_EMISSIVE_MODEL = "hub/hub_e";
     public static final String HUB_CRYSTAL_MODEL = "hub/hub_crystal";
@@ -37,7 +26,16 @@ public final class HubRenderLayout {
     public static final String DEFAULT_PLUGIN_MODEL_PREFIX = "hub/plug/default_";
     public static final String WIDE_AREA_PLUGIN_MODEL = "hub/plug/multidimensional_link_antenna";
     public static final String DIMENSIONAL_PLUGIN_MODEL = "hub/plug/dimensional_link_antenna";
-
+    private static final double HUB_CRYSTAL_Y_OFFSET = 3.0D;
+    private static final double HUB_RING_Y_OFFSET = 3.0D;
+    private static final double HUB_CHANNEL_Y_OFFSET = 5.0D;
+    private static final double HUB_CHANNEL_BEAM_DOWN_Y_OFFSET = 6.0D;
+    private static final double HUB_CHANNEL_BEAM_MID_Y_OFFSET = 9.0D;
+    private static final double HUB_CHANNEL_BEAM_TOP_Y_OFFSET = 12.0D;
+    private static final int HUB_RENDER_BOUNDS_MIN_XZ = -1;
+    private static final int HUB_RENDER_BOUNDS_MAX_XZ = 2;
+    private static final int HUB_RENDER_BOUNDS_MIN_Y = 0;
+    private static final int HUB_RENDER_BOUNDS_MAX_Y = 8;
     private static final Vec3i plugin1 = new Vec3i(-1, 2, -1);
     private static final Vec3i plugin2 = new Vec3i(1, 2, -1);
     private static final Vec3i plugin3 = new Vec3i(1, 2, 1);
@@ -59,9 +57,9 @@ public final class HubRenderLayout {
                 }
             }
         }
-        SHELL_OFFSETS[i++] = new Vec3i(0,2,0);
-        SHELL_OFFSETS[i++] = new Vec3i(0,3,0);
-        SHELL_OFFSETS[i++] = new Vec3i(0,4,0);
+        SHELL_OFFSETS[i++] = new Vec3i(0, 2, 0);
+        SHELL_OFFSETS[i++] = new Vec3i(0, 3, 0);
+        SHELL_OFFSETS[i++] = new Vec3i(0, 4, 0);
         SHELL_OFFSETS[i++] = plugin1;
         SHELL_OFFSETS[i++] = plugin2;
         SHELL_OFFSETS[i++] = plugin3;

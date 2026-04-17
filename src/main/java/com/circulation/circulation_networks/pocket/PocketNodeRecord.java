@@ -3,26 +3,50 @@ package com.circulation.circulation_networks.pocket;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.registry.NodeTypes;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-//? if <1.20 {
-import net.minecraft.util.EnumFacing;
-//?} else {
-/*import net.minecraft.core.Direction;
- *///?}
-
+import com.circulation.circulation_networks.utils.BlockPosCompat;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-//? if <1.20 {
-import com.github.bsideup.jabel.Desugar;
 
-@Desugar
-//?}
-//~ if >=1.20 'EnumFacing' -> 'Direction' {
-public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable EnumFacing attachmentFace,
+public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable Direction attachmentFace,
                                @Nullable String customName, @Nullable String hostBlockId) {
+
+    public static @Nullable PocketNodeRecord deserialize(@Nullable CompoundTag tag) {
+        if (tag == null) {
+            return null;
+        }
+        if (!NbtCompat.contains(tag, "dim") || !NbtCompat.contains(tag, "pos") || !NbtCompat.contains(tag, "type")) {
+            return null;
+        }
+        NodeType<?> nodeType = NodeTypes.getById(NbtCompat.getStringOr(tag, "type", ""));
+        if (nodeType == null || !nodeType.allowsPocketNode()) {
+            return null;
+        }
+        String customName = NbtCompat.contains(tag, "customName") ? NbtCompat.getStringOr(tag, "customName", "") : null;
+        return new PocketNodeRecord(
+            NbtCompat.getIntOr(tag, "dim", 0),
+            BlockPosCompat.fromLong(NbtCompat.getLongOr(tag, "pos", 0L)),
+            nodeType,
+            deserializeFace(NbtCompat.contains(tag, "face") ? NbtCompat.getStringOr(tag, "face", "") : null),
+            customName == null || customName.isEmpty() ? null : customName,
+            NbtCompat.contains(tag, "hostBlockId") ? NbtCompat.getStringOr(tag, "hostBlockId", "") : null
+        );
+    }
+
+    private static String serializeFace(Direction face) {
+        return face.getName();
+    }
+
+    private static @Nullable Direction deserializeFace(@Nullable String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        return Direction.byName(name);
+    }
 
     public int getDimensionId() {
         return dimensionId;
@@ -36,7 +60,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         return nodeType;
     }
 
-    public @Nullable EnumFacing getAttachmentFace() {
+    public @Nullable Direction getAttachmentFace() {
         return attachmentFace;
     }
 
@@ -48,108 +72,28 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         return hostBlockId;
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.hasKey(' -> '.contains(' {
-    //~ if >=1.20 '.getInteger(' -> '.getInt(' {
-    //~ if >=1.20 'BlockPos.fromLong(' -> 'BlockPos.of(' {
-    public static @Nullable PocketNodeRecord deserialize(@Nullable NBTTagCompound tag) {
-        if (tag == null) {
-            return null;
-        }
-        if (!tag.hasKey("dim") || !tag.hasKey("pos") || !tag.hasKey("type")) {
-            return null;
-        }
-        NodeType<?> nodeType = NodeTypes.getById(tag.getString("type"));
-        if (nodeType == null || !nodeType.allowsPocketNode()) {
-            return null;
-        }
-        String customName = tag.hasKey("customName") ? tag.getString("customName") : null;
-        return new PocketNodeRecord(
-            tag.getInteger("dim"),
-            BlockPos.fromLong(tag.getLong("pos")),
-            nodeType,
-            deserializeFace(tag.hasKey("face") ? tag.getString("face") : null),
-            customName == null || customName.isEmpty() ? null : customName,
-            tag.hasKey("hostBlockId") ? tag.getString("hostBlockId") : null
-        );
-    }
-    //~}
-    //~}
-    //~}
-    //~}
-
-    private static String toDisplayName(String typeId) {
-        String[] parts = typeId.split("_");
-        StringBuilder builder = new StringBuilder();
-        for (String part : parts) {
-            if (part.isEmpty()) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append(' ');
-            }
-            builder.append(Character.toUpperCase(part.charAt(0)));
-            if (part.length() > 1) {
-                builder.append(part.substring(1));
-            }
-        }
-        return builder.toString();
-    }
-
-    private static String serializeFace(EnumFacing face) {
-        //? if <1.20 {
-        return face.getName2();
-        //?} else {
-        /*return face.getName();
-         *///?}
-    }
-
-    private static @Nullable EnumFacing deserializeFace(@Nullable String name) {
-        if (name == null || name.isEmpty()) {
-            return null;
-        }
-        //? if <1.20 {
-        return EnumFacing.byName(name);
-        //?} else {
-        /*return EnumFacing.byName(name);
-         *///?}
-    }
-
-    //~ if >=1.20 'World ' -> 'Level ' {
-    public NodeContext createNodeContext(World world) {
+    public NodeContext createNodeContext(Level world) {
         return NodeContext.of(world, pos, null, nodeType.fallbackVisualId());
     }
-    //~}
 
     public PocketNodeRecord withHostBlockId(@Nullable String newHostBlockId) {
         return new PocketNodeRecord(dimensionId, pos, nodeType, attachmentFace, customName, newHostBlockId);
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 'BlockPos.fromLong(' -> 'BlockPos.of(' {
-    //~ if >=1.20 '.set' -> '.put' {
-    //~ if >=1.20 '.setInteger(' -> '.putInt(' {
-    //~ if >=1.20 '.toLong()' -> '.asLong()' {
-    public NBTTagCompound serialize() {
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("dim", dimensionId);
-        tag.setLong("pos", pos.toLong());
-        tag.setString("type", nodeType.id());
+    public CompoundTag serialize() {
+        CompoundTag tag = new CompoundTag();
+        NbtCompat.putInt(tag, "dim", dimensionId);
+        NbtCompat.putLong(tag, "pos", BlockPosCompat.toLong(pos));
+        NbtCompat.putString(tag, "type", nodeType.id());
         if (attachmentFace != null) {
-            tag.setString("face", serializeFace(attachmentFace));
+            NbtCompat.putString(tag, "face", serializeFace(attachmentFace));
         }
         if (customName != null && !customName.isEmpty()) {
-            tag.setString("customName", customName);
+            NbtCompat.putString(tag, "customName", customName);
         }
         if (hostBlockId != null && !hostBlockId.isEmpty()) {
-            tag.setString("hostBlockId", hostBlockId);
+            NbtCompat.putString(tag, "hostBlockId", hostBlockId);
         }
         return tag;
     }
-    //~}
-    //~}
-    //~}
-    //~}
-    //~}
-//~}
 }

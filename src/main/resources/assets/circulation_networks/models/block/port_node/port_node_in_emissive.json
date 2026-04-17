@@ -4,7 +4,7 @@
 	"textures": {
 		"4": "circulation_networks:block/node/io/link",
 		"5": "circulation_networks:block/node/io/port",
-		"particle": "circulation_networks:block/node/particle/node_particle"
+		"particle": "circulation_networks:block/particle/node_particle"
 	},
 	"elements": [
 		{

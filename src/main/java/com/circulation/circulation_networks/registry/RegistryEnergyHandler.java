@@ -1,32 +1,26 @@
 package com.circulation.circulation_networks.registry;
 
-import com.circulation.circulation_networks.api.node.IMachineNode;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ReferenceSet;
-import com.google.common.collect.ImmutableList;
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.IMachineNodeBlockEntity;
-import com.circulation.circulation_networks.CFNConfig;
-//~ mc_imports
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
+import com.circulation.circulation_networks.api.node.IMachineNode;
+import com.google.common.collect.ImmutableList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ArrayDeque;
 
 @SuppressWarnings("unused")
 public final class RegistryEnergyHandler {
 
-    //~ if >=1.20 '(TileEntity ' -> '(BlockEntity ' {
-    //~ if >=1.20 ' TileEntity ' -> ' BlockEntity ' {
-    //~ if >=1.20 '<TileEntity>' -> '<BlockEntity>' {
 
     private static Class<?>[] blackListClass;
     private static Class<?>[] supplyBlackListClass;
@@ -74,7 +68,7 @@ public final class RegistryEnergyHandler {
         registeredSupplyBlackClasses.add(clazz);
     }
 
-    public static boolean isBlack(TileEntity blockEntity) {
+    public static boolean isBlack(BlockEntity blockEntity) {
         if (blockEntity instanceof IMachineNodeBlockEntity) return true;
         if (blackListClass != null) {
             for (Class<?> listClass : blackListClass) {
@@ -90,7 +84,7 @@ public final class RegistryEnergyHandler {
         return false;
     }
 
-    public static boolean isSupplyBlack(TileEntity blockEntity) {
+    public static boolean isSupplyBlack(BlockEntity blockEntity) {
         if (supplyBlackListClass != null) {
             for (Class<?> listClass : supplyBlackListClass) {
                 if (listClass.isInstance(blockEntity)) return true;
@@ -113,14 +107,14 @@ public final class RegistryEnergyHandler {
         return false;
     }
 
-    public static boolean isEnergyTileEntity(TileEntity tile) {
+    public static boolean isEnergyTileEntity(BlockEntity tile) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(tile)) return true;
         }
         return false;
     }
 
-    public static @Nullable IEnergyHandlerManager getEnergyManager(TileEntity tile) {
+    public static @Nullable IEnergyHandlerManager getEnergyManager(BlockEntity tile) {
         for (IEnergyHandlerManager manager : list) {
             if (manager.isAvailable(tile)) return manager;
         }
@@ -160,37 +154,10 @@ public final class RegistryEnergyHandler {
         final ReferenceSet<Class<?>> blackSet = registeredBlackClasses;
         final ReferenceSet<Class<?>> supplySet = registeredSupplyBlackClasses;
 
-        //? if <1.20 {
         collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
-        collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
-
-        if (!blackPrefixes.isEmpty() || !supplyPrefixes.isEmpty()) {
-            for (var aClass : TileEntity.REGISTRY) {
-                var className = aClass.getName();
-                if (!blackPrefixes.isEmpty() && !blackSet.contains(aClass)) {
-                    for (String prefix : blackPrefixes) {
-                        if (className.startsWith(prefix)) {
-                            blackSet.add(aClass);
-                            break;
-                        }
-                    }
-                }
-                if (!supplyPrefixes.isEmpty() && !supplySet.contains(aClass)) {
-                    for (String prefix : supplyPrefixes) {
-                        if (className.startsWith(prefix)) {
-                            supplySet.add(aClass);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        //?} else {
-         /*collectExactClasses(CFNConfig.classNames, blackSet, blackPrefixes);
         collectExactClasses(CFNConfig.supplyClassNames, supplySet, supplyPrefixes);
         blackPrefixArray = blackPrefixes.isEmpty() ? null : blackPrefixes.toArray(new String[0]);
         supplyPrefixArray = supplyPrefixes.isEmpty() ? null : supplyPrefixes.toArray(new String[0]);
-        *///?}
 
         blackListClass = blackSet.isEmpty() ? null : blackSet.toArray(new Class[0]);
         supplyBlackListClass = supplySet.isEmpty() ? null : supplySet.toArray(new Class[0]);
@@ -215,9 +182,6 @@ public final class RegistryEnergyHandler {
         }
     }
 
-    //? if <1.20 {
-    @Desugar
-        //?}
     public record Pair(double multiplying, String unit, int p) implements Comparable<Pair> {
 
         @Override
@@ -226,7 +190,4 @@ public final class RegistryEnergyHandler {
         }
     }
 
-    //~}
-    //~}
-    //~}
 }

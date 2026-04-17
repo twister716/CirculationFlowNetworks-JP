@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 
 import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayDeque;
 
 final class EnergyTransferParticipant {

@@ -1,6 +1,3 @@
-import groovy.text.SimpleTemplateEngine
-
-(configurations.named('ksp') ?: configurations.create('ksp'))
 apply plugin: 'net.neoforged.moddev'
 
 neoForge {
@@ -8,17 +5,9 @@ neoForge {
     validateAccessTransformers = true
 
     runs {
-        if (use_mixins.toString().toBoolean()) {
-            def rawConfigs = mixin_configs.toString()
-            def engine = new SimpleTemplateEngine()
-            def resolvedConfigs = engine.createTemplate(rawConfigs).make(project.properties).toString()
-            def mixinConfigs = resolvedConfigs.split(' ').findAll { !it.isEmpty() }.collect { "mixins.${it}.json" }
-            configureEach {
-                mixinConfigs.each { config ->
-                    programArgument '--mixin.config'
-                    programArgument config
-                }
-            }
+        configureEach {
+            programArgument '--mixin.config'
+            programArgument "mixins.${mod_id}.json"
         }
 
         client {
@@ -27,8 +16,8 @@ neoForge {
         server {
             server()
         }
-        data {
-            data()
+        clientData {
+            clientData()
         }
     }
 
@@ -37,16 +26,4 @@ neoForge {
             sourceSet sourceSets.main
         }
     }
-}
-
-def prepareEmptyKspDir = tasks.register('prepareEmptyKspDir') {
-    def outputDir = layout.buildDirectory.dir('generated/ksp')
-    outputs.dir(outputDir)
-    doLast {
-        outputDir.get().asFile.mkdirs()
-    }
-}
-
-tasks.named('processResources') {
-    dependsOn(prepareEmptyKspDir)
 }

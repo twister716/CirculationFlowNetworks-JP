@@ -5,72 +5,37 @@ import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
+import com.circulation.circulation_networks.utils.DimensionHelper;
+import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
-//~ mc_imports
-import net.minecraft.util.math.BlockPos;
-//? if <1.20 {
-import net.minecraft.world.World;
-//?} else {
-/*import net.minecraft.world.level.Level;
-*///?}
-//? if <1.20 {
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-//?} else if <1.21 {
-/*import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-*///?} else {
-/*import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-//? if <1.20 {
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
-import org.lwjgl.opengl.GL11;
-//?} else {
-/*import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.OutlineBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollection;
+import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.ItemDisplayContext;
-//~ neo_imports
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-*///?}
+import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jetbrains.annotations.Nullable;
 
-//~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
-@SideOnly(Side.CLIENT)
-//~}
 public final class PocketNodeRenderingHandler {
 
     public static final PocketNodeRenderingHandler INSTANCE = new PocketNodeRenderingHandler();
     private static final double FACE_OFFSET = 0.501D;
     private static final float FACE_SCALE = 0.03125F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
+    private static final ItemFeatureRenderer ITEM_FEATURE_RENDERER = new ItemFeatureRenderer();
     private final Int2ObjectMap<Long2ObjectMap<PocketNodeClientHost>> hosts = new Int2ObjectOpenHashMap<>();
 
     private PocketNodeRenderingHandler() {
@@ -84,85 +49,51 @@ public final class PocketNodeRenderingHandler {
     }
 
     private static long pack(BlockPos pos) {
-        //? if <1.20 {
-        return pos.toLong();
-        //?} else {
-        /*return pos.asLong();
-         *///?}
+        return pos.asLong();
     }
 
-    //? if <1.20 {
-    private static void applyWorldLight(Minecraft mc, BlockPos pos) {
-        int packedLight = mc.world.getCombinedLight(pos, 0);
-        int blockLight = packedLight % 65536;
-        int skyLight = packedLight / 65536;
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, blockLight, skyLight);
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    private static int getDimensionId(
+        Level world
+    ) {
+        return DimensionHelper.getDimensionHash(world);
     }
 
-    private static void applyFullBrightLight() {
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-    }
-
-    //?}
-
-    //? if <1.20 {
-    private static void applyFaceTransform(EnumFacing face) {
-        EnumFacing resolved = face == null ? EnumFacing.UP : face;
+    private static void applyFaceTransform(PoseStack poseStack, Direction face) {
+        Direction resolved = face == null ? Direction.UP : face;
         switch (resolved) {
             case DOWN -> {
-                GlStateManager.translate(0.0D, -FACE_OFFSET, 0.0D);
-                GlStateManager.rotate(90.0F, 1.0F, 0.0F, 0.0F);
-                GlStateManager.rotate(180.0F, 0.0F, 0.0F, 1.0F);
+                poseStack.translate(0.0D, -FACE_OFFSET, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
+                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180.0F));
             }
             case NORTH -> {
-                GlStateManager.translate(0.0D, 0.0D, -FACE_OFFSET);
-                GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
+                poseStack.translate(0.0D, 0.0D, -FACE_OFFSET);
+                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180.0F));
             }
-            case SOUTH -> GlStateManager.translate(0.0D, 0.0D, FACE_OFFSET);
+            case SOUTH -> poseStack.translate(0.0D, 0.0D, FACE_OFFSET);
             case WEST -> {
-                GlStateManager.translate(-FACE_OFFSET, 0.0D, 0.0D);
-                GlStateManager.rotate(-90.0F, 0.0F, 1.0F, 0.0F);
+                poseStack.translate(-FACE_OFFSET, 0.0D, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.YN.rotationDegrees(90.0F));
             }
             case EAST -> {
-                GlStateManager.translate(FACE_OFFSET, 0.0D, 0.0D);
-                GlStateManager.rotate(90.0F, 0.0F, 1.0F, 0.0F);
+                poseStack.translate(FACE_OFFSET, 0.0D, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90.0F));
             }
             default -> {
-                GlStateManager.translate(0.0D, FACE_OFFSET, 0.0D);
-                GlStateManager.rotate(-90.0F, 1.0F, 0.0F, 0.0F);
+                poseStack.translate(0.0D, FACE_OFFSET, 0.0D);
+                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
             }
         }
-        GlStateManager.scale(FACE_SCALE, FACE_SCALE, FACE_SCALE);
+        poseStack.scale(FACE_SCALE, FACE_SCALE, FACE_SCALE);
     }
-    //?}
 
     private Long2ObjectMap<PocketNodeClientHost> getDimHosts(int dimId) {
         return hosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
 
-    private static int getDimensionId(
-        //? if <1.20 {
-        World world
-        //?} else {
-        /*Level world
-        *///?}
-    ) {
-        //? if <1.20 {
-        return world.provider.getDimension();
-        //?} else {
-        /*return world.dimension().location().hashCode();
-        *///?}
-    }
-
     @Nullable
     private PocketNodeClientHost getHost(
-        //? if <1.20 {
-        World world,
-        //?} else {
-        /*Level world,
-        *///?}
+        Level world,
         BlockPos pos
     ) {
         if (pos == null) {
@@ -216,30 +147,29 @@ public final class PocketNodeRenderingHandler {
         hosts.clear();
     }
 
-    //? if >=1.20 {
-    /*@SubscribeEvent
-    public void renderWorldLastEvent(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
-            return;
-        }
+    @SubscribeEvent
+    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentBlocks event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || mc.level == null) {
             return;
         }
 
-        int dimId = mc.level.dimension().location().hashCode();
+        int dimId = DimensionHelper.getDimensionHash(mc.level);
         Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
         if (dimHosts == null || dimHosts.isEmpty()) {
             return;
         }
 
-        var cameraPos = event.getCamera().getPosition();
+        var cameraPos = mc.gameRenderer.getMainCamera().position();
         double cameraX = cameraPos.x;
         double cameraY = cameraPos.y;
         double cameraZ = cameraPos.z;
 
+        SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
+        submitNodeStorage.order(0);
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+        OutlineBufferSource outlineBufferSource = mc.renderBuffers().outlineBufferSource();
         boolean renderedAny = false;
         for (var host : dimHosts.values()) {
             if (host.getRenderStack().isEmpty()) {
@@ -262,129 +192,33 @@ public final class PocketNodeRenderingHandler {
                 poseStack.scale(1.0F, 1.0F, 0.002F);
             }
 
-            BakedModel itemModel = PocketNodeModelCache.get(host.getRenderStack());
-            itemModel.getTransforms().getTransform(ItemDisplayContext.GUI).apply(false, poseStack);
-            poseStack.translate(-0.5F, -0.5F, -0.5F);
-            VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
-            mc.getBlockRenderer().getModelRenderer().renderModel(
-                poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
-                LevelRenderer.getLightColor(mc.level, pos), OverlayTexture.NO_OVERLAY
-            );
-            mc.getBlockRenderer().getModelRenderer().renderModel(
-                poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
-            );
+            ItemStackRenderState itemState = PocketNodeModelCache.get(host.getRenderStack());
+            if (itemState.isEmpty()) {
+                poseStack.popPose();
+                continue;
+            }
+
+            int light = LevelRenderer.getLightCoords(mc.level, pos);
+            itemState.submit(poseStack, submitNodeStorage, light, OverlayTexture.NO_OVERLAY, 0);
             renderedAny = true;
             poseStack.popPose();
         }
         if (renderedAny) {
+            for (SubmitNodeCollection submitNodeCollection : submitNodeStorage.getSubmitsPerOrder().values()) {
+                ITEM_FEATURE_RENDERER.renderSolid(submitNodeCollection, bufferSource, outlineBufferSource);
+                ITEM_FEATURE_RENDERER.renderTranslucent(submitNodeCollection, bufferSource, outlineBufferSource);
+            }
             bufferSource.endBatch();
+            outlineBufferSource.endOutlineBatch();
         }
     }
-    *///?}
 
     @Nullable
     public INode getNode(
-        //? if <1.20 {
-        World world,
-        //?} else {
-        /*Level world,
-        *///?}
+        Level world,
         BlockPos pos
     ) {
         PocketNodeClientHost host = getHost(world, pos);
         return host == null ? null : host.getNode(world);
     }
-
-    //? if <1.20 {
-    @SubscribeEvent
-    public void renderWorldLastEvent(RenderWorldLastEvent event) {
-        Minecraft mc = Minecraft.getMinecraft();
-        EntityPlayerSP player = mc.player;
-        if (player == null || mc.world == null) {
-            return;
-        }
-
-        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(player.dimension);
-        if (dimHosts == null || dimHosts.isEmpty()) {
-            return;
-        }
-
-        double cameraX = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks();
-        double cameraY = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
-        double cameraZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.getPartialTicks();
-
-        for (var host : dimHosts.values()) {
-            if (host.getRenderStack().isEmpty()) {
-                continue;
-            }
-
-            BlockPos pos = host.getRecord().pos();
-            EnumFacing face = host.getRecord().attachmentFace();
-            GlStateManager.pushMatrix();
-            GlStateManager.enableRescaleNormal();
-            GlStateManager.enableBlend();
-            GlStateManager.tryBlendFuncSeparate(
-                GL11.GL_SRC_ALPHA,
-                GL11.GL_ONE_MINUS_SRC_ALPHA,
-                GL11.GL_ONE,
-                GL11.GL_ZERO
-            );
-            GlStateManager.disableCull();
-            GlStateManager.depthMask(true);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            GlStateManager.translate(pos.getX() + 0.5D - cameraX, pos.getY() + 0.5D - cameraY, pos.getZ() + 0.5D - cameraZ);
-            applyFaceTransform(face);
-            mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-            GlStateManager.enableAlpha();
-            GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
-            GlStateManager.scale(16.0F, 16.0F, 16.0F);
-            if (host.isGui3d()) {
-                GlStateManager.scale(1.0F, 1.0F, 0.002F);
-            }
-            IBakedModel model = PocketNodeModelCache.get(host.getRenderStack());
-            model = ForgeHooksClient.handleCameraTransforms(model, ItemCameraTransforms.TransformType.GUI, false);
-            RenderHelper.disableStandardItemLighting();
-            applyWorldLight(mc, pos);
-            mc.getRenderItem().renderItem(host.getRenderStack(), model);
-            applyFullBrightLight();
-            mc.getRenderItem().renderItem(host.getRenderStack(), model);
-            GlStateManager.depthMask(true);
-            GlStateManager.enableCull();
-            GlStateManager.disableBlend();
-            GlStateManager.popMatrix();
-        }
-
-        applyWorldLight(mc, player.getPosition());
-    }
-    //?} else {
-    /*private static void applyFaceTransform(PoseStack poseStack, Direction face) {
-        Direction resolved = face == null ? Direction.UP : face;
-        switch (resolved) {
-            case DOWN -> {
-                poseStack.translate(0.0D, -FACE_OFFSET, 0.0D);
-                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
-                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180.0F));
-            }
-            case NORTH -> {
-                poseStack.translate(0.0D, 0.0D, -FACE_OFFSET);
-                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180.0F));
-            }
-            case SOUTH -> poseStack.translate(0.0D, 0.0D, FACE_OFFSET);
-            case WEST -> {
-                poseStack.translate(-FACE_OFFSET, 0.0D, 0.0D);
-                poseStack.mulPose(com.mojang.math.Axis.YN.rotationDegrees(90.0F));
-            }
-            case EAST -> {
-                poseStack.translate(FACE_OFFSET, 0.0D, 0.0D);
-                poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90.0F));
-            }
-            default -> {
-                poseStack.translate(0.0D, FACE_OFFSET, 0.0D);
-                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
-            }
-        }
-        poseStack.scale(FACE_SCALE, FACE_SCALE, FACE_SCALE);
-    }
-    *///?}
 }

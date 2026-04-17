@@ -6,7 +6,7 @@ public final class AnimationUtils {
     }
 
     public static float easeOutCubic(float progress) {
-        float clamped = Math.max(0.0f, Math.min(progress, 1.0f));
+        float clamped = Math.clamp(progress, 0.0f, 1.0f);
         return (float) (1.0 - Math.pow(1.0 - clamped, 3.0));
     }
 

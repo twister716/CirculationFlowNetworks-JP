@@ -4,8 +4,8 @@
 
 环流网络（Circulation Flow Networks）模组提供了一套完整的 API 供其他模组集成自定义能源体系、扩展节点类型和查询网络状态。
 
-本模组使用 [Stonecutter](https://stonecutter.kikugie.dev/) 进行多版本预处理。在以下文档中，1.12.2 版本的类名（如
-`TileEntity`、`World`、`NBTTagCompound`）在 1.20+ 版本中分别对应 `BlockEntity`、`Level`、`CompoundTag`。
+当前分支直接以 `26.1` 为实现基线。本文档使用当前源码中的原生类型名，例如 `BlockEntity`、`Level` 和
+`CompoundTag`。
 
 **包路径**：`com.circulation.circulation_networks.api`
 
@@ -66,8 +66,7 @@ import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.node.INode;
 
 // 注册自定义能源处理器
-// 1.12.2：在 init 阶段调用，postInit 锁定前完成注册
-// 1.20.1 / 1.21.1：在模组构造与通用注册阶段调用，FMLLoadCompleteEvent 锁定前完成注册
+// 需要在 RegistryEnergyHandler.lock() 锁定前完成注册
 API.registerEnergyHandler(myEnergyHandlerManager);
 
 // 查询方块实体的能量处理器管理器
@@ -96,21 +95,21 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 | 方法签名                                                                                               | 说明                        |
 |----------------------------------------------------------------------------------------------------|---------------------------|
-| `@Nullable INode getNodeAt(@Nonnull World world, @Nonnull BlockPos pos)`                           | 根据坐标获取节点。可以获取到未被加载区块内的节点。 |
+| `@Nullable INode getNodeAt(@Nonnull Level world, @Nonnull BlockPos pos)`                           | 根据坐标获取节点。可以获取到未被加载区块内的节点。 |
 | `@Nonnull ReferenceSet<INode> getAllNodes()`                                                       | 返回当前所有处于活跃状态的节点。          |
 | `@Nonnull Collection<IGrid> getAllGrids()`                                                         | 返回当前所有处于可用状态的网格。          |
-| `@Nonnull ReferenceSet<INode> getNodesCoveringPos(@Nonnull World world, @Nonnull BlockPos pos)`    | 获取链接范围覆盖指定位置所在区块的所有节点。    |
-| `@Nonnull ReferenceSet<INode> getNodesCoveringChunk(@Nonnull World world, int chunkX, int chunkZ)` | 获取链接范围覆盖指定区块的所有节点。        |
-| `@Nonnull ReferenceSet<INode> getNodesInChunk(@Nonnull World world, int chunkX, int chunkZ)`       | 返回位于指定区块内的所有活跃节点。         |
+| `@Nonnull ReferenceSet<INode> getNodesCoveringPos(@Nonnull Level world, @Nonnull BlockPos pos)`    | 获取链接范围覆盖指定位置所在区块的所有节点。    |
+| `@Nonnull ReferenceSet<INode> getNodesCoveringChunk(@Nonnull Level world, int chunkX, int chunkZ)` | 获取链接范围覆盖指定区块的所有节点。        |
+| `@Nonnull ReferenceSet<INode> getNodesInChunk(@Nonnull Level world, int chunkX, int chunkZ)`       | 返回位于指定区块内的所有活跃节点。         |
 
 ### 能量供应节点
 
 | 方法签名                                                                                                               | 说明                                                   |
 |--------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull BlockPos pos)`             | 返回供能范围覆盖指定位置所在区块的所有能量供应节点。                           |
-| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, int chunkX, int chunkZ)`            | 返回供能范围覆盖指定区块的所有能量供应节点。                               |
-| `@Deprecated @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull World world, @Nonnull ChunkPos pos)` | **已弃用**。使用 chunk 坐标或 `BlockPos` 重载代替。                |
-| `@Nonnull Set<TileEntity> getMachinesSuppliedBy(@Nonnull IEnergySupplyNode node)`                                  | 返回指定能量供应节点当前所链接的所有设备。返回集可能包含同时拥有 `IMachineNode` 的实体。 |
+| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, @Nonnull BlockPos pos)`             | 返回供能范围覆盖指定位置所在区块的所有能量供应节点。                           |
+| `@Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, int chunkX, int chunkZ)`            | 返回供能范围覆盖指定区块的所有能量供应节点。                               |
+| `@Deprecated @Nonnull ReferenceSet<IEnergySupplyNode> getEnergyNodes(@Nonnull Level world, @Nonnull ChunkPos pos)` | **已弃用**。使用 chunk 坐标或 `BlockPos` 重载代替。                |
+| `@Nonnull Set<BlockEntity> getMachinesSuppliedBy(@Nonnull IEnergySupplyNode node)`                                 | 返回指定能量供应节点当前所链接的所有设备。返回集可能包含同时拥有 `IMachineNode` 的实体。 |
 
 ### 中枢频道
 
@@ -122,18 +121,18 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 | 方法签名                                                                                | 说明                                                      |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------|
-| `boolean isEnergyBlacklisted(@Nonnull TileEntity blockEntity)`                      | 判断方块实体是否位于能源全局黑名单中。黑名单实体不会被任何节点识别为能源容器。                 |
-| `boolean isSupplyBlacklisted(@Nonnull TileEntity blockEntity)`                      | 判断方块实体是否位于供应节点黑名单中。黑名单实体只能由覆写了 `isBlacklisted` 的专用节点连接。 |
+| `boolean isEnergyBlacklisted(@Nonnull BlockEntity blockEntity)`                     | 判断方块实体是否位于能源全局黑名单中。黑名单实体不会被任何节点识别为能源容器。                 |
+| `boolean isSupplyBlacklisted(@Nonnull BlockEntity blockEntity)`                     | 判断方块实体是否位于供应节点黑名单中。黑名单实体只能由覆写了 `isBlacklisted` 的专用节点连接。 |
 | `boolean isEnergyItem(@Nonnull ItemStack stack)`                                    | 判断物品堆是否为受能量处理器管理的能源物品。                                  |
-| `boolean isEnergyTileEntity(@Nonnull TileEntity blockEntity)`                       | 判断方块实体是否为受能量处理器管理的能源容器。                                 |
-| `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull TileEntity blockEntity)` | 获取适用于指定方块实体的能量处理器管理器，无匹配时返回 `null`。                     |
+| `boolean isEnergyTileEntity(@Nonnull BlockEntity blockEntity)`                      | 判断方块实体是否为受能量处理器管理的能源容器。                                 |
+| `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull BlockEntity blockEntity)` | 获取适用于指定方块实体的能量处理器管理器，无匹配时返回 `null`。                     |
 | `@Nullable IEnergyHandlerManager getEnergyManager(@Nonnull ItemStack stack)`        | 获取适用于指定物品堆的能量处理器管理器，无匹配时返回 `null`。                      |
 
 ### 注册
 
 | 方法签名                                                                                                                                    | 说明                                                            |
 |-----------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | 注册自定义的能量管理器。必须在 `RegistryEnergyHandler.lock()` 前完成；1.12.2 对应 `postInit` 前，1.20.1 / 1.21.1 对应 `FMLLoadCompleteEvent` 前。 |
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | 注册自定义的能量管理器。必须在 `RegistryEnergyHandler.lock()` 前完成。 |
 | `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | 注册自定义节点类型及其 NBT 反序列化函数和运行时创建函数。可在世界中创建的节点类型应提供 `NodeCreator`。 |
 | `void registerPocketNodeItem(@Nonnull NodeType<? extends INode> nodeType, @Nonnull Item item)`                                          | 注册节点类型到口袋节点物品的映射。仅允许口袋节点形态的类型应注册此映射。                          |
 
@@ -151,12 +150,12 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 |-----------------------------------|------------------------|-----------------|
 | `getPos()`                        | `@Nonnull BlockPos`    | 节点的方块坐标         |
 | `getVec3d()`                      | `@Nonnull Vec3d`       | 节点的精确向量坐标       |
-| `getWorld()`                      | `@Nonnull World`       | 节点所在的世界         |
+| `getWorld()`                      | `@Nonnull Level`       | 节点所在的世界         |
 | `getDimensionId()`                | `int`                  | 默认实现：获取世界的维度 ID |
 | `getSerializedDimensionKey()`     | `@Nonnull String`      | 默认实现：获取序列化的维度键  |
 | `getNodeType()`                   | `@Nonnull NodeType<?>` | 节点类型标识          |
 | `getVisualId()`                   | `@Nonnull String`      | 视觉标识（通常为注册表 ID） |
-| `serialize()`                     | `NBTTagCompound`       | 将节点序列化为 NBT     |
+| `serialize()`                     | `CompoundTag`          | 将节点序列化为 NBT     |
 | `isActive()`                      | `boolean`              | 节点是否处于活跃状态      |
 | `setActive(boolean)`              | `void`                 | 设置节点活跃状态        |
 | `getLinkScope()`                  | `double`               | 链接范围（方块距离）      |
@@ -212,7 +211,7 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 | `getEnergyScope()`           | `double`  | 供能范围（方块距离）           |
 | `getEnergyScopeSq()`         | `double`  | 供能范围的平方              |
 | `supplyScopeCheck(BlockPos)` | `boolean` | 默认实现：判断坐标是否在供能范围内    |
-| `isBlacklisted(TileEntity)`  | `boolean` | 默认实现：检查方块实体是否在供应黑名单中 |
+| `isBlacklisted(BlockEntity)` | `boolean` | 默认实现：检查方块实体是否在供应黑名单中 |
 
 ---
 
@@ -292,9 +291,9 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 | 方法                                    | 返回类型                 | 说明                  |
 |---------------------------------------|----------------------|---------------------|
-| `fromWorld(World, BlockPos)`          | `static NodeContext` | 从世界和坐标自动解析默认名称及视觉标识 |
-| `of(World, BlockPos, String, String)` | `static NodeContext` | 手动指定所有参数            |
-| `getWorld()`                          | `@NotNull World`     | 获取世界                |
+| `fromWorld(Level, BlockPos)`          | `static NodeContext` | 从世界和坐标自动解析默认名称及视觉标识 |
+| `of(Level, BlockPos, String, String)` | `static NodeContext` | 手动指定所有参数            |
+| `getWorld()`                          | `@NotNull Level`     | 获取世界                |
 | `getPos()`                            | `@NotNull BlockPos`  | 获取坐标                |
 | `getDefaultName()`                    | `@NotNull String`    | 获取默认名称（通常为方块本地化名称）  |
 | `getVisualId()`                       | `@NotNull String`    | 获取视觉标识（通常为方块注册表 ID） |
@@ -305,7 +304,7 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 `com.circulation.circulation_networks.api.NodeDeserializer`
 
-函数式接口，继承自 `Function<NBTTagCompound, INode>`，用于从 NBT 数据反序列化节点。
+函数式接口，继承自 `Function<CompoundTag, INode>`，用于从 NBT 数据反序列化节点。
 
 通过 `API.registerNodeType()` 注册。
 
@@ -333,9 +332,10 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 |--------------------|------------|---------------------|
 | `getNode()`        | `INode`    | 获取关联的节点             |
 | `getNodePos()`     | `BlockPos` | 获取节点坐标              |
-| `getNodeWorld()`   | `World`    | 获取节点所在的世界           |
+| `getNodeWorld()`   | `Level`    | 获取节点所在的世界           |
 | `nodeValidate()`   | `void`     | 节点方块实体加载/校验时的生命周期回调 |
 | `nodeInvalidate()` | `void`     | 节点方块实体失效/卸载时的生命周期回调 |
+| `syncNodeAfterNetworkInit()` | `void` | 网络管理器初始化完成后同步节点状态 |
 
 ---
 
@@ -393,9 +393,9 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 | 方法                                 | 返回类型                              | 说明                                   |
 |------------------------------------|-----------------------------------|--------------------------------------|
-| `release(TileEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | 从对象池获取方块实体用处理器；若池为空则新建               |
+| `release(BlockEntity, HubMetadata)` | `static @Nullable IEnergyHandler` | 从对象池获取方块实体用处理器；若池为空则新建               |
 | `release(ItemStack, HubMetadata)`  | `static @Nullable IEnergyHandler` | 从对象池获取物品用处理器；若池为空则新建                 |
-| `init(TileEntity, HubMetadata)`    | `IEnergyHandler`                  | 以方块实体初始化处理器状态，并返回 `this`             |
+| `init(BlockEntity, HubMetadata)`   | `IEnergyHandler`                  | 以方块实体初始化处理器状态，并返回 `this`             |
 | `init(ItemStack, HubMetadata)`     | `IEnergyHandler`                  | 以物品堆初始化处理器状态，并返回 `this`              |
 | `clear()`                          | `void`                            | 仅清空处理器内部状态；该生命周期重置不再依赖 `HubMetadata` |
 | `recycle()`                        | `void`                            | 调用 `clear()` 后将处理器实例回收至对象池           |
@@ -431,7 +431,7 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 | 方法                         | 返回类型                              | 说明                  |
 |----------------------------|-----------------------------------|---------------------|
-| `isAvailable(TileEntity)`  | `boolean`                         | 判断方块实体是否由此管理器处理     |
+| `isAvailable(BlockEntity)` | `boolean`                         | 判断方块实体是否由此管理器处理     |
 | `isAvailable(ItemStack)`   | `boolean`                         | 判断物品堆是否由此管理器处理      |
 | `getEnergyHandlerClass()`  | `Class<? extends IEnergyHandler>` | 返回关联的处理器实现类         |
 | `getPriority()`            | `int`                             | 管理器优先级，数值越小优先级越高    |
@@ -446,8 +446,8 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 public class MyEnergyManager implements IEnergyHandlerManager {
 
     @Override
-    public boolean isAvailable(TileEntity tile) {
-        return tile.hasCapability(MY_ENERGY_CAP, null);
+    public boolean isAvailable(BlockEntity blockEntity) {
+        return MyEnergyCompat.isSupported(blockEntity);
     }
 
     @Override
@@ -699,12 +699,12 @@ API.registerEnergyHandler(new MyEnergyManager());
 | `ChargingPreference(boolean, boolean, boolean, boolean, boolean, boolean)` | 构造器                         | 按 INVENTORY, HOTBAR, ACCESSORY, MAIN_HAND, OFF_HAND, ARMOR 顺序 |
 | `ChargingPreference(byte)`                                                 | 构造器                         | 从原始位掩码构造                                                      |
 | `defaultAll()`                                                             | `static ChargingPreference` | 所有槽位均启用                                                       |
-| `deserialize(NBTTagCompound)`                                              | `static ChargingPreference` | 从 NBT 反序列化                                                    |
+| `deserialize(CompoundTag)`                                                 | `static ChargingPreference` | 从 NBT 反序列化                                                    |
 | `getPreference(ChargingDefinition)`                                        | `boolean`                   | 查询指定槽位是否启用                                                    |
 | `setPreference(ChargingDefinition, boolean)`                               | `void`                      | 设置槽位开关                                                        |
 | `setPrefs(byte)`                                                           | `void`                      | 直接设置原始位掩码                                                     |
 | `toByte()`                                                                 | `byte`                      | 导出为原始位掩码                                                      |
-| `serialize()`                                                              | `NBTTagCompound`            | 序列化为 NBT                                                      |
+| `serialize()`                                                              | `CompoundTag`               | 序列化为 NBT                                                      |
 
 ---
 
@@ -801,7 +801,7 @@ public interface ServerTickMachine {
 |------------------------|-----------------------|---------------------|
 | `getId()`              | `UUID`                | 网格唯一 ID             |
 | `getNodes()`           | `ReferenceSet<INode>` | 网格中的所有节点            |
-| `serialize()`          | `NBTTagCompound`      | 将网格序列化为 NBT         |
+| `serialize()`          | `CompoundTag`         | 将网格序列化为 NBT         |
 | `getHubNode()`         | `IHubNode`            | 网格的中枢节点（可能为 `null`） |
 | `setHubNode(IHubNode)` | `void`                | 设置中枢节点              |
 | `getSnapshotVersion()` | `long`                | 快照版本号，用于增量同步        |

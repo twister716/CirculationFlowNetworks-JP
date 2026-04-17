@@ -1,0 +1,67 @@
+package com.circulation.circulation_networks.mixins.mc;
+
+import com.circulation.circulation_networks.manager.PocketNodeManager;
+import com.circulation.circulation_networks.utils.EventHooks;
+import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
+import net.minecraft.world.level.chunk.UpgradeData;
+import net.minecraft.world.level.levelgen.blending.BlendingData;
+import org.jspecify.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(value = LevelChunk.class, remap = false)
+public abstract class MixinLevelChunk extends ChunkAccess {
+
+    @Shadow
+    @Final
+    private Level level;
+
+    public MixinLevelChunk(ChunkPos chunkPos, UpgradeData upgradeData, LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory containerFactory, long inhabitedTime, LevelChunkSection @Nullable [] sections, @Nullable BlendingData blendingData) {
+        super(chunkPos, upgradeData, levelHeightAccessor, containerFactory, inhabitedTime, sections, blendingData);
+    }
+
+    @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER))
+    public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
+        if (blockEntity != null) {
+            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+        }
+    }
+
+    @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;clearRemoved()V", shift = At.Shift.AFTER))
+    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
+        var pos = blockEntity.getBlockPos();
+        var rb = this.blockEntities.get(pos);
+        if (rb != null) {
+            EventHooks.onBlockEntityInvalidate(this.level, pos, rb);
+            rb.setRemoved();
+            rb.setLevel(null);
+        }
+    }
+
+    @Inject(method = "removeBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
+    private void removeBlockEntity(BlockPos blockPos, CallbackInfo ci, @Local(name = "removeThis") BlockEntity removeThis) {
+        EventHooks.onBlockEntityInvalidate(this.level, blockPos, removeThis);
+    }
+
+    @Inject(method = "setBlockState", at = @At("TAIL"))
+    private void setBlockState(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> cir) {
+        if (!this.level.isClientSide() && cir.getReturnValue() != null) {
+            PocketNodeManager.INSTANCE.onHostBlockStateChanged(this.level, pos);
+        }
+    }
+}

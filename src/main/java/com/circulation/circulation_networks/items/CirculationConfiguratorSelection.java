@@ -3,16 +3,10 @@ package com.circulation.circulation_networks.items;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
-//? if <1.20 {
-import com.github.bsideup.jabel.Desugar;
-
-@Desugar
-//?}
 public record CirculationConfiguratorSelection(ToolFunction function, int subMode) {
 
     public static final String MODE_DISPLAY_KEY = "item.circulation_networks.circulation_configurator.mode_display";

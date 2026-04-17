@@ -1,8 +1,7 @@
 package com.circulation.circulation_networks.api;
 
-//~ mc_imports
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public interface ICirculationShielderBlockEntity {
 

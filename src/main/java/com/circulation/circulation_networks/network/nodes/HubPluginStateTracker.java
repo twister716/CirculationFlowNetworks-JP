@@ -6,8 +6,7 @@ import com.circulation.circulation_networks.items.HubChannelPluginData;
 import com.circulation.circulation_networks.manager.ChargingManager;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 public final class HubPluginStateTracker {
@@ -42,7 +41,7 @@ public final class HubPluginStateTracker {
         }
 
         if ((oldCapability == HubCapabilitys.CHARGE_CAPABILITY || newCapability == HubCapabilitys.CHARGE_CAPABILITY)
-                && hubNode.getGrid() != null) {
+            && hubNode.getGrid() != null) {
             ChargingManager.INSTANCE.refreshWideAreaState(hubNode);
         }
     }

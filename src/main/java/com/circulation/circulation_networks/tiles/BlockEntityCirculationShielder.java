@@ -1,0 +1,165 @@
+package com.circulation.circulation_networks.tiles;
+
+import com.circulation.circulation_networks.CFNConfig;
+import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
+import com.circulation.circulation_networks.container.ContainerCirculationShielder;
+import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
+import com.circulation.circulation_networks.manager.CirculationShielderManager;
+import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
+import com.circulation.circulation_networks.registry.CFNMenuTypes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class BlockEntityCirculationShielder extends BaseCFNBlockEntity implements ICirculationShielderBlockEntity, MenuProvider {
+
+    private transient final BlockPos.MutableBlockPos min = new BlockPos.MutableBlockPos();
+    private transient final BlockPos.MutableBlockPos max = new BlockPos.MutableBlockPos();
+    private int scope = 0;
+    private boolean redstoneMode = false;
+    private boolean showingRange = false;
+
+    public BlockEntityCirculationShielder(BlockPos pos, BlockState state) {
+        super(CFNBlockEntityTypes.CIRCULATION_SHIELDER, pos, state);
+        setScope(scope);
+    }
+
+    public int getScope() {
+        return scope;
+    }
+
+    public void setScope(int scope) {
+        int maxScope = Math.max(0, getMaxScope());
+        int clamped = Math.clamp(scope, 0, maxScope);
+        this.min.set(this.getBlockPos().getX() - clamped, this.getBlockPos().getY() - clamped, this.getBlockPos().getZ() - clamped);
+        this.max.set(this.getBlockPos().getX() + clamped, this.getBlockPos().getY() + clamped, this.getBlockPos().getZ() + clamped);
+        this.scope = clamped;
+    }
+
+    @Override
+    public int getMaxScope() {
+        return CFNConfig.SHIELDER.maxScope;
+    }
+
+    public boolean isShowingRange() {
+        return showingRange;
+    }
+
+    public void setShowingRange(boolean showingRange) {
+        this.showingRange = showingRange;
+    }
+
+    @Override
+    protected void saveAdditional(@NotNull ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt("scope", this.scope);
+        output.putBoolean("RedstoneMode", this.redstoneMode);
+    }
+
+    @Override
+    protected void loadAdditional(@NotNull ValueInput input) {
+        super.loadAdditional(input);
+        setScope(input.getIntOr("scope", 0));
+        this.redstoneMode = input.getBooleanOr("RedstoneMode", false);
+    }
+
+    @Override
+    public boolean checkScope(BlockPos pos) {
+        return min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ()
+            && max.getX() >= pos.getX() && max.getY() >= pos.getY() && max.getZ() >= pos.getZ();
+    }
+
+    @Override
+    public boolean isActive() {
+        if (level == null) return false;
+        int redstoneState = level.hasNeighborSignal(worldPosition) ? 1 : 0;
+        if (redstoneMode) {
+            return redstoneState == 1;
+        } else {
+            return redstoneState == 0;
+        }
+    }
+
+    public void toggleRedstoneMode() {
+        this.redstoneMode = !this.redstoneMode;
+        setChanged();
+    }
+
+    public boolean getRedstoneMode() {
+        return redstoneMode;
+    }
+
+    public void setRedstoneMode(boolean mode) {
+        this.redstoneMode = mode;
+        setChanged();
+    }
+
+    public boolean isReceivingRedstoneSignal() {
+        return level != null && level.hasNeighborSignal(worldPosition);
+    }
+
+    @Override
+    public BlockPos getBEPos() {
+        return getBlockPos();
+    }
+
+    public void onValidate() {
+        if (level != null) {
+            if (level.isClientSide()) {
+                clientRegister();
+            } else {
+                CirculationShielderManager.INSTANCE.register(this, level.dimension().identifier().hashCode());
+            }
+        }
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        onValidate();
+    }
+
+    @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        onValidate();
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null) {
+            if (level.isClientSide()) {
+                clientUnregister();
+            } else {
+                CirculationShielderManager.INSTANCE.unregister(this, level.dimension().identifier().hashCode());
+            }
+        }
+        super.setRemoved();
+    }
+
+    private void clientRegister() {
+        CirculationShielderRenderingHandler.INSTANCE.addShielder(this);
+    }
+
+    private void clientUnregister() {
+        CirculationShielderRenderingHandler.INSTANCE.removeShielder(this);
+    }
+
+    @Override
+    public @NotNull Component getDisplayName() {
+        return Component.translatable("block.circulation_networks.circulation_shielder");
+    }
+
+    @Override
+    public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
+        return new ContainerCirculationShielder(CFNMenuTypes.CIRCULATION_SHIELDER_MENU, containerId, player, this);
+    }
+}

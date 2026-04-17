@@ -2,15 +2,11 @@ package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.utils.Functions;
-//~ mc_imports
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-//? if >=1.21 {
-/*import net.minecraft.core.component.DataComponents;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-*///?}
 
 import java.util.UUID;
 
@@ -31,9 +27,7 @@ public final class HubChannelPluginData {
         var tag = Functions.getOrCreateTagCompound(stack);
         putString(tag, CHANNEL_ID_KEY, channelId.toString());
         putString(tag, CHANNEL_NAME_KEY, channelName);
-        //? if >=1.21 {
-        /*Functions.saveTagCompound(stack, tag);
-         *///?}
+        Functions.saveTagCompound(stack, tag);
     }
 
     public static void setChannelInfo(ItemStack stack, ChannelInfo channelInfo) {
@@ -111,44 +105,28 @@ public final class HubChannelPluginData {
         return channelInfo != null && isComplete(channelInfo.channelId(), channelInfo.channelName());
     }
 
-    //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
-    //~ if >=1.20 '.hasKey(' -> '.contains(' {
-    //~ if >=1.20 '.setString(' -> '.putString(' {
-    //~ if >=1.20 '.getTagCompound()' -> '.getTag()' {
-    //? if <1.21 {
-    private static NBTTagCompound getTag(ItemStack stack) {
-        return stack.getTagCompound();
-    }
-    //?} else {
-    /*private static NBTTagCompound getTag(ItemStack stack) {
+    private static CompoundTag getTag(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         return data != null ? data.copyTag() : null;
     }
-    *///?}
 
-    private static boolean contains(NBTTagCompound tag, String key) {
-        return tag.hasKey(key);
+    private static boolean contains(CompoundTag tag, String key) {
+        return tag.contains(key);
     }
 
-    private static String getString(NBTTagCompound tag, String key) {
-        return tag.getString(key);
+    private static String getString(CompoundTag tag, String key) {
+        return NbtCompat.getStringOr(tag, key, "");
     }
 
-    private static void putString(NBTTagCompound tag, String key, String value) {
-        tag.setString(key, value);
+    private static void putString(CompoundTag tag, String key, String value) {
+        tag.putString(key, value);
     }
 
-    //? if <1.20
-    @Desugar
     public record ChannelInfo(UUID channelId, String channelName) {
 
-            public ChannelInfo(UUID channelId, String channelName) {
-                this.channelId = channelId != null ? channelId : EMPTY;
-                this.channelName = channelName != null ? channelName : "";
-            }
+        public ChannelInfo(UUID channelId, String channelName) {
+            this.channelId = channelId != null ? channelId : EMPTY;
+            this.channelName = channelName != null ? channelName : "";
         }
-    //~}
-    //~}
-    //~}
-    //~}
+    }
 }

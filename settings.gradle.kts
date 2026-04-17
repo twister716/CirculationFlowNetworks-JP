@@ -1,27 +1,16 @@
 pluginManagement {
     repositories {
-        maven("https://nexus.gtnewhorizons.com/repository/public/") {
-            name = "GTNH Maven"
-            content {
-                includeGroup("com.gtnewhorizons")
-                includeGroup("com.gtnewhorizons.retrofuturagradle")
-            }
-        }
         maven("https://maven.kikugie.dev/releases") {
             name = "KikuGie Releases"
         }
         maven("https://maven.kikugie.dev/snapshots") {
             name = "KikuGie Snapshots"
         }
-        maven("https://maven.minecraftforge.net/") {
-            name = "MinecraftForge Plugins"
-        }
         maven("https://maven.neoforged.net/releases") {
             name = "NeoForged Plugins"
         }
         gradlePluginPortal()
         mavenCentral()
-        mavenLocal()
     }
 }
 
@@ -37,7 +26,7 @@ stonecutter {
     centralScript = "build.gradle.kts"
 
     create(getRootProject()) {
-        versions("1.12.2", "1.20.1", "1.21.1", "26.1")
-        vcsVersion = "1.12.2"
+        versions("26.1")
+        vcsVersion = "26.1"
     }
 }

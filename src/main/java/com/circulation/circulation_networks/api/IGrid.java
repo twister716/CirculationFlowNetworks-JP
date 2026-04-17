@@ -3,10 +3,10 @@ package com.circulation.circulation_networks.api;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
-//~ mc_imports
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 import org.jetbrains.annotations.Nullable;
+
 import java.util.UUID;
 
 public interface IGrid {
@@ -15,9 +15,7 @@ public interface IGrid {
 
     ReferenceSet<INode> getNodes();
 
-    //~ if >=1.20 'NBTTagCompound ' -> 'CompoundTag ' {
-    NBTTagCompound serialize();
-    //~}
+    CompoundTag serialize();
 
     /**
      * 获取此网络的中枢节点 / Get the hub node of this network

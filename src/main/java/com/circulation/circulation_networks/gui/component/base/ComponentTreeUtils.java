@@ -3,6 +3,7 @@ package com.circulation.circulation_networks.gui.component.base;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 
 import org.jetbrains.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 

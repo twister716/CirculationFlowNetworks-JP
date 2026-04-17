@@ -2,16 +2,12 @@ package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.utils.Functions;
-//~ mc_imports
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-//? if >=1.21 {
-/*import net.minecraft.core.component.DataComponents;
+import com.circulation.circulation_networks.utils.NbtCompat;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-*///?}
 
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
 
 public final class CirculationConfiguratorState {
 
@@ -38,13 +34,9 @@ public final class CirculationConfiguratorState {
     }
 
     public static void setSubMode(ItemStack stack, int subMode) {
-        //? if <1.21 {
-        putInt(Functions.getOrCreateTagCompound(stack), MODE_KEY, subMode);
-        //?} else {
-        /*CompoundTag tag = Functions.getOrCreateTagCompound(stack);
+        CompoundTag tag = Functions.getOrCreateTagCompound(stack);
         putInt(tag, MODE_KEY, subMode);
         Functions.saveTagCompound(stack, tag);
-        *///?}
     }
 
     public static ToggleResult toggleFunction(ItemStack stack) {
@@ -53,54 +45,24 @@ public final class CirculationConfiguratorState {
         ToolFunction currentFunction = ToolFunction.fromID(CirculationConfiguratorModeModel.nextFunctionId(previousFunction.ordinal()));
         putInt(nbt, FUNCTION_KEY, currentFunction.ordinal());
         putInt(nbt, MODE_KEY, 0);
-        //? if >=1.21 {
-        /*Functions.saveTagCompound(stack, nbt);
-         *///?}
+        Functions.saveTagCompound(stack, nbt);
         return new ToggleResult(previousFunction, currentFunction);
     }
 
-    //? if <1.20 {
-    private static NBTTagCompound getTag(ItemStack stack) {
-        return stack.getTagCompound();
-    }
-
-    private static int getInt(NBTTagCompound nbt, String key) {
-        return nbt.getInteger(key);
-    }
-
-    private static void putInt(NBTTagCompound nbt, String key, int value) {
-        nbt.setInteger(key, value);
-    }
-    //?} else if <1.21 {
-    /*private static CompoundTag getTag(ItemStack stack) {
-        return stack.getTag();
-    }
-
-    private static int getInt(CompoundTag nbt, String key) {
-        return nbt.getInt(key);
-    }
-
-    private static void putInt(CompoundTag nbt, String key, int value) {
-        nbt.putInt(key, value);
-    }
-    *///?} else {
-    /*private static CompoundTag getTag(ItemStack stack) {
+    private static CompoundTag getTag(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         return data != null ? data.copyTag() : null;
     }
 
     private static int getInt(CompoundTag nbt, String key) {
-        return nbt.getInt(key);
+        return NbtCompat.getIntOr(nbt, key, 0);
     }
 
     private static void putInt(CompoundTag nbt, String key, int value) {
         nbt.putInt(key, value);
     }
-    *///?}
 
 
-    //? if <1.20
-    @Desugar
     public record ToggleResult(ToolFunction previousFunction, ToolFunction currentFunction) {
 
     }
