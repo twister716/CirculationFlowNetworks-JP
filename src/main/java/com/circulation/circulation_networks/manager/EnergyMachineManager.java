@@ -72,6 +72,8 @@ public final class EnergyMachineManager {
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
+    private final Reference2ObjectOpenHashMap<TileEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
     private final Int2ObjectMap<LongSet> warningPositionsScratch = new Int2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
     private final ReferenceSet<TileEntity> cache = new ReferenceOpenHashSet<>();
@@ -273,6 +275,8 @@ public final class EnergyMachineManager {
         var overrideManager = EnergyTypeOverrideManager.get();
         activeTickGrids.clear();
         processedTickGrids.clear();
+        tickMachineHandlers.clear();
+        tickSharedHandlers.clear();
         clearWarningPositionsScratch();
         for (var entry : machineGridMap.entrySet()) {
             var te = entry.getKey();
@@ -292,11 +296,11 @@ public final class EnergyMachineManager {
                 if (grid == null) continue;
 
                 var hubMetadata = getHubMetadata(grid);
-                var handler = IEnergyHandler.release(te, hubMetadata);
+                var handler = getOrCreateTickMachineHandler(te, hubMetadata);
                 if (handler == null) {
                     continue;
                 }
-                var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid));
+                var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid), false);
 
                 var type = override != null ? override : participant.getType();
                 if (type == IEnergyHandler.EnergyType.INVALID) {
@@ -376,6 +380,7 @@ public final class EnergyMachineManager {
         for (var grid : activeTickGrids) {
             tickGridData.get(grid).finishTick();
         }
+        recycleTickMachineHandlers();
         activeTickGrids.clear();
     }
 
@@ -752,6 +757,29 @@ public final class EnergyMachineManager {
             activeTickGrids.add(grid);
         }
         return data;
+    }
+
+    @Nullable
+    private IEnergyHandler getOrCreateTickMachineHandler(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
+        IEnergyHandler handler = tickMachineHandlers.get(tileEntity);
+        if (handler != null) {
+            return handler;
+        }
+        handler = IEnergyHandler.release(tileEntity, hubMetadata);
+        if (handler == null) {
+            return null;
+        }
+        tickMachineHandlers.put(tileEntity, handler);
+        tickSharedHandlers.add(handler);
+        return handler;
+    }
+
+    private void recycleTickMachineHandlers() {
+        for (var handler : tickSharedHandlers) {
+            handler.recycle();
+        }
+        tickSharedHandlers.clear();
+        tickMachineHandlers.clear();
     }
 
     private void clearWarningPositionsScratch() {

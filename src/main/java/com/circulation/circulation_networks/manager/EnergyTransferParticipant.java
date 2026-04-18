@@ -20,6 +20,7 @@ final class EnergyTransferParticipant {
     private HubNode.HubMetadata hubMetadata;
     @Nullable
     private EnergyMachineManager.Interaction interaction;
+    private boolean recycleHandlerOnRecycle;
 
     private EnergyTransferParticipant() {
     }
@@ -28,12 +29,21 @@ final class EnergyTransferParticipant {
                                             @Nullable IGrid grid,
                                             @Nullable HubNode.HubMetadata hubMetadata,
                                             @Nullable EnergyMachineManager.Interaction interaction) {
+        return obtain(handler, grid, hubMetadata, interaction, true);
+    }
+
+    static EnergyTransferParticipant obtain(IEnergyHandler handler,
+                                            @Nullable IGrid grid,
+                                            @Nullable HubNode.HubMetadata hubMetadata,
+                                            @Nullable EnergyMachineManager.Interaction interaction,
+                                            boolean recycleHandlerOnRecycle) {
         EnergyTransferParticipant p = POOL.pollFirst();
         if (p == null) p = new EnergyTransferParticipant();
         p.handler = handler;
         p.grid = grid;
         p.hubMetadata = hubMetadata;
         p.interaction = interaction;
+        p.recycleHandlerOnRecycle = recycleHandlerOnRecycle;
         return p;
     }
 
@@ -76,11 +86,14 @@ final class EnergyTransferParticipant {
     }
 
     void recycle() {
-        handler.recycle();
+        if (recycleHandlerOnRecycle) {
+            handler.recycle();
+        }
         handler = null;
         grid = null;
         hubMetadata = null;
         interaction = null;
+        recycleHandlerOnRecycle = false;
         if (POOL.size() < MAX_POOL_SIZE) {
             POOL.addFirst(this);
         }
