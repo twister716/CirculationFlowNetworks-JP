@@ -32,6 +32,7 @@ import org.lwjgl.opengl.GL11;
 /*import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.entity.player.Inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.world.inventory.Slot;
@@ -41,6 +42,7 @@ import java.util.Optional;
 /*import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.entity.player.Inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.world.inventory.Slot;
@@ -604,5 +606,14 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends GuiContaine
         }
         return list;
     }
-    //?}
+    //?} else {
+    /*public List<Rect2i> getGuiExtraAreas() {
+        var list = new ObjectArrayList<Rect2i>();
+        for (Component component : componentController.getAllComponents()) {
+            if (!component.isVisible()) continue;
+            list.add(new Rect2i(component.getAbsoluteX(), component.getAbsoluteY(), component.width, component.height));
+        }
+        return list;
+    }
+    *///?}
 }

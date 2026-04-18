@@ -24,7 +24,7 @@ import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class MEKHandler implements IEnergyHandler {
+public class MEKHandler implements IEnergyHandler {
 
     private static final Class<?> inductionPort;
     private static final MethodHandle structureGet;

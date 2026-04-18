@@ -12,7 +12,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 
 import org.jetbrains.annotations.Nullable;
 
-public final class FEHandler implements IEnergyHandler {
+public class FEHandler implements IEnergyHandler {
 
     @Nullable
     private IEnergyStorage send;

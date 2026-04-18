@@ -1,5 +1,8 @@
 dependencies {
-    modImplementation("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1")
+    modCompileOnly("mezz.jei:jei-1.20.1-forge-api:15.20.0.130")
+    modRuntimeOnly("mezz.jei:jei-1.20.1-forge:15.20.0.130")
+    modCompileOnly("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
+    modRuntimeOnly("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1")
     modImplementation("curse.maven:architectury-api-419699:5137938")
     modImplementation("curse.maven:ftb-library-forge-404465:6807424")
     modImplementation("curse.maven:ftb-teams-forge-404468:7499810")

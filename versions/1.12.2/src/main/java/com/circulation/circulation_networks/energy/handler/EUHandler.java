@@ -16,7 +16,7 @@ import net.minecraft.tileentity.TileEntity;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("DataFlowIssue")
-public final class EUHandler implements IEnergyHandler {
+public class EUHandler implements IEnergyHandler {
     private static final double MAX_EU_TRANSFER = Long.MAX_VALUE / 4.0D;
 
     private EnergyType energyType;

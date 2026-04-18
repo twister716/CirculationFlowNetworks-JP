@@ -4,7 +4,6 @@ import com.circulation.circulation_networks.registry.CFNItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -63,6 +62,8 @@ public final class PocketNodeItemStackRenderer extends TileEntityItemStackRender
         boolean blendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
         boolean alphaEnabled = GL11.glIsEnabled(GL11.GL_ALPHA_TEST);
         boolean lightingEnabled = GL11.glIsEnabled(GL11.GL_LIGHTING);
+        float savedBrightnessX = OpenGlHelper.lastBrightnessX;
+        float savedBrightnessY = OpenGlHelper.lastBrightnessY;
 
         GlStateManager.enableAlpha();
         GlStateManager.alphaFunc(GL11.GL_GREATER, CUTOUT_ALPHA_THRESHOLD);
@@ -74,15 +75,19 @@ public final class PocketNodeItemStackRenderer extends TileEntityItemStackRender
             GL11.GL_ZERO
         );
         GlStateManager.disableLighting();
-        RenderHelper.disableStandardItemLighting();
         GlStateManager.disableCull();
 
         try {
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(0.5F, 0.5F, 0.5F);
             minecraft.getRenderItem().renderItem(stack, model);
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
             GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             minecraft.getRenderItem().renderItem(stack, model);
+            GlStateManager.popMatrix();
         } finally {
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, savedBrightnessX, savedBrightnessY);
+            GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             if (lightingEnabled) {
                 GlStateManager.enableLighting();
             } else {

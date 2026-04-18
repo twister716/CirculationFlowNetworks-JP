@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class MEKHandler implements IEnergyHandler {
+public class MEKHandler implements IEnergyHandler {
 
     private static final Direction[] DIRECTIONS = Direction.values();
     private static final double FE_TO_MEK_RATIO = 2.5D;
