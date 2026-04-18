@@ -8,7 +8,7 @@
   "textures": {
     "1": "circulation_networks:block/node/node_crystal",
     "4": "circulation_networks:block/node/io/link",
-    "particle": "circulation_networks:block/node/particle/node_particle",
+    "particle": "circulation_networks:block/particle/node_particle",
     "2": "circulation_networks:block/node/io/link"
   },
   "elements": [

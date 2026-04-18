@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "circulation_networks:item/wide_area_charging_plugin"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "circulation_networks:gui/component/hub_base"
+    "layer0": "circulation_networks:item/end_core_crystal"
   }
 }

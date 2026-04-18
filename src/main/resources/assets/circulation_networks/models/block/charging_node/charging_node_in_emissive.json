@@ -3,7 +3,7 @@
 	"texture_size": [32, 32],
 	"textures": {
 		"4": "circulation_networks:block/node/io/link",
-		"particle": "circulation_networks:block/node/particle/node_particle"
+		"particle": "circulation_networks:block/particle/node_particle"
 	},
 	"elements": [
 		{

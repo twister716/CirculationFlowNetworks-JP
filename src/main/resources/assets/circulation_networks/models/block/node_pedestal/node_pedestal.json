@@ -7,7 +7,7 @@
   ],
   "textures": {
     "1": "circulation_networks:block/node/base_b",
-    "particle": "circulation_networks:block/node/particle/node_pedestal_particle"
+    "particle": "circulation_networks:block/particle/node_pedestal_particle"
   },
   "elements": [
     {

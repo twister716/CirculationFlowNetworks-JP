@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "circulation_networks:gui/component/node"
+    "layer0": "circulation_networks:item/infernal_melting_crystal"
   }
 }
