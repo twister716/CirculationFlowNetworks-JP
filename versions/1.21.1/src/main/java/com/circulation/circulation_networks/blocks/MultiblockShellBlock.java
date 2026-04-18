@@ -7,6 +7,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -73,6 +75,21 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return null;
     }
 
+    @NotNull
+    public static BlockPos resolveRedirectedPos(BlockGetter level, BlockPos pos) {
+        BlockPos originPos = getOriginPos(level, pos);
+        return originPos != null ? originPos : pos;
+    }
+
+    public static boolean canBeReplacedAt(Level level, BlockPos shellPos) {
+        BlockPos origin = getOriginPos(level, shellPos);
+        if (origin == null) {
+            return false;
+        }
+        BlockState originState = level.getBlockState(origin);
+        return originState.isAir() || originState.getBlock() instanceof MultiblockShellBlock;
+    }
+
     @Override
     @Nullable
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -83,6 +100,17 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @NotNull
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
+    }
+
+    @Override
+    public boolean addLandingEffects(BlockState state, ServerLevel level, BlockPos pos,
+                                     BlockState stateAtPos, LivingEntity entity, int numberOfParticles) {
+        return true;
+    }
+
+    @Override
+    public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
+        return true;
     }
 
     @Override
@@ -272,35 +300,26 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return 0;
     }
 
-    private VoxelShape proxyShape(BlockGetter level, BlockPos pos, CollisionContext context, ShapeGetter getter) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = getter.get(originState, level, originPos, context);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
-    }
-
     private static @NotNull VoxelShape emptyShape() {
         return Shapes.empty();
+    }
+
+    private static @NotNull VoxelShape fullShape() {
+        return Shapes.block();
     }
 
     @Override
     @NotNull
     protected VoxelShape getShape(BlockState state, BlockGetter level,
                                   BlockPos pos, CollisionContext context) {
-        return proxyShape(level, pos, context, BlockState::getShape);
+        return fullShape();
     }
 
     @Override
     @NotNull
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                                            BlockPos pos, CollisionContext context) {
-        return proxyShape(level, pos, context, BlockState::getCollisionShape);
+        return fullShape();
     }
 
     @Override
@@ -319,32 +338,18 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @Override
     @NotNull
     protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return emptyShape();
+        return fullShape();
     }
 
     @Override
     @NotNull
     protected VoxelShape getInteractionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos == null) return Shapes.block();
-        BlockState originState = level.getBlockState(originPos);
-        VoxelShape shape = originState.getInteractionShape(level, originPos);
-        VoxelShape moved = shape.move(
-            originPos.getX() - pos.getX(),
-            originPos.getY() - pos.getY(),
-            originPos.getZ() - pos.getZ()
-        );
-        return moved.isEmpty() ? Shapes.block() : moved;
+        return fullShape();
     }
 
     @Override
     protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
-        BlockPos origin = getOriginPos(context.getLevel(), context.getClickedPos());
-        return origin == null;
+        return canBeReplacedAt(context.getLevel(), context.getClickedPos());
     }
 
-    @FunctionalInterface
-    private interface ShapeGetter {
-        VoxelShape get(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context);
-    }
 }

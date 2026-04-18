@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IGrid;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.IMachineNode;
 import com.circulation.circulation_networks.api.node.INode;
@@ -252,7 +253,7 @@ public final class EnergyMachineManager {
         if (isClientWorld(event.getWorld())) return;
         if (NetworkManager.INSTANCE.isInit()) {
             addMachine(event.getBlockEntity());
-            var node = NetworkManager.INSTANCE.getNodeFromPos(event.getWorld(), event.getPos());
+            var node = API.getNodeAt(event.getWorld(), event.getPos());
             if (node instanceof IMachineNode im) {
                 addMachineNode(im, event.getBlockEntity());
             }
@@ -602,7 +603,7 @@ public final class EnergyMachineManager {
             addMachine(te);
             //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
             //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
-            var node = NetworkManager.INSTANCE.getNodeFromPos(te.getWorld(), te.getPos());
+            var node = API.getNodeAt(te.getWorld(), te.getPos());
             //~}
             //~}
             if (node instanceof IMachineNode im) {

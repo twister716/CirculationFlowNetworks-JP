@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.tiles;
 
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -24,6 +26,10 @@ public class TileEntityMultiblockShell extends TileEntity implements IWorldNamea
     public void setOriginPos(@NotNull BlockPos pos) {
         this.originPos = pos;
         markDirty();
+        if (world != null && !world.isRemote) {
+            BlockPos currentPos = this.pos;
+            world.notifyBlockUpdate(currentPos, getBlockType().getDefaultState(), getBlockType().getDefaultState(), 3);
+        }
     }
 
     public boolean canRedirect() {
@@ -59,7 +65,31 @@ public class TileEntityMultiblockShell extends TileEntity implements IWorldNamea
                 compound.getInteger("OriginY"),
                 compound.getInteger("OriginZ")
             );
+        } else {
+            originPos = null;
         }
+    }
+
+    @Override
+    @Nullable
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(this.pos, 0, getUpdateTag());
+    }
+
+    @Override
+    @NotNull
+    public NBTTagCompound getUpdateTag() {
+        return writeToNBT(new NBTTagCompound());
+    }
+
+    @Override
+    public void onDataPacket(@NotNull NetworkManager net, @NotNull SPacketUpdateTileEntity pkt) {
+        handleUpdateTag(pkt.getNbtCompound());
+    }
+
+    @Override
+    public void handleUpdateTag(@NotNull NBTTagCompound tag) {
+        readFromNBT(tag);
     }
 
     // IWorldNameable

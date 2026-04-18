@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.mixins.mc;
 
+import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.utils.EventHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -7,6 +8,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -21,6 +23,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LevelChunk.class)
 public abstract class MixinLevelChunk extends ChunkAccess {
@@ -35,6 +38,13 @@ public abstract class MixinLevelChunk extends ChunkAccess {
         super(p_187621_, p_187622_, p_187623_, p_187624_, p_187625_, p_187626_, p_187627_);
     }
 
+    @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER, remap = false))
+    public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
+        if (blockEntity != null) {
+            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+        }
+    }
+
     @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;clearRemoved()V", shift = At.Shift.AFTER))
     private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         var pos = blockEntity.getBlockPos();
@@ -43,9 +53,6 @@ public abstract class MixinLevelChunk extends ChunkAccess {
             EventHooks.onBlockEntityInvalidate(this.level, pos, rb);
             rb.setRemoved();
             rb.setLevel(null);
-        }
-        if (blockEntity != null) {
-            EventHooks.onBlockEntityValidate(this.level, pos, blockEntity);
         }
     }
 
@@ -62,5 +69,12 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Inject(method = "removeBlockEntity", at = @At("TAIL"))
     private void removeBlockEntityR(BlockPos blockPos, CallbackInfo ci) {
         cfn$blockEntity = null;
+    }
+
+    @Inject(method = "setBlockState", at = @At("TAIL"))
+    private void setBlockState(BlockPos blockPos, BlockState blockState, boolean moved, CallbackInfoReturnable<BlockState> cir) {
+        if (!this.level.isClientSide && cir.getReturnValue() != null) {
+            PocketNodeManager.INSTANCE.onHostBlockStateChanged(this.level, blockPos);
+        }
     }
 }

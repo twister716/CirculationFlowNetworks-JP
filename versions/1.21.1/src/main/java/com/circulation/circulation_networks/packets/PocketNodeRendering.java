@@ -73,7 +73,7 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
             BlockPos pos = BlockPos.of(buf.readLong());
             Direction face = buf.readBoolean() ? Direction.byName(buf.readUtf()) : null;
             if (nodeType != null && nodeType.allowsPocketNode()) {
-                message.parsedRecords.add(new PocketNodeRecord(message.parsedDim, pos, nodeType, face, null));
+                message.parsedRecords.add(new PocketNodeRecord(message.parsedDim, pos, nodeType, face, null, null));
             }
         }
         return message;

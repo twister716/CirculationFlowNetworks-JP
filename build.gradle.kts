@@ -20,8 +20,8 @@ plugins {
     id("com.google.devtools.ksp") version "2.2.10-2.0.2"
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.3"
     id("com.gtnewhorizons.retrofuturagradle") version "2.0.2" apply false
-    id("net.neoforged.moddev") version "2.0.140" apply false
-    id("net.neoforged.moddev.legacyforge") version "2.0.140" apply false
+    id("net.neoforged.moddev") version "2.0.141" apply false
+    id("net.neoforged.moddev.legacyforge") version "2.0.141" apply false
     id("com.matthewprenger.cursegradle") version "1.4.0" apply false
     id("com.modrinth.minotaur") version "2.+" apply false
     id("org.jetbrains.changelog") version "2.5.0"

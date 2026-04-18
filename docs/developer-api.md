@@ -65,7 +65,9 @@ import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.node.INode;
 
-// 注册自定义能源处理器（必须在 postInit 阶段前调用）
+// 注册自定义能源处理器
+// 1.12.2：在 init 阶段调用，postInit 锁定前完成注册
+// 1.20.1 / 1.21.1：在模组构造与通用注册阶段调用，FMLLoadCompleteEvent 锁定前完成注册
 API.registerEnergyHandler(myEnergyHandlerManager);
 
 // 查询方块实体的能量处理器管理器
@@ -129,10 +131,11 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 ### 注册
 
-| 方法签名                                                                                                                                    | 说明                                  |
-|-----------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
-| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | 注册自定义的能量管理器。**必须在 postInit 阶段前调用**。 |
-| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | 注册自定义节点类型及其 NBT 反序列化函数和运行时创建函数。     |
+| 方法签名                                                                                                                                    | 说明                                                            |
+|-----------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `void registerEnergyHandler(@Nonnull IEnergyHandlerManager manager)`                                                                    | 注册自定义的能量管理器。必须在 `RegistryEnergyHandler.lock()` 前完成；1.12.2 对应 `postInit` 前，1.20.1 / 1.21.1 对应 `FMLLoadCompleteEvent` 前。 |
+| `void registerNodeType(@Nonnull NodeType<? extends INode> nodeType, @Nonnull NodeDeserializer function, @Nullable NodeCreator creator)` | 注册自定义节点类型及其 NBT 反序列化函数和运行时创建函数。可在世界中创建的节点类型应提供 `NodeCreator`。 |
+| `void registerPocketNodeItem(@Nonnull NodeType<? extends INode> nodeType, @Nonnull Item item)`                                          | 注册节点类型到口袋节点物品的映射。仅允许口袋节点形态的类型应注册此映射。                          |
 
 ---
 
@@ -186,11 +189,13 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 `com.circulation.circulation_networks.api.node.IMachineNode extends IEnergySupplyNode`
 
-机器节点接口，表示网络中直接与能源设备交互的节点。
+机器节点接口，表示节点所在的方块位置本身就是一个能源机器端点。它继承 `IEnergySupplyNode` 的供能能力，同时要求该节点自己的方块实体直接暴露能源处理器。
 
 | 方法          | 返回类型                        | 说明                                |
 |-------------|-----------------------------|-----------------------------------|
 | `getType()` | `IEnergyHandler.EnergyType` | 节点的能量类型（SEND / RECEIVE / STORAGE） |
+
+这类节点通常不应允许口袋节点形态。
 
 继承自 `IEnergySupplyNode` 和 `INode` 的所有方法。
 
@@ -200,7 +205,7 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 `com.circulation.circulation_networks.api.node.IEnergySupplyNode extends INode`
 
-能量供应节点接口，标识该节点可与周围设备进行能量交互。
+能量供应节点接口，标识该节点可在供能范围内与周围设备进行能量交互。
 
 | 方法                           | 返回类型      | 说明                   |
 |------------------------------|-----------|----------------------|
@@ -267,49 +272,17 @@ ReferenceSet<INode> allNodes = API.getAllNodes();
 
 节点类型标识接口，用于注册和区分不同类型的节点。
 
-| 方法                      | 返回类型                | 说明                            |
-|-------------------------|---------------------|-------------------------------|
-| `id()`                  | `@NotNull String`   | 节点类型的唯一标识符                    |
-| `nodeClass()`           | `@NotNull Class<N>` | 节点类的 Class 对象                 |
-| `allowsPocketNode()`    | `boolean`           | 是否允许口袋节点形态                    |
-| `fallbackVisualId()`    | `@NotNull String`   | 回退视觉标识                        |
-| `getId()`               | `@NotNull String`   | 默认实现：等同于 `id()`               |
-| `getNodeClass()`        | `@NotNull Class<N>` | 默认实现：等同于 `nodeClass()`        |
-| `getFallbackVisualId()` | `@NotNull String`   | 默认实现：等同于 `fallbackVisualId()` |
-| `matches(INode)`        | `boolean`           | 默认实现：检查节点是否为此类型               |
-| `cast(INode)`           | `@NotNull N`        | 默认实现：将节点强转为此类型                |
-
-**注册自定义节点类型示例**：
-
-```
-// 定义节点类型
-NodeType<MyCustomNode> MY_NODE_TYPE = new NodeType<>() {
-        @Override
-        public @NotNull String id() {
-            return "mymod:my_node";
-        }
-
-        @Override
-        public @NotNull Class<MyCustomNode> nodeClass() {
-            return MyCustomNode.class;
-        }
-
-        @Override
-        public boolean allowsPocketNode() {
-            return true;
-        }
-
-        @Override
-        public @NotNull String fallbackVisualId() {
-            return "mymod:my_node_block";
-        }
-    };
-
-// 注册节点类型和反序列化器
-API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
-```
-
----
+| 方法                      | 返回类型                | 说明                                                     |
+|-------------------------|---------------------|--------------------------------------------------------|
+| `id()`                  | `@NotNull String`   | 节点类型的唯一标识符                                             |
+| `nodeClass()`           | `@NotNull Class<N>` | 节点类的 Class 对象                                          |
+| `allowsPocketNode()`    | `boolean`           | 是否允许该类型以口袋节点形态存在。像 `IMachineNode` 这类节点类型通常应返回 `false`。 |
+| `fallbackVisualId()`    | `@NotNull String`   | 节点在口袋节点恢复、客户端回退显示和物品回退链路中使用的视觉标识。                      |
+| `getId()`               | `@NotNull String`   | 默认实现：等同于 `id()`                                        |
+| `getNodeClass()`        | `@NotNull Class<N>` | 默认实现：等同于 `nodeClass()`                                 |
+| `getFallbackVisualId()` | `@NotNull String`   | 默认实现：等同于 `fallbackVisualId()`                          |
+| `matches(INode)`        | `boolean`           | 默认实现：检查节点是否为此类型                                        |
+| `cast(INode)`           | `@NotNull N`        | 默认实现：将节点强转为此类型                                         |
 
 ### NodeContext
 
@@ -342,9 +315,9 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 `com.circulation.circulation_networks.api.NodeCreator`
 
-函数式接口，继承自 `Function<NodeContext, INode>`，用于在运行时创建新节点实例（如放置方块或口袋节点时）。
+函数式接口，继承自 `Function<NodeContext, INode>`，用于在运行时创建新节点实例（如放置方块、绑定方块实体或恢复口袋节点时）。
 
-通过 `API.registerNodeType()` 注册。可为 `null`，表示该类型不支持运行时创建。
+通过 `API.registerNodeType()` 注册。可在世界中创建或恢复的节点类型应提供该创建器。
 
 ---
 
@@ -370,11 +343,11 @@ API.registerNodeType(MY_NODE_TYPE, nbt ->MyCustomNode.deserialize(nbt));
 
 `com.circulation.circulation_networks.api.IMachineNodeBlockEntity extends INodeBlockEntity`
 
-机器节点方块实体接口。
+机器节点方块实体接口，表示该方块实体自身就是 `IMachineNode` 对应的能源机器端点。
 
-| 方法                                                   | 返回类型             | 说明                            |
-|------------------------------------------------------|------------------|-------------------------------|
-| `getNode()`                                          | `IMachineNode`   | 获取关联的机器节点（覆写返回类型）             |
+| 方法                   | 返回类型             | 说明                                       |
+|----------------------|------------------|------------------------------------------|
+| `getNode()`          | `IMachineNode`   | 获取关联的机器节点（覆写返回类型）                        |
 | `getEnergyHandler()` | `IEnergyHandler` | 返回此方块实体持有的能量处理器；实现类必须重写 `recycle()` 为空操作 |
 
 ---

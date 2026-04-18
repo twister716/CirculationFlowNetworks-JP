@@ -1,5 +1,7 @@
 package com.circulation.circulation_networks.handlers;
 
+import com.circulation.circulation_networks.api.node.INode;
+import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
@@ -11,6 +13,11 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
 //~ mc_imports
 import net.minecraft.util.math.BlockPos;
+//? if <1.20 {
+import net.minecraft.world.World;
+//?} else {
+/*import net.minecraft.world.level.Level;
+*///?}
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -42,15 +49,18 @@ import org.lwjgl.opengl.GL11;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 //~ neo_imports
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 *///?}
+import org.jetbrains.annotations.Nullable;
 
 //~ if >=1.20 '@SideOnly(Side.CLIENT)' -> '@OnlyIn(Dist.CLIENT)' {
 @SideOnly(Side.CLIENT)
@@ -68,6 +78,7 @@ public final class PocketNodeRenderingHandler {
 
     private static void unregisterHost(PocketNodeClientHost host) {
         if (host != null) {
+            host.invalidateNode();
             MachineNodeBlockEntityManager.INSTANCE.unregisterClientMachine(host);
         }
     }
@@ -93,6 +104,7 @@ public final class PocketNodeRenderingHandler {
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
     }
+
     //?}
 
     //? if <1.20 {
@@ -128,6 +140,36 @@ public final class PocketNodeRenderingHandler {
 
     private Long2ObjectMap<PocketNodeClientHost> getDimHosts(int dimId) {
         return hosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
+    }
+
+    private static int getDimensionId(
+        //? if <1.20 {
+        World world
+        //?} else {
+        /*Level world
+        *///?}
+    ) {
+        //? if <1.20 {
+        return world.provider.getDimension();
+        //?} else {
+        /*return world.dimension().location().hashCode();
+        *///?}
+    }
+
+    @Nullable
+    private PocketNodeClientHost getHost(
+        //? if <1.20 {
+        World world,
+        //?} else {
+        /*Level world,
+        *///?}
+        BlockPos pos
+    ) {
+        if (pos == null) {
+            return null;
+        }
+        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(getDimensionId(world));
+        return dimHosts == null ? null : dimHosts.get(pack(pos));
     }
 
     public void setDimensionState(int dimId, ObjectList<PocketNodeRecord> records) {
@@ -220,10 +262,14 @@ public final class PocketNodeRenderingHandler {
                 poseStack.scale(1.0F, 1.0F, 0.002F);
             }
 
-            BakedModel itemModel = mc.getItemRenderer().getModel(host.getRenderStack(), mc.level, null, 0);
+            BakedModel itemModel = PocketNodeModelCache.get(host.getRenderStack());
             itemModel.getTransforms().getTransform(ItemDisplayContext.GUI).apply(false, poseStack);
             poseStack.translate(-0.5F, -0.5F, -0.5F);
-            VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+            VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
+            mc.getBlockRenderer().getModelRenderer().renderModel(
+                poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
+                LevelRenderer.getLightColor(mc.level, pos), OverlayTexture.NO_OVERLAY
+            );
             mc.getBlockRenderer().getModelRenderer().renderModel(
                 poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
                 LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
@@ -237,12 +283,17 @@ public final class PocketNodeRenderingHandler {
     }
     *///?}
 
-    public boolean hasNode(int dimId, BlockPos pos) {
-        if (pos == null) {
-            return false;
-        }
-        Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
-        return dimHosts != null && dimHosts.containsKey(pack(pos));
+    @Nullable
+    public INode getNode(
+        //? if <1.20 {
+        World world,
+        //?} else {
+        /*Level world,
+        *///?}
+        BlockPos pos
+    ) {
+        PocketNodeClientHost host = getHost(world, pos);
+        return host == null ? null : host.getNode(world);
     }
 
     //? if <1.20 {
@@ -291,9 +342,12 @@ public final class PocketNodeRenderingHandler {
             if (host.isGui3d()) {
                 GlStateManager.scale(1.0F, 1.0F, 0.002F);
             }
-            IBakedModel model = mc.getRenderItem().getItemModelWithOverrides(host.getRenderStack(), mc.world, null);
+            IBakedModel model = PocketNodeModelCache.get(host.getRenderStack());
             model = ForgeHooksClient.handleCameraTransforms(model, ItemCameraTransforms.TransformType.GUI, false);
             RenderHelper.disableStandardItemLighting();
+            applyWorldLight(mc, pos);
+            mc.getRenderItem().renderItem(host.getRenderStack(), model);
+            applyFullBrightLight();
             mc.getRenderItem().renderItem(host.getRenderStack(), model);
             GlStateManager.depthMask(true);
             GlStateManager.enableCull();

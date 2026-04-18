@@ -27,6 +27,9 @@ public final class RegistryItems {
             CFNItems.pocketPortNode = register(helper, "pocket_port_node", new ItemPocketNode(NodeTypes.PORT_NODE, new Item.Properties()));
             CFNItems.pocketChargingNode = register(helper, "pocket_charging_node", new ItemPocketNode(NodeTypes.CHARGING_NODE, new Item.Properties()));
             CFNItems.pocketRelayNode = register(helper, "pocket_relay_node", new ItemPocketNode(NodeTypes.RELAY_NODE, new Item.Properties()));
+            PocketNodeItems.register(NodeTypes.PORT_NODE, CFNItems.pocketPortNode);
+            PocketNodeItems.register(NodeTypes.CHARGING_NODE, CFNItems.pocketChargingNode);
+            PocketNodeItems.register(NodeTypes.RELAY_NODE, CFNItems.pocketRelayNode);
             CFNItems.hubChannelPlugin = register(helper, "hub_channel_plugin", new ItemHubChannelPlugin(new Item.Properties()));
             CFNItems.wideAreaChargingPlugin = register(helper, "wide_area_charging_plugin", new ItemWideAreaChargingPlugin(new Item.Properties()));
             CFNItems.dimensionalChargingPlugin = register(helper, "dimensional_charging_plugin", new ItemDimensionalChargingPlugin(new Item.Properties()));

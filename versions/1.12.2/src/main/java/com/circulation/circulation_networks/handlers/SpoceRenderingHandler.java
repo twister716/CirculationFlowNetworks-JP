@@ -1,6 +1,6 @@
 package com.circulation.circulation_networks.handlers;
 
-import com.circulation.circulation_networks.api.INodeBlockEntity;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.InspectionMode;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.items.CirculationConfiguratorState;
@@ -170,11 +170,7 @@ public class SpoceRenderingHandler {
         if (world == null || targetPos == null) {
             return false;
         }
-        if (PocketNodeRenderingHandler.INSTANCE.hasNode(targetDimensionId, targetPos)) {
-            return true;
-        }
-        TileEntity blockEntity = world.getTileEntity(targetPos);
-        return blockEntity instanceof INodeBlockEntity && !blockEntity.isInvalid();
+        return API.getNodeAt(world, targetPos) != null;
     }
 
     @SubscribeEvent

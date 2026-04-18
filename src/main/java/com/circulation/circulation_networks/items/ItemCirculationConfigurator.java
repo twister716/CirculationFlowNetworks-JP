@@ -1,14 +1,13 @@
 package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.node.IChargingNode;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ConfigurationMode;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
-import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
@@ -22,7 +21,6 @@ import com.circulation.circulation_networks.tiles.TileEntityMultiblockShell;
 *///?}
 //~ mc_imports
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -138,12 +136,11 @@ public class ItemCirculationConfigurator extends BaseItem {
     //~}
 
     //~ if >=1.20 'World ' -> 'Level ' {
-    //~ if >=1.20 'TileEntity te' -> 'BlockEntity te' {
     //~ if >=1.20 'world.getTileEntity(pos)' -> 'world.getBlockEntity(pos)' {
     //? if <1.20 {
     //~ if >=1.20 'TileEntityMultiblockShell' -> 'MultiblockShellBlockEntity' {
     private static BlockPos resolveOriginPos(World world, BlockPos pos) {
-        TileEntity te = world.getTileEntity(pos);
+        var te = world.getTileEntity(pos);
         if (te instanceof TileEntityMultiblockShell shell && shell.canRedirect()) {
             return shell.getOriginPos();
         }
@@ -152,14 +149,13 @@ public class ItemCirculationConfigurator extends BaseItem {
     //~}
     //?} else {
     /*private static BlockPos resolveOriginPos(Level world, BlockPos pos) {
-        BlockEntity te = world.getBlockEntity(pos);
+        var te = world.getBlockEntity(pos);
         if (te instanceof MultiblockShellBlockEntity shell && shell.canRedirect()) {
             return shell.getOriginPos();
         }
         return pos;
     }
     *///?}
-    //~}
     //~}
     //~}
 
@@ -171,7 +167,7 @@ public class ItemCirculationConfigurator extends BaseItem {
             return EnumActionResult.PASS;
         }
         if (world.isRemote) {
-            return PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(world), pos)
+            return API.getNodeAt(world, pos) != null
                 ? EnumActionResult.SUCCESS
                 : EnumActionResult.PASS;
         }
@@ -191,7 +187,7 @@ public class ItemCirculationConfigurator extends BaseItem {
             return InteractionResult.PASS;
         }
         if (context.getLevel().isClientSide) {
-            return PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(context.getLevel()), context.getClickedPos())
+            return API.getNodeAt(context.getLevel(), context.getClickedPos()) != null
                 ? InteractionResult.SUCCESS
                 : InteractionResult.PASS;
         }
@@ -209,10 +205,7 @@ public class ItemCirculationConfigurator extends BaseItem {
     @Override
     public @NotNull EnumActionResult onItemUse(@NotNull EntityPlayer player, @NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ) {
         if (worldIn.isRemote) {
-            if (worldIn.getTileEntity(pos) instanceof TileEntityMultiblockShell) {
-                return EnumActionResult.SUCCESS;
-            }
-            return !player.isSneaking() && PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(worldIn), pos)
+            return !player.isSneaking() && API.getNodeAt(worldIn, pos) != null
                 ? EnumActionResult.SUCCESS
                 : EnumActionResult.PASS;
         }
@@ -236,11 +229,8 @@ public class ItemCirculationConfigurator extends BaseItem {
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
         Player player = context.getPlayer();
         if (context.getLevel().isClientSide) {
-            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof MultiblockShellBlockEntity) {
-                return InteractionResult.SUCCESS;
-            }
             return player != null && !player.isShiftKeyDown()
-                && PocketNodeRenderingHandler.INSTANCE.hasNode(getDimensionId(context.getLevel()), context.getClickedPos())
+                && API.getNodeAt(context.getLevel(), context.getClickedPos()) != null
                 ? InteractionResult.SUCCESS
                 : InteractionResult.PASS;
         }
@@ -298,7 +288,7 @@ public class ItemCirculationConfigurator extends BaseItem {
 
     //? if <1.20 {
     private EnumActionResult executeInspection(EntityPlayerMP player, World world, BlockPos pos, int subMode) {
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
+        INode node = API.getNodeAt(world, pos);
         if (node == null) {
             return EnumActionResult.PASS;
         }
@@ -322,7 +312,7 @@ public class ItemCirculationConfigurator extends BaseItem {
     }
     //?} else {
     /*private InteractionResult executeInspection(ServerPlayer player, Level world, BlockPos pos, int subMode) {
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
+        INode node = API.getNodeAt(world, pos);
         if (node == null) {
             return InteractionResult.PASS;
         }
@@ -353,11 +343,9 @@ public class ItemCirculationConfigurator extends BaseItem {
             return EnumActionResult.FAIL;
         }
 
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
-        //~ if >=1.20 ' TileEntity ' -> ' BlockEntity ' {
+        INode node = API.getNodeAt(world, pos);
         //~ if >=1.20 'world.getTileEntity(pos)' -> 'world.getBlockEntity(pos)' {
-        TileEntity blockEntity = world.getTileEntity(pos);
-        //~}
+        var blockEntity = world.getTileEntity(pos);
         //~}
         if (node != null) {
             sendFeedbackMessage(player, "item.circulation_networks.circulation_configurator.config.node_blocked", null);
@@ -393,8 +381,8 @@ public class ItemCirculationConfigurator extends BaseItem {
             return InteractionResult.FAIL;
         }
 
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(world, pos);
-        BlockEntity blockEntity = world.getBlockEntity(pos);
+        INode node = API.getNodeAt(world, pos);
+        var blockEntity = world.getBlockEntity(pos);
         if (node != null) {
             sendFeedbackMessage(player, "item.circulation_networks.circulation_configurator.config.node_blocked", null);
             return InteractionResult.FAIL;

@@ -3,6 +3,8 @@ package com.circulation.circulation_networks;
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeItemStackRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
 import com.circulation.circulation_networks.client.render.RotatingBlockModelCache;
@@ -25,6 +27,7 @@ import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
+import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
 import com.circulation.circulation_networks.utils.CI18n;
 import net.minecraft.client.Minecraft;
@@ -81,7 +84,11 @@ final class CirculationFlowNetworksClient {
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterMenuScreens);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterClientExtensions);
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
-        modEventBus.addListener((ModelEvent.BakingCompleted event) -> RotatingBlockModelCache.clear());
+        modEventBus.addListener(PocketNodeModelCache::onRegisterAdditionalModels);
+        modEventBus.addListener((ModelEvent.BakingCompleted event) -> {
+            RotatingBlockModelCache.clear();
+            PocketNodeModelCache.clear();
+        });
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.CHARGING_NODE, ChargingNodeRenderer::new);
@@ -178,6 +185,17 @@ final class CirculationFlowNetworksClient {
             CFNBlocks.blockChargingNode.asItem(),
             CFNBlocks.blockPortNode.asItem(),
             CFNBlocks.blockNodePedestal.asItem()
+        );
+        IClientItemExtensions pocketNodeRenderer = new IClientItemExtensions() {
+            @Override
+            public @org.jetbrains.annotations.NotNull net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return PocketNodeItemStackRenderer.getInstance();
+            }
+        };
+        event.registerItem(pocketNodeRenderer,
+            CFNItems.pocketPortNode,
+            CFNItems.pocketChargingNode,
+            CFNItems.pocketRelayNode
         );
         event.registerBlock(MultiblockShellBlock.PARTICLE_CLIENT_EXTENSIONS, CFNBlocks.blockMultiblockShell);
     }

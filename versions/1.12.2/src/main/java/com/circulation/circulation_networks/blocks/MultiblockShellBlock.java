@@ -7,6 +7,8 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.particle.ParticleManager;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -19,6 +21,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.fml.relauncher.Side;
@@ -50,10 +53,19 @@ public class MultiblockShellBlock extends Block {
         return null;
     }
 
-    @Nullable
-    private static IBlockState getOriginState(IBlockAccess world, BlockPos shellPos) {
+    @NotNull
+    public static BlockPos resolveRedirectedPos(IBlockAccess world, BlockPos pos) {
+        BlockPos originPos = getOriginPos(world, pos);
+        return originPos != null ? originPos : pos;
+    }
+
+    public static boolean canBeReplacedAt(World world, BlockPos shellPos) {
         BlockPos origin = getOriginPos(world, shellPos);
-        return origin != null ? world.getBlockState(origin) : null;
+        if (origin == null) {
+            return false;
+        }
+        IBlockState originState = world.getBlockState(origin);
+        return world.isAirBlock(origin) || originState.getBlock() instanceof MultiblockShellBlock;
     }
 
     @Override
@@ -86,6 +98,16 @@ public class MultiblockShellBlock extends Block {
     @SideOnly(Side.CLIENT)
     @Override
     public boolean addDestroyEffects(World world, BlockPos pos, ParticleManager manager) {
+        return true;
+    }
+
+    @Override
+    public boolean addLandingEffects(IBlockState state, WorldServer world, BlockPos pos, IBlockState blockState, EntityLivingBase entity, int numberOfParticles) {
+        return true;
+    }
+
+    @Override
+    public boolean addRunningEffects(IBlockState state, World world, BlockPos pos, Entity entity) {
         return true;
     }
 

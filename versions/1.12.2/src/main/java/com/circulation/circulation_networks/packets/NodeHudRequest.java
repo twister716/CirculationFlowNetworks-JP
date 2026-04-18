@@ -1,9 +1,9 @@
 package com.circulation.circulation_networks.packets;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
-import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.circulation.circulation_networks.utils.Packet;
@@ -47,7 +47,7 @@ public final class NodeHudRequest implements Packet<NodeHudRequest> {
         BlockPos pos = BlockPos.fromLong(message.posLong);
         if (sender.getDistanceSq(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64 * 64) return null;
 
-        INode node = NetworkManager.INSTANCE.getNodeFromPos(sender.world, pos);
+        INode node = API.getNodeAt(sender.world, pos);
         if (node == null) return null;
 
         String displayName = resolveDisplayName(sender, pos, node);

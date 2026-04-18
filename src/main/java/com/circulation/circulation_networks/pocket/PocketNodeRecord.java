@@ -22,7 +22,7 @@ import com.github.bsideup.jabel.Desugar;
 //?}
 //~ if >=1.20 'EnumFacing' -> 'Direction' {
 public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable EnumFacing attachmentFace,
-                               @Nullable String customName) {
+                               @Nullable String customName, @Nullable String hostBlockId) {
 
     public int getDimensionId() {
         return dimensionId;
@@ -42,6 +42,10 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
 
     public @Nullable String getCustomName() {
         return customName;
+    }
+
+    public @Nullable String getHostBlockId() {
+        return hostBlockId;
     }
 
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
@@ -65,7 +69,8 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
             BlockPos.fromLong(tag.getLong("pos")),
             nodeType,
             deserializeFace(tag.hasKey("face") ? tag.getString("face") : null),
-            customName == null || customName.isEmpty() ? null : customName
+            customName == null || customName.isEmpty() ? null : customName,
+            tag.hasKey("hostBlockId") ? tag.getString("hostBlockId") : null
         );
     }
     //~}
@@ -116,6 +121,10 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
     }
     //~}
 
+    public PocketNodeRecord withHostBlockId(@Nullable String newHostBlockId) {
+        return new PocketNodeRecord(dimensionId, pos, nodeType, attachmentFace, customName, newHostBlockId);
+    }
+
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     //~ if >=1.20 'BlockPos.fromLong(' -> 'BlockPos.of(' {
     //~ if >=1.20 '.set' -> '.put' {
@@ -131,6 +140,9 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         }
         if (customName != null && !customName.isEmpty()) {
             tag.setString("customName", customName);
+        }
+        if (hostBlockId != null && !hostBlockId.isEmpty()) {
+            tag.setString("hostBlockId", hostBlockId);
         }
         return tag;
     }

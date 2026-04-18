@@ -25,7 +25,6 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
 *///?}
-
 import org.jetbrains.annotations.NotNull;
 
 public class ItemPocketNode extends BaseItem {
@@ -48,9 +47,7 @@ public class ItemPocketNode extends BaseItem {
     private static void sendFeedback(EntityPlayerMP player, String key) {
         player.sendMessage(new TextComponentTranslation(key));
     }
-    //?}
 
-    //? if <1.20 {
     @Override
     public @NotNull EnumActionResult onItemUse(@NotNull EntityPlayer player, @NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ) {
         if (!(player instanceof EntityPlayerMP serverPlayer)) {

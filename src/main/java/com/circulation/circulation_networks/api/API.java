@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.api;
 
+import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.api.node.IEnergySupplyNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeType;
@@ -9,7 +10,9 @@ import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.NodeTypes;
+import com.circulation.circulation_networks.registry.PocketNodeItems;
 //~ mc_imports
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -51,8 +54,31 @@ public final class API {
      */
     @Nullable
     public static INode getNodeAt(@NotNull World world, @NotNull BlockPos pos) {
+        if (isClientWorld(world)) {
+            INode clientNode = getClientNodeAt(world, pos);
+            if (clientNode != null) {
+                return clientNode;
+            }
+        }
         return NetworkManager.INSTANCE.getNodeFromPos(world, pos);
     }
+
+    //~ if >=1.20 '.isRemote' -> '.isClientSide' {
+    private static boolean isClientWorld(@NotNull World world) {
+        return world.isRemote;
+    }
+
+    @Nullable
+    private static INode getClientNodeAt(@NotNull World world, @NotNull BlockPos pos) {
+        //~ if >=1.20 'world.getTileEntity(pos)' -> 'world.getBlockEntity(pos)' {
+        var blockEntity = world.getTileEntity(pos);
+        //~}
+        if (blockEntity instanceof INodeBlockEntity nodeBlockEntity) {
+            return nodeBlockEntity.getNode();
+        }
+        return PocketNodeRenderingHandler.INSTANCE.getNode(world, pos);
+    }
+    //~}
 
     /**
      * 返回当前所有处于活跃状态的节点。
@@ -307,10 +333,12 @@ public final class API {
 
     /**
      * 注册自定义的能量管理器。
-     * 只允许在 postInit 阶段前进行注册。
+     * 必须在 {@link RegistryEnergyHandler#lock()} 前完成注册。
+     * 1.12.2 中对应 {@code postInit} 前，1.20.1 / 1.21.1 中对应 {@code FMLLoadCompleteEvent} 前。
      * <p>
      * Registers a custom energy handler manager.
-     * Must be called before the postInit phase.
+     * Registration must complete before {@link RegistryEnergyHandler#lock()}.
+     * That means before {@code postInit} on 1.12.2, and before {@code FMLLoadCompleteEvent} on 1.20.1 / 1.21.1.
      *
      * @param manager 要注册的能量管理器 / the manager to register
      */
@@ -329,6 +357,20 @@ public final class API {
      */
     public static void registerNodeType(@NotNull NodeType<? extends INode> nodeType, @NotNull NodeDeserializer function, @NotNull NodeCreator creator) {
         NodeTypes.register(nodeType, function, creator);
+    }
+
+    /**
+     * 注册自定义口袋节点物品映射。
+     * 该映射用于口袋节点掉落、HUD 展示和客户端渲染堆栈回退。
+     * <p>
+     * Registers a custom pocket-node item mapping.
+     * This mapping is used for pocket-node drops, HUD display, and client render-stack fallback.
+     *
+     * @param nodeType 节点类型 / the node type
+     * @param item     对应的口袋节点物品 / the pocket-node item for that type
+     */
+    public static void registerPocketNodeItem(@NotNull NodeType<? extends INode> nodeType, @NotNull Item item) {
+        PocketNodeItems.register(nodeType, item);
     }
     //~}
     //~}

@@ -1,11 +1,11 @@
 package com.circulation.circulation_networks.registry;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.items.BuiltinPocketNodeItem;
 import com.circulation.circulation_networks.items.ItemCirculationConfigurator;
 import com.circulation.circulation_networks.items.ItemDimensionalChargingPlugin;
 import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
 import com.circulation.circulation_networks.items.ItemMaterial;
-import com.circulation.circulation_networks.items.ItemPocketNode;
 import com.circulation.circulation_networks.items.ItemWideAreaChargingPlugin;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -25,9 +25,12 @@ public final class RegistryItems {
     private static void onRegisterItems(RegisterEvent event) {
         event.register(ForgeRegistries.Keys.ITEMS, helper -> {
             CFNItems.circulationConfigurator = register(helper, "circulation_configurator", new ItemCirculationConfigurator(new Item.Properties()));
-            CFNItems.pocketPortNode = register(helper, "pocket_port_node", new ItemPocketNode(NodeTypes.PORT_NODE, new Item.Properties()));
-            CFNItems.pocketChargingNode = register(helper, "pocket_charging_node", new ItemPocketNode(NodeTypes.CHARGING_NODE, new Item.Properties()));
-            CFNItems.pocketRelayNode = register(helper, "pocket_relay_node", new ItemPocketNode(NodeTypes.RELAY_NODE, new Item.Properties()));
+            CFNItems.pocketPortNode = register(helper, "pocket_port_node", new BuiltinPocketNodeItem(NodeTypes.PORT_NODE, new Item.Properties()));
+            CFNItems.pocketChargingNode = register(helper, "pocket_charging_node", new BuiltinPocketNodeItem(NodeTypes.CHARGING_NODE, new Item.Properties()));
+            CFNItems.pocketRelayNode = register(helper, "pocket_relay_node", new BuiltinPocketNodeItem(NodeTypes.RELAY_NODE, new Item.Properties()));
+            PocketNodeItems.register(NodeTypes.PORT_NODE, CFNItems.pocketPortNode);
+            PocketNodeItems.register(NodeTypes.CHARGING_NODE, CFNItems.pocketChargingNode);
+            PocketNodeItems.register(NodeTypes.RELAY_NODE, CFNItems.pocketRelayNode);
             CFNItems.hubChannelPlugin = register(helper, "hub_channel_plugin", new ItemHubChannelPlugin(new Item.Properties()));
             CFNItems.wideAreaChargingPlugin = register(helper, "wide_area_charging_plugin", new ItemWideAreaChargingPlugin(new Item.Properties()));
             CFNItems.dimensionalChargingPlugin = register(helper, "dimensional_charging_plugin", new ItemDimensionalChargingPlugin(new Item.Properties()));

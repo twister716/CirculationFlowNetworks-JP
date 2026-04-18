@@ -54,6 +54,14 @@ public final class BlockHub extends BaseNodeBlock {
         return positions.get(origin.asLong());
     }
 
+    private static boolean canReplaceOccupiedPosition(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockPlaceContext context) {
+        BlockState occupiedState = level.getBlockState(pos);
+        if (occupiedState.getBlock() instanceof MultiblockShellBlock) {
+            return MultiblockShellBlock.canBeReplacedAt(level, pos);
+        }
+        return occupiedState.canBeReplaced(context);
+    }
+
     @Override
     public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
@@ -83,10 +91,16 @@ public final class BlockHub extends BaseNodeBlock {
     public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         BlockPos origin = context.getClickedPos();
         Level level = context.getLevel();
+        if (origin.getY() < level.getMinBuildHeight() || origin.getY() >= level.getMaxBuildHeight()) {
+            return null;
+        }
+        if (!canReplaceOccupiedPosition(level, origin, context)) {
+            return null;
+        }
         for (BlockPos shellPos : shellPositions(origin)) {
             if (shellPos.getY() < level.getMinBuildHeight() || shellPos.getY() >= level.getMaxBuildHeight())
                 return null;
-            if (!level.getBlockState(shellPos).canBeReplaced(context)) return null;
+            if (!canReplaceOccupiedPosition(level, shellPos, context)) return null;
         }
         return super.getStateForPlacement(context);
     }
@@ -100,6 +114,9 @@ public final class BlockHub extends BaseNodeBlock {
     public void setPlacedBy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state,
                             @Nullable LivingEntity placer, @NotNull ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.getBlockState(pos).is(this)) {
+            return;
+        }
         if (placer instanceof Player player && !level.isClientSide()) {
             var be = level.getBlockEntity(pos);
             if (be instanceof HubBlockEntity hub) {

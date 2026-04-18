@@ -3,6 +3,9 @@ package com.circulation.circulation_networks.tiles;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -29,6 +32,10 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
     public void setOriginPos(@NotNull BlockPos pos) {
         this.originPos = pos;
         setChanged();
+        if (level != null && !level.isClientSide) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, 3);
+        }
     }
 
     public boolean canRedirect() {
@@ -62,7 +69,23 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
                 tag.getInt("OriginY"),
                 tag.getInt("OriginZ")
             );
+        } else {
+            originPos = null;
         }
+    }
+
+    @Override
+    @Nullable
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    @NotNull
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag);
+        return tag;
     }
 
     // Nameable

@@ -5,6 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,6 +43,10 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
     public void setOriginPos(@NotNull BlockPos pos) {
         this.originPos = pos;
         setChanged();
+        if (level != null && !level.isClientSide) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, 3);
+        }
     }
 
     public boolean canRedirect() {
@@ -75,7 +82,23 @@ public class MultiblockShellBlockEntity extends BlockEntity implements Nameable 
                 tag.getInt("OriginY"),
                 tag.getInt("OriginZ")
             );
+        } else {
+            originPos = null;
         }
+    }
+
+    @Override
+    @Nullable
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    @NotNull
+    public CompoundTag getUpdateTag(HolderLookup.@NotNull Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, registries);
+        return tag;
     }
 
     @Override
