@@ -11,7 +11,6 @@ import com.circulation.circulation_networks.blocks.nodes.BlockPortNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockRelayNode;
 import com.circulation.circulation_networks.container.ContainerCirculationShielder;
 import com.circulation.circulation_networks.container.ContainerHub;
-import com.circulation.circulation_networks.items.BaseItemTooltipModel;
 import com.circulation.circulation_networks.tiles.BlockEntityCirculationShielder;
 import com.circulation.circulation_networks.tiles.BlockEntityMultiblockShell;
 import com.circulation.circulation_networks.tiles.BlockEntityNodePedestal;
@@ -90,7 +89,7 @@ public final class RegistryBlocks {
                     hub.syncNodeAfterNetworkInit();
                     return new ContainerHub(CFNMenuTypes.HUB_MENU, containerId, inv.player, hub.getNode());
                 }
-                return null;
+                throw new IllegalArgumentException(String.valueOf(be));
             }));
             CFNMenuTypes.CIRCULATION_SHIELDER_MENU = registerMenuType(helper, "circulation_shielder", IMenuTypeExtension.create((containerId, inv, buf) -> {
                 BlockPos pos = buf.readBlockPos();
@@ -98,7 +97,7 @@ public final class RegistryBlocks {
                 if (be instanceof BlockEntityCirculationShielder shielder) {
                     return new ContainerCirculationShielder(CFNMenuTypes.CIRCULATION_SHIELDER_MENU, containerId, inv.player, shielder);
                 }
-                return null;
+                throw new IllegalArgumentException(String.valueOf(be));
             }));
         });
     }
@@ -122,14 +121,8 @@ public final class RegistryBlocks {
     }
 
     private static Item.Properties withStaticTooltip(Item.Properties properties, String blockName, boolean moveFirstTooltipToEnd) {
-        TooltipTranslationsComponent component = TooltipTranslationsComponent.fromTranslationKey(
-            "block." + CirculationFlowNetworks.MOD_ID + "." + blockName,
-            moveFirstTooltipToEnd ? BaseItemTooltipModel::moveFirstTooltipKeyToEnd : java.util.function.UnaryOperator.identity()
-        );
-        if (component == null) {
-            return properties;
-        }
-        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS, component);
+        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS,
+            new TooltipTranslationsComponent("block." + CirculationFlowNetworks.MOD_ID + "." + blockName, moveFirstTooltipToEnd));
     }
 
     private static <T extends BlockEntity> BlockEntityType<T> registerBlockEntityType(

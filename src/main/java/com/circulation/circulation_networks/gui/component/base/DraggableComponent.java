@@ -54,15 +54,15 @@ public class DraggableComponent extends Component {
         int newY = mouseY - dragOffsetY - parentAbsY;
 
         if (dragBounds != null) {
-            newX = Math.max(dragBounds[0], Math.min(dragBounds[2], newX));
-            newY = Math.max(dragBounds[1], Math.min(dragBounds[3], newY));
+            newX = Math.clamp(newX, dragBounds[0], dragBounds[2]);
+            newY = Math.clamp(newY, dragBounds[1], dragBounds[3]);
         }
 
         if (getParent() != null) {
             int maxX = getParent().width - this.width;
             int maxY = getParent().height - this.height;
-            newX = Math.max(0, Math.min(maxX, newX));
-            newY = Math.max(0, Math.min(maxY, newY));
+            newX = Math.clamp(newX, 0, maxX);
+            newY = Math.clamp(newY, 0, maxY);
         }
 
         int deltaX = newX - x;

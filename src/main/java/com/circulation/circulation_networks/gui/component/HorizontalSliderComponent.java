@@ -41,7 +41,7 @@ public class HorizontalSliderComponent extends Component {
     }
 
     private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+        return Math.clamp(value, min, max);
     }
 
     public int getValue() {

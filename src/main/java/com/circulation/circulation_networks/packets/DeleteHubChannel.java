@@ -24,7 +24,7 @@ public final class DeleteHubChannel implements Packet<DeleteHubChannel> {
     }
 
     @Override
-    public DeleteHubChannel decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull DeleteHubChannel decode(@NonNull RegistryFriendlyByteBuf buf) {
         return new DeleteHubChannel();
     }
 

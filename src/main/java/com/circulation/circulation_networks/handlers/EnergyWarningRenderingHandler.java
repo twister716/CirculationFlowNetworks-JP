@@ -4,13 +4,12 @@ import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
 import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
 import com.circulation.circulation_networks.gui.component.base.AtlasRenderHelper;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
-import com.circulation.circulation_networks.utils.DimensionHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -25,7 +24,7 @@ public final class EnergyWarningRenderingHandler {
     private static final float ICON_SIZE = 0.375F;
     private static final double ICON_HEIGHT = 1.25D;
     private static final String WARNING_SPRITE = "warning";
-    private final Int2ObjectMap<Long2LongMap> warnings = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2LongMap> warnings = new Object2ObjectOpenHashMap<>();
     private long clientTick;
 
     private EnergyWarningRenderingHandler() {
@@ -38,13 +37,14 @@ public final class EnergyWarningRenderingHandler {
     }
 
     private static double distanceSqToPlayer(Minecraft mc, BlockPos pos) {
+        assert mc.player != null;
         double dx = mc.player.getX() - (pos.getX() + 0.5D);
         double dy = mc.player.getY() - (pos.getY() + ICON_HEIGHT);
         double dz = mc.player.getZ() - (pos.getZ() + 0.5D);
         return dx * dx + dy * dy + dz * dz;
     }
 
-    public void refreshWarnings(int dimId, LongCollection positions) {
+    public void refreshWarnings(String dimId, LongCollection positions) {
         if (positions == null || positions.isEmpty()) {
             return;
         }
@@ -76,7 +76,7 @@ public final class EnergyWarningRenderingHandler {
         if (mc.level == null || mc.player == null) {
             return;
         }
-        Long2LongMap dimWarnings = warnings.get(DimensionHelper.getDimensionHash(mc.level));
+        Long2LongMap dimWarnings = warnings.get(com.circulation.circulation_networks.utils.WorldResolveCompat.getDimensionId(mc.level));
         if (dimWarnings == null || dimWarnings.isEmpty()) {
             return;
         }
@@ -112,7 +112,7 @@ public final class EnergyWarningRenderingHandler {
     }
 
     private void cleanupExpired() {
-        for (var dimIterator = warnings.int2ObjectEntrySet().iterator(); dimIterator.hasNext(); ) {
+        for (var dimIterator = warnings.object2ObjectEntrySet().iterator(); dimIterator.hasNext(); ) {
             var dimEntry = dimIterator.next();
             Long2LongMap dimWarnings = dimEntry.getValue();
             dimWarnings.long2LongEntrySet().removeIf(warningEntry -> clientTick - warningEntry.getLongValue() > WARNING_TTL_TICKS);

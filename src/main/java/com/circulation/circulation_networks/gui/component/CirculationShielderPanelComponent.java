@@ -102,7 +102,7 @@ public class CirculationShielderPanelComponent extends Component implements Hori
         if (maxScope < 0) {
             return 0;
         }
-        return Math.max(0, Math.min(maxScope, value));
+        return Math.clamp(value, 0, maxScope);
     }
 
     private static String trimToWidth(String text, int width) {

@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.gui.component.base;
 
+import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
@@ -32,20 +33,6 @@ public final class AtlasRenderHelper {
         if (batchDepth <= 0) return;
         if (--batchDepth > 0) return;
         flushCurrentBatch();
-    }
-
-    public static void flushBatch(ComponentAtlas atlas) {
-        if (batchDepth <= 0) return;
-        int saved = batchDepth;
-        batchDepth = 1;
-        endBatch();
-        batchDepth = 0;
-        beginBatch(atlas);
-        batchDepth = saved;
-    }
-
-    public static boolean isBatching() {
-        return batchDepth > 0;
     }
 
     public static void drawRegion(ComponentAtlas atlas, AtlasRegion region, int screenX, int screenY, int renderW, int renderH) {
@@ -128,7 +115,11 @@ public final class AtlasRenderHelper {
     }
 
     private static void drawMesh(RenderType renderType, MeshData mesh) {
-        renderType.draw(mesh);
+        try {
+            renderType.draw(mesh);
+        } catch (Exception e) {
+            CirculationFlowNetworks.LOGGER.error("Failed to draw atlas mesh", e);
+        }
     }
 
     private static void appendQuad(float u0, float v0, float u1, float v1,

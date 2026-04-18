@@ -1,4 +1,10 @@
 ﻿{
+  "block.circulation_networks.charging_node": "环流充能节点",
+  "block.circulation_networks.circulation_shielder": "环流屏蔽仪",
+  "block.circulation_networks.hub": "环流中枢",
+  "block.circulation_networks.node_pedestal": "节点基座",
+  "block.circulation_networks.port_node": "环流端口节点",
+  "block.circulation_networks.relay_node": "环流中继节点",
   "item.circulation_networks.charging_node": "环流充能节点",
   "item.circulation_networks.circulation_shielder": "环流屏蔽仪",
   "item.circulation_networks.circulation_shielder.tooltip.0": "§7阻止范围内的方块通过网络交互能量",

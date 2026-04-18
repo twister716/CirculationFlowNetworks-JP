@@ -29,7 +29,7 @@ public final class HubPluginSyncRequest implements Packet<HubPluginSyncRequest> 
     }
 
     @Override
-    public HubPluginSyncRequest decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull HubPluginSyncRequest decode(@NonNull RegistryFriendlyByteBuf buf) {
         HubPluginSyncRequest msg = new HubPluginSyncRequest();
         msg.posLong = buf.readLong();
         return msg;

@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
+import com.circulation.circulation_networks.registry.CFNDataComponents;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;
@@ -22,6 +23,7 @@ public class BaseBlockItem extends BlockItem {
     @SuppressWarnings("deprecation")
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> builder, TooltipFlag flag) {
+        stack.addToTooltip(CFNDataComponents.TOOLTIP_TRANSLATIONS, context, display, builder, flag);
         if (getBlock() instanceof BaseBlock baseBlock) {
             for (var lc : baseBlock.buildTooltips(stack)) {
                 builder.accept(Component.literal(lc.get()));

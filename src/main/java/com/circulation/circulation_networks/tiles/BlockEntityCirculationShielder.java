@@ -7,6 +7,7 @@ import com.circulation.circulation_networks.handlers.CirculationShielderRenderin
 import com.circulation.circulation_networks.manager.CirculationShielderManager;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
@@ -88,11 +89,6 @@ public class BlockEntityCirculationShielder extends BaseCFNBlockEntity implement
         }
     }
 
-    public void toggleRedstoneMode() {
-        this.redstoneMode = !this.redstoneMode;
-        setChanged();
-    }
-
     public boolean getRedstoneMode() {
         return redstoneMode;
     }
@@ -116,7 +112,7 @@ public class BlockEntityCirculationShielder extends BaseCFNBlockEntity implement
             if (level.isClientSide()) {
                 clientRegister();
             } else {
-                CirculationShielderManager.INSTANCE.register(this, level.dimension().identifier().hashCode());
+                CirculationShielderManager.INSTANCE.register(this, WorldResolveCompat.getDimensionId(level));
             }
         }
     }
@@ -139,7 +135,7 @@ public class BlockEntityCirculationShielder extends BaseCFNBlockEntity implement
             if (level.isClientSide()) {
                 clientUnregister();
             } else {
-                CirculationShielderManager.INSTANCE.unregister(this, level.dimension().identifier().hashCode());
+                CirculationShielderManager.INSTANCE.unregister(this, WorldResolveCompat.getDimensionId(level));
             }
         }
         super.setRemoved();

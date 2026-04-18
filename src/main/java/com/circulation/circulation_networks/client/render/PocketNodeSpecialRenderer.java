@@ -11,7 +11,7 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
 
@@ -44,7 +44,6 @@ public final class PocketNodeSpecialRenderer implements NoDataSpecialModelRender
     public void submit(@NotNull PoseStack poseStack, @NotNull SubmitNodeCollector submitNodeCollector, int lightCoords, int overlayCoords, boolean hasFoil, int outlineColor) {
         try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession(submitNodeCollector)) {
             RotatingModelVBORenderer.renderLitYAxis(poseStack, lightCoords, kind.modelLocation, 0.0F, CENTER, CENTER, CENTER);
-            RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, kind.modelLocation, 0.0F, CENTER, CENTER, CENTER);
         }
     }
 
@@ -96,7 +95,7 @@ public final class PocketNodeSpecialRenderer implements NoDataSpecialModelRender
         }
 
         @Override
-        public @Nullable SpecialModelRenderer<Void> bake(@NotNull SpecialModelRenderer.BakingContext context) {
+        public @NonNull SpecialModelRenderer<Void> bake(@NotNull SpecialModelRenderer.BakingContext context) {
             return new PocketNodeSpecialRenderer(kind);
         }
     }

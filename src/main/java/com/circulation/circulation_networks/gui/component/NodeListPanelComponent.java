@@ -14,6 +14,7 @@ import com.circulation.circulation_networks.packets.UpdateNodeCustomName;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -467,7 +468,7 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            NodeHighlightRenderingHandler.INSTANCE.highlight(pos, mc.player.level().dimension().identifier().hashCode());
+            NodeHighlightRenderingHandler.INSTANCE.highlight(pos, WorldResolveCompat.getDimensionId(mc.player.level()));
             mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                 "§e[CFN] §r" + I18n.get("message.circulation_networks.node_location",
                     entry.x(), entry.y(), entry.z())

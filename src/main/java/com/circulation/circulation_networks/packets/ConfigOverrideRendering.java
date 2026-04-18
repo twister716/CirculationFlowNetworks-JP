@@ -32,7 +32,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
     private long[] positions = EMPTY_LONGS;
     private int[] types = EMPTY_INTS;
 
-    public ConfigOverrideRendering(int dim) {
+    public ConfigOverrideRendering(String dim) {
         this.mode = SET;
         var manager = EnergyTypeOverrideManager.get();
         if (manager != null) {
@@ -65,7 +65,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
     }
 
     public static void sendFullSync(ServerPlayer player) {
-        CirculationFlowNetworks.sendToPlayer(new ConfigOverrideRendering(DimensionHelper.getDimensionHash(player.level())), player);
+        CirculationFlowNetworks.sendToPlayer(new ConfigOverrideRendering(DimensionHelper.getDimensionId(player.level())), player);
     }
 
     public static void sendAdd(ServerPlayer player, long pos, IEnergyHandler.EnergyType type) {
@@ -80,7 +80,7 @@ public final class ConfigOverrideRendering implements Packet<ConfigOverrideRende
         CirculationFlowNetworks.sendToPlayer(new ConfigOverrideRendering(), player);
     }
 
-    public ConfigOverrideRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull ConfigOverrideRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
         ConfigOverrideRendering message = new ConfigOverrideRendering();
         message.mode = buf.readByte();
         switch (message.mode) {

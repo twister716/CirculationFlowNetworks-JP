@@ -17,31 +17,36 @@ import net.neoforged.neoforge.client.event.InputEvent;
 public class ItemToolHandler {
     public static final ItemToolHandler INSTANCE = new ItemToolHandler();
 
-    private final Minecraft mc = Minecraft.getInstance();
-
     @SubscribeEvent
     public void onMouseEvent(InputEvent.MouseScrollingEvent event) {
-        if (mc.player != null && mc.player.isShiftKeyDown()) {
-            ItemStack stack = mc.player.getMainHandItem();
-            int delta = CirculationConfiguratorModeModel.normalizeScrollDelta((int) event.getScrollDeltaY());
-            if (delta != 0 && stack.getItem() == CFNItems.circulationConfigurator) {
-                int mode = CirculationConfiguratorState.getSubMode(stack) + delta;
-                CirculationConfiguratorState.setSubMode(stack, mode);
-
-                CirculationFlowNetworks.sendToServer(new UpdateItemModeMessage(mode));
-
-                CirculationConfiguratorSelection selection = CirculationConfiguratorSelection.fromStack(stack);
-                String modeName = CI18n.format(selection.modeLangKey());
-                String subModeName = CI18n.format(selection.subModeLangKey());
-
-
-                Component message = Component.literal(
-                    ChatFormatting.GOLD + modeName + ChatFormatting.GRAY + "[" + ChatFormatting.BLUE + subModeName + ChatFormatting.GRAY + "]"
-                );
-                mc.player.sendOverlayMessage(message);
-
-                event.setCanceled(true);
-            }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || mc.screen != null || !mc.player.isShiftKeyDown()) {
+            return;
         }
+
+        ItemStack stack = mc.player.getMainHandItem();
+        if (stack.getItem() != CFNItems.circulationConfigurator) {
+            return;
+        }
+
+        int delta = CirculationConfiguratorModeModel.normalizeScrollDelta((int) Math.signum(event.getScrollDeltaY()));
+        if (delta == 0) {
+            return;
+        }
+
+        int mode = CirculationConfiguratorState.getSubMode(stack) + delta;
+        CirculationConfiguratorState.setSubMode(stack, mode);
+
+        CirculationFlowNetworks.sendToServer(new UpdateItemModeMessage(mode));
+
+        CirculationConfiguratorSelection selection = CirculationConfiguratorSelection.fromStack(stack);
+        String modeName = CI18n.format(selection.modeLangKey());
+        String subModeName = CI18n.format(selection.subModeLangKey());
+
+        Component message = Component.literal(
+            ChatFormatting.GOLD + modeName + ChatFormatting.GRAY + "[" + ChatFormatting.BLUE + subModeName + ChatFormatting.GRAY + "]"
+        );
+        mc.player.sendOverlayMessage(message);
+        event.setCanceled(true);
     }
 }

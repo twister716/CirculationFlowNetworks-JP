@@ -19,23 +19,23 @@ public final class EnergyWarningRendering implements Packet<EnergyWarningRenderi
         Identifier.parse(CirculationFlowNetworks.MOD_ID + ":energy_warning_rendering")
     );
 
-    private int dim;
+    private String dim;
     private LongList positions;
-    private transient int parsedDim;
+    private transient String parsedDim;
     private transient LongList parsedPositions;
 
     public EnergyWarningRendering() {
     }
 
-    public EnergyWarningRendering(int dim, LongCollection positions) {
+    public EnergyWarningRendering(String dim, LongCollection positions) {
         this.dim = dim;
         this.positions = new LongArrayList(positions);
     }
 
     @Override
-    public EnergyWarningRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull EnergyWarningRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
         EnergyWarningRendering message = new EnergyWarningRendering();
-        message.parsedDim = buf.readInt();
+        message.parsedDim = buf.readUtf();
         int count = buf.readVarInt();
         message.parsedPositions = new LongArrayList(count);
         for (int i = 0; i < count; i++) {
@@ -46,7 +46,7 @@ public final class EnergyWarningRendering implements Packet<EnergyWarningRenderi
 
     @Override
     public void encode(@NonNull RegistryFriendlyByteBuf buf) {
-        buf.writeInt(dim);
+        buf.writeUtf(dim == null ? "" : dim);
         buf.writeVarInt(positions == null ? 0 : positions.size());
         if (positions != null) {
             for (long posLong : positions) {

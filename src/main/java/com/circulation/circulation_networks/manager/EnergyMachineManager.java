@@ -17,18 +17,14 @@ import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.utils.BlockPosCompat;
 import com.circulation.circulation_networks.utils.Functions;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -56,26 +52,26 @@ public final class EnergyMachineManager {
     private static final int WARNING_SEND_INTERVAL_TICKS = 20;
     private static final int WARNING_STALE_TICKS = 200;
     private static final double WARNING_RENDER_DISTANCE_SQ = 48.0D * 48.0D;
-    private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<INode, Set<BlockEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectOpenHashMap<BlockEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
-    private final Int2ObjectMap<LongSet> warningPositionsScratch = new Int2ObjectOpenHashMap<>();
+    private final Reference2ObjectOpenHashMap<BlockEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
+    private final Object2ObjectOpenHashMap<String, LongSet> warningPositionsScratch = new Object2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
     private final ReferenceSet<BlockEntity> cache = new ReferenceOpenHashSet<>();
-    private final Int2ObjectMap<Long2LongMap> lastWarningTicks = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, Long2LongMap> lastWarningTicks = new Object2ObjectOpenHashMap<>();
     private final LongOpenHashSet visibleWarningsScratch = new LongOpenHashSet();
     private long warningTickCounter;
     private long lastWarningCleanupTick;
     private long interactionEpoch;
 
     {
-        scopeNode.defaultReturnValue(Long2ObjectMaps.emptyMap());
-        nodeScope.defaultReturnValue(Object2ObjectMaps.emptyMap());
         gridMachineMap.defaultReturnValue(ReferenceSets.emptySet());
     }
 
@@ -223,6 +219,7 @@ public final class EnergyMachineManager {
         }
     }
 
+    @SuppressWarnings("unused")
     public Map<BlockEntity, ReferenceSet<INode>> getMachineGridMap() {
         return machineGridMap;
     }
@@ -255,6 +252,8 @@ public final class EnergyMachineManager {
         var overrideManager = EnergyTypeOverrideManager.get();
         activeTickGrids.clear();
         processedTickGrids.clear();
+        tickMachineHandlers.clear();
+        tickSharedHandlers.clear();
         clearWarningPositionsScratch();
         for (var entry : machineGridMap.entrySet()) {
             var te = entry.getKey();
@@ -262,7 +261,7 @@ public final class EnergyMachineManager {
             var pos = te.getBlockPos();
             if (!Functions.isChunkLoaded(world, pos)) continue;
             if (CirculationShielderManager.INSTANCE.isBlockedByShielder(pos, world)) continue;
-            int dimId = WorldResolveCompat.getDimensionId(world);
+            String dimId = WorldResolveCompat.getDimensionId(world);
             var override = overrideManager == null ? null : overrideManager.getOverride(dimId, pos);
             WarningTarget warningTarget = null;
             for (var node : entry.getValue()) {
@@ -270,11 +269,11 @@ public final class EnergyMachineManager {
                 if (grid == null) continue;
 
                 var hubMetadata = getHubMetadata(grid);
-                var handler = IEnergyHandler.release(te, hubMetadata);
+                var handler = getOrCreateTickMachineHandler(te, hubMetadata);
                 if (handler == null) {
                     continue;
                 }
-                var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid));
+                var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid), false);
 
                 var type = override != null ? override : participant.getType();
                 if (type == IEnergyHandler.EnergyType.INVALID) {
@@ -283,7 +282,7 @@ public final class EnergyMachineManager {
                 }
 
                 var gridData = getTickGridData(grid);
-                gridData.handlers(type).add(participant);
+                Objects.requireNonNull(gridData.handlers(type)).add(participant);
                 if (type == IEnergyHandler.EnergyType.RECEIVE) {
                     if (gridData.receiveTargets.get(participant) == null) {
                         if (warningTarget == null) {
@@ -354,6 +353,7 @@ public final class EnergyMachineManager {
         for (var grid : activeTickGrids) {
             tickGridData.get(grid).finishTick();
         }
+        recycleTickMachineHandlers();
         activeTickGrids.clear();
     }
 
@@ -365,7 +365,7 @@ public final class EnergyMachineManager {
 
         var dim = WorldResolveCompat.getDimensionId(blockEntity.getLevel());
         var map = scopeNode.get(dim);
-        if (map == scopeNode.defaultReturnValue()) {
+        if (map == null) {
             scopeNode.put(dim, map = new Long2ObjectOpenHashMap<>());
             map.defaultReturnValue(ReferenceSets.emptySet());
         }
@@ -446,10 +446,10 @@ public final class EnergyMachineManager {
             int maxChunkZ = (nodeZ + range) >> 4;
             LongSet chunksCovered = new LongOpenHashSet();
 
-            int dimId = WorldResolveCompat.getDimensionId(node.getWorld());
+            String dimId = WorldResolveCompat.getDimensionId(node.getWorld());
 
             Long2ObjectMap<ReferenceSet<IEnergySupplyNode>> map = scopeNode.get(dimId);
-            if (map == scopeNode.defaultReturnValue()) {
+            if (map == null) {
                 Long2ObjectMap<ReferenceSet<IEnergySupplyNode>> newMap = new Long2ObjectOpenHashMap<>();
                 newMap.defaultReturnValue(ReferenceSets.emptySet());
                 scopeNode.put(dimId, map = newMap);
@@ -488,7 +488,7 @@ public final class EnergyMachineManager {
             }
 
             Object2ObjectMap<IEnergySupplyNode, LongSet> nodeScopeMap = nodeScope.get(dimId);
-            if (nodeScopeMap == nodeScope.defaultReturnValue()) {
+            if (nodeScopeMap == null) {
                 nodeScope.put(dimId, nodeScopeMap = new Object2ObjectOpenHashMap<>());
             }
             nodeScopeMap.put(energySupplyNode, LongSets.unmodifiable(chunksCovered));
@@ -511,7 +511,7 @@ public final class EnergyMachineManager {
                 LongSet chunksCovered = new LongOpenHashSet();
 
                 Long2ObjectMap<ReferenceSet<IEnergySupplyNode>> map = scopeNode.get(dim);
-                if (map == scopeNode.defaultReturnValue()) {
+                if (map == null) {
                     Long2ObjectMap<ReferenceSet<IEnergySupplyNode>> newMap = new Long2ObjectOpenHashMap<>();
                     newMap.defaultReturnValue(ReferenceSets.emptySet());
                     scopeNode.put(dim, map = newMap);
@@ -531,7 +531,7 @@ public final class EnergyMachineManager {
                 }
 
                 Object2ObjectMap<IEnergySupplyNode, LongSet> nodeScopeMap = nodeScope.get(dim);
-                if (nodeScopeMap == nodeScope.defaultReturnValue()) {
+                if (nodeScopeMap == null) {
                     nodeScope.put(dim, nodeScopeMap = new Object2ObjectOpenHashMap<>());
                 }
                 nodeScopeMap.put(energySupplyNode, LongSets.unmodifiable(chunksCovered));
@@ -540,7 +540,7 @@ public final class EnergyMachineManager {
 
         for (var te : cache) {
             addMachine(te);
-            var node = API.getNodeAt(te.getLevel(), te.getBlockPos());
+            var node = API.getNodeAt(Objects.requireNonNull(te.getLevel()), te.getBlockPos());
             if (node instanceof IMachineNode im) {
                 addMachineNode(im, te);
             }
@@ -550,16 +550,16 @@ public final class EnergyMachineManager {
 
     public void removeNode(INode node) {
         if (node instanceof IEnergySupplyNode removedNode) {
-            int dimId = removedNode.getDimensionId();
+            String dimId = removedNode.getDimensionId();
 
             var nodeScopeMap = nodeScope.get(dimId);
-            if (nodeScopeMap == nodeScope.defaultReturnValue()) return;
+            if (nodeScopeMap == null) return;
 
             LongSet coveredChunks = nodeScopeMap.remove(removedNode);
             if (coveredChunks == null || coveredChunks.isEmpty()) return;
 
             var scopeMap = scopeNode.get(dimId);
-            if (scopeMap == scopeNode.defaultReturnValue()) return;
+            if (scopeMap == null) return;
 
             for (long coveredChunk : coveredChunks) {
                 var set = scopeMap.get(coveredChunk);
@@ -606,6 +606,7 @@ public final class EnergyMachineManager {
 
     public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(Level world, int chunkX, int chunkZ) {
         var map = scopeNode.get(WorldResolveCompat.getDimensionId(world));
+        if (map == null) return ReferenceSets.emptySet();
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
 
@@ -626,6 +627,29 @@ public final class EnergyMachineManager {
         return data;
     }
 
+    @Nullable
+    private IEnergyHandler getOrCreateTickMachineHandler(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
+        IEnergyHandler handler = tickMachineHandlers.get(blockEntity);
+        if (handler != null) {
+            return handler;
+        }
+        handler = IEnergyHandler.release(blockEntity, hubMetadata);
+        if (handler == null) {
+            return null;
+        }
+        tickMachineHandlers.put(blockEntity, handler);
+        tickSharedHandlers.add(handler);
+        return handler;
+    }
+
+    private void recycleTickMachineHandlers() {
+        for (var handler : tickSharedHandlers) {
+            handler.recycle();
+        }
+        tickSharedHandlers.clear();
+        tickMachineHandlers.clear();
+    }
+
     private void clearWarningPositionsScratch() {
         for (var positions : warningPositionsScratch.values()) {
             positions.clear();
@@ -634,7 +658,7 @@ public final class EnergyMachineManager {
 
     private void collectWarningPositions(Set<EnergyTransferParticipant> receiveHandlers,
                                          Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets,
-                                         Int2ObjectMap<LongSet> warningPositions) {
+                                         Object2ObjectOpenHashMap<String, LongSet> warningPositions) {
         if (receiveHandlers.isEmpty() || receiveTargets == null || receiveTargets.isEmpty()) {
             return;
         }
@@ -661,7 +685,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    private @NotNull Long2LongMap getWarningTicksForDimension(int dimId) {
+    private @NotNull Long2LongMap getWarningTicksForDimension(String dimId) {
         Long2LongMap dimWarnings = lastWarningTicks.get(dimId);
         if (dimWarnings == null) {
             dimWarnings = new Long2LongOpenHashMap();
@@ -682,12 +706,12 @@ public final class EnergyMachineManager {
         dimWarnings.put(target.posLong, warningTickCounter);
     }
 
-    private void sendWarningsToNearbyPlayers(MinecraftServer server, Int2ObjectMap<LongSet> warningPositions) {
+    private void sendWarningsToNearbyPlayers(MinecraftServer server, Object2ObjectOpenHashMap<String, LongSet> warningPositions) {
         if (warningPositions.isEmpty()) {
             return;
         }
         for (var player : WorldResolveCompat.getServerPlayers(server)) {
-            int dimId = WorldResolveCompat.getPlayerDimensionId(player);
+            String dimId = WorldResolveCompat.getPlayerDimensionId(player);
             LongSet dimWarnings = warningPositions.get(dimId);
             if (dimWarnings == null || dimWarnings.isEmpty()) {
                 continue;
@@ -710,7 +734,7 @@ public final class EnergyMachineManager {
             return;
         }
         lastWarningCleanupTick = warningTickCounter;
-        for (var dimIterator = lastWarningTicks.int2ObjectEntrySet().iterator(); dimIterator.hasNext(); ) {
+        for (var dimIterator = lastWarningTicks.object2ObjectEntrySet().iterator(); dimIterator.hasNext(); ) {
             var dimEntry = dimIterator.next();
             Long2LongMap dimWarnings = dimEntry.getValue();
             dimWarnings.long2LongEntrySet().removeIf(warningEntry -> warningTickCounter - warningEntry.getLongValue() > WARNING_STALE_TICKS);
@@ -751,7 +775,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    private record WarningTarget(int dimId, long posLong) {
+    private record WarningTarget(String dimId, long posLong) {
     }
 
     static final class GridTickData {

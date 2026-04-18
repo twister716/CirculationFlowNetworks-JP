@@ -32,7 +32,6 @@ public class Node implements INode {
     private final BlockPos pos;
     private final Vec3d vec3d;
     private final WeakReference<Level> world;
-    private final int dimensionId;
     private final String dimensionKey;
     private final ReferenceSet<INode> neighbors = new ReferenceOpenHashSet<>();
     private final Reference2DoubleMap<INode> distanceMap = new Reference2DoubleOpenHashMap<>();
@@ -51,8 +50,7 @@ public class Node implements INode {
     public Node(NodeType<?> nodeType, CompoundTag nbt) {
         this.nodeType = nodeType;
         this.dimensionKey = NbtCompat.getStringOr(nbt, "dim", "minecraft:overworld");
-        this.dimensionId = dimensionKey.hashCode();
-        this.world = new WeakReference<>(WorldResolveCompat.resolveWorld(dimensionKey, dimensionId));
+        this.world = new WeakReference<>(WorldResolveCompat.resolveWorld(dimensionKey));
         this.pos = BlockPosCompat.fromLong(NbtCompat.getLongOr(nbt, "pos", 0L));
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
         this.linkScope = NbtCompat.getDoubleOr(nbt, "linkScope", 0.0D);
@@ -63,8 +61,7 @@ public class Node implements INode {
 
     public Node(NodeType<?> nodeType, NodeContext context, double linkScope) {
         this.nodeType = nodeType;
-        this.dimensionId = WorldResolveCompat.getDimensionId(context.getWorld());
-        this.dimensionKey = WorldResolveCompat.getSerializedDimensionKey(context.getWorld());
+        this.dimensionKey = WorldResolveCompat.getDimensionId(context.getWorld());
         this.world = new WeakReference<>(context.getWorld());
         this.pos = context.getPos();
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
@@ -155,7 +152,7 @@ public class Node implements INode {
         if (cachedWorld != null) {
             return cachedWorld;
         }
-        var resolvedWorld = WorldResolveCompat.resolveWorld(dimensionKey, dimensionId);
+        var resolvedWorld = WorldResolveCompat.resolveWorld(dimensionKey);
         if (resolvedWorld != null) {
             return resolvedWorld;
         }
@@ -163,12 +160,7 @@ public class Node implements INode {
     }
 
     @Override
-    public int getDimensionId() {
-        return dimensionId;
-    }
-
-    @Override
-    public @NotNull String getSerializedDimensionKey() {
+    public @NotNull String getDimensionId() {
         return dimensionKey;
     }
 

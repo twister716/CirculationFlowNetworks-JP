@@ -12,7 +12,8 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 
-public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable Direction attachmentFace,
+@SuppressWarnings("unused")
+public record PocketNodeRecord(String dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable Direction attachmentFace,
                                @Nullable String customName, @Nullable String hostBlockId) {
 
     public static @Nullable PocketNodeRecord deserialize(@Nullable CompoundTag tag) {
@@ -28,7 +29,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         }
         String customName = NbtCompat.contains(tag, "customName") ? NbtCompat.getStringOr(tag, "customName", "") : null;
         return new PocketNodeRecord(
-            NbtCompat.getIntOr(tag, "dim", 0),
+            NbtCompat.getStringOr(tag, "dim", "minecraft:overworld"),
             BlockPosCompat.fromLong(NbtCompat.getLongOr(tag, "pos", 0L)),
             nodeType,
             deserializeFace(NbtCompat.contains(tag, "face") ? NbtCompat.getStringOr(tag, "face", "") : null),
@@ -48,7 +49,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         return Direction.byName(name);
     }
 
-    public int getDimensionId() {
+    public String getDimensionId() {
         return dimensionId;
     }
 
@@ -82,7 +83,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
 
     public CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
-        NbtCompat.putInt(tag, "dim", dimensionId);
+        NbtCompat.putString(tag, "dim", dimensionId);
         NbtCompat.putLong(tag, "pos", BlockPosCompat.toLong(pos));
         NbtCompat.putString(tag, "type", nodeType.id());
         if (attachmentFace != null) {

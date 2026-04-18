@@ -48,7 +48,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     private static final Object2ReferenceMap<IGrid, ReferenceLinkedOpenHashSet<ServerPlayer>> GRID_PLAYERS = new Object2ReferenceOpenHashMap<>();
     private static final Reference2ReferenceMap<ServerPlayer, IGrid> PLAYER_GRID = new Reference2ReferenceOpenHashMap<>();
     private int mode;
-    private int dim;
+    private String dim;
     private IGrid grid;
     private ReferenceSet<INode> nodes;
     private INode targetNode;
@@ -62,7 +62,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     }
 
     public NodeNetworkRendering(Player player, IGrid grid) {
-        this.dim = DimensionHelper.getDimensionHash(player.level());
+        this.dim = DimensionHelper.getDimensionId(player.level());
         this.grid = grid;
         this.nodes = grid.getNodes();
         this.mode = SET;
@@ -81,7 +81,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     }
 
     public NodeNetworkRendering(Player player, INode node, int mode) {
-        this.dim = DimensionHelper.getDimensionHash(player.level());
+        this.dim = DimensionHelper.getDimensionId(player.level());
         this.grid = node.getGrid();
         this.mode = mode;
         this.targetNode = node;
@@ -97,7 +97,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
     }
 
     public NodeNetworkRendering(Player player, BlockEntity blockEntity, INode node, int mode) {
-        this.dim = DimensionHelper.getDimensionHash(player.level());
+        this.dim = DimensionHelper.getDimensionId(player.level());
         this.grid = node.getGrid();
         this.mode = mode;
         this.entryList = ObjectLists.singleton(new Pair(blockEntity, node));
@@ -145,7 +145,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
         return data;
     }
 
-    public NodeNetworkRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull NodeNetworkRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
         NodeNetworkRendering message = new NodeNetworkRendering();
         message.parsedMode = buf.readByte();
         if (message.parsedMode == SET || message.parsedMode == NODE_ADD || message.parsedMode == NODE_REMOVE) {
@@ -169,7 +169,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
                 LongSet processedLinks = new LongOpenHashSet();
                 if (mode == SET) {
                     for (var node : nodes) {
-                        if (dim != DimensionHelper.getDimensionHash(node.getWorld())) {
+                        if (node.getWorld() == null || !dim.equals(DimensionHelper.getDimensionId(node.getWorld()))) {
                             continue;
                         }
                         long posA = node.getPos().asLong();
@@ -220,7 +220,7 @@ public final class NodeNetworkRendering implements Packet<NodeNetworkRendering> 
             writeLinks(buf, () -> {
                 int count = 0;
                 for (var entry : entryList) {
-                    if (entry.blockEntity.getLevel() == null || dim != DimensionHelper.getDimensionHash(entry.blockEntity.getLevel())) {
+                    if (entry.blockEntity.getLevel() == null || !dim.equals(DimensionHelper.getDimensionId(entry.blockEntity.getLevel()))) {
                         continue;
                     }
                     var node = entry.node;

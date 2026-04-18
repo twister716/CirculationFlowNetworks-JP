@@ -13,8 +13,9 @@ import com.circulation.circulation_networks.registry.NodeTypes;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
 import com.circulation.circulation_networks.utils.DimensionHelper;
 import com.circulation.circulation_networks.utils.Functions;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -27,7 +28,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -41,10 +41,10 @@ import java.util.Objects;
 public final class PocketNodeManager {
 
     public static final PocketNodeManager INSTANCE = new PocketNodeManager();
-    private final Int2ObjectMap<Long2ObjectMap<PocketNodeHost>> activeHosts = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<PocketNodeRecord>> pendingHosts = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<LongSet>> activeChunkIndex = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<LongSet>> pendingChunkIndex = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<PocketNodeHost>> activeHosts = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<PocketNodeRecord>> pendingHosts = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<LongSet>> activeChunkIndex = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<LongSet>> pendingChunkIndex = new Object2ObjectOpenHashMap<>();
     private final LongArrayList chunkLoadIterationScratch = new LongArrayList();
     private boolean loaded;
     private boolean dirty;
@@ -52,7 +52,7 @@ public final class PocketNodeManager {
     private PocketNodeManager() {
     }
 
-    private static Long2ObjectMap<LongSet> getChunkIndex(Int2ObjectMap<Long2ObjectMap<LongSet>> index, int dimId) {
+    private static Long2ObjectMap<LongSet> getChunkIndex(Object2ObjectMap<String, Long2ObjectMap<LongSet>> index, String dimId) {
         return index.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
 
@@ -133,25 +133,12 @@ public final class PocketNodeManager {
         return net.minecraft.core.Direction.UP;
     }
 
-    private static @Nullable MinecraftServer getCurrentServer() {
-        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+    private static @Nullable Level resolveWorld(String dimId) {
+        return WorldResolveCompat.resolveWorld(dimId);
     }
 
-    private static @Nullable Level resolveWorld(int dimId) {
-        MinecraftServer server = getCurrentServer();
-        if (server == null) {
-            return null;
-        }
-        for (Level level : server.getAllLevels()) {
-            if (DimensionHelper.getDimensionHash(level) == dimId) {
-                return level;
-            }
-        }
-        return null;
-    }
-
-    private static int getDimensionId(Level world) {
-        return DimensionHelper.getDimensionHash(world);
+    private static String getDimensionId(Level world) {
+        return DimensionHelper.getDimensionId(world);
     }
 
     private static boolean isClientWorld(Level world) {
@@ -229,7 +216,7 @@ public final class PocketNodeManager {
             }
         }
 
-        for (var dimEntry : new ObjectArrayList<>(pendingHosts.int2ObjectEntrySet())) {
+        for (var dimEntry : new ObjectArrayList<>(pendingHosts.object2ObjectEntrySet())) {
             for (var record : new ObjectArrayList<>(dimEntry.getValue().values())) {
                 tryActivate(record, true);
             }
@@ -247,12 +234,12 @@ public final class PocketNodeManager {
         CompoundTag nbt = new CompoundTag();
         ListTag list = new ListTag();
 
-        for (var dimEntry : activeHosts.int2ObjectEntrySet()) {
+        for (var dimEntry : activeHosts.object2ObjectEntrySet()) {
             for (var host : dimEntry.getValue().values()) {
                 list.add(host.toRecord().serialize());
             }
         }
-        for (var dimEntry : pendingHosts.int2ObjectEntrySet()) {
+        for (var dimEntry : pendingHosts.object2ObjectEntrySet()) {
             for (var record : dimEntry.getValue().values()) {
                 list.add(record.serialize());
             }
@@ -281,7 +268,7 @@ public final class PocketNodeManager {
         if (!loaded || isClientWorld(world)) {
             return;
         }
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
         long chunkCoord = Functions.mergeChunkCoords(chunkX, chunkZ);
 
         LongSet activePositions = getChunkPositions(activeChunkIndex.get(dimId), chunkCoord);
@@ -330,7 +317,7 @@ public final class PocketNodeManager {
             return RegisterPocketNodeResult.FAILED;
         }
 
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
         long posLong = pos.asLong();
         if (getActiveDimMap(dimId).containsKey(posLong) || getPendingDimMap(dimId).containsKey(posLong)) {
             return RegisterPocketNodeResult.OCCUPIED;
@@ -360,7 +347,7 @@ public final class PocketNodeManager {
         if (!loaded) {
             return false;
         }
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
         long posLong = pos.asLong();
         PocketNodeHost activeHost = removeActiveHost(dimId, posLong);
         if (activeHost != null) {
@@ -395,7 +382,7 @@ public final class PocketNodeManager {
         if (!loaded || isClientWorld(world)) {
             return;
         }
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
         long posLong = pos.asLong();
 
         Long2ObjectMap<PocketNodeHost> activeDimMap = activeHosts.get(dimId);
@@ -429,7 +416,7 @@ public final class PocketNodeManager {
         }
     }
 
-    public ObjectList<PocketNodeRecord> getActiveRecords(int dimId) {
+    public ObjectList<PocketNodeRecord> getActiveRecords(String dimId) {
         ObjectList<PocketNodeRecord> result = new ObjectArrayList<>();
         Long2ObjectMap<PocketNodeHost> dimMap = activeHosts.get(dimId);
         if (dimMap == null) {
@@ -448,7 +435,7 @@ public final class PocketNodeManager {
         return isActivePocketNode(getDimensionId(world), pos, nodeType);
     }
 
-    public boolean isActivePocketNode(int dimId, BlockPos pos, @Nullable NodeType<?> nodeType) {
+    public boolean isActivePocketNode(String dimId, BlockPos pos, @Nullable NodeType<?> nodeType) {
         if (!loaded || pos == null) {
             return false;
         }
@@ -469,7 +456,7 @@ public final class PocketNodeManager {
             return RegisterPocketNodeResult.FAILED;
         }
 
-        int dimId = record.dimensionId();
+        String dimId = record.dimensionId();
         long posLong = record.pos().asLong();
 
         PocketNodeRecord resolvedRecord = resolveValidatedRecord(world, record);
@@ -541,14 +528,14 @@ public final class PocketNodeManager {
     }
 
     private void putActive(PocketNodeHost host) {
-        int dimId = host.record().dimensionId();
+        String dimId = host.record().dimensionId();
         long posLong = host.record().pos().asLong();
         long chunkCoord = Functions.mergeChunkCoords(host.record().pos());
         getActiveDimMap(dimId).put(posLong, host);
         indexChunkPosition(getChunkIndex(activeChunkIndex, dimId), chunkCoord, posLong);
     }
 
-    private @org.jetbrains.annotations.Nullable PocketNodeHost removeActiveHost(int dimId, long posLong) {
+    private @org.jetbrains.annotations.Nullable PocketNodeHost removeActiveHost(String dimId, long posLong) {
         Long2ObjectMap<PocketNodeHost> dimMap = activeHosts.get(dimId);
         if (dimMap == null) {
             return null;
@@ -565,14 +552,14 @@ public final class PocketNodeManager {
     }
 
     private void putPending(PocketNodeRecord record) {
-        int dimId = record.dimensionId();
+        String dimId = record.dimensionId();
         long posLong = record.pos().asLong();
         long chunkCoord = Functions.mergeChunkCoords(record.pos());
         getPendingDimMap(dimId).put(posLong, record);
         indexChunkPosition(getChunkIndex(pendingChunkIndex, dimId), chunkCoord, posLong);
     }
 
-    private @org.jetbrains.annotations.Nullable PocketNodeRecord removePending(int dimId, long posLong) {
+    private @org.jetbrains.annotations.Nullable PocketNodeRecord removePending(String dimId, long posLong) {
         Long2ObjectMap<PocketNodeRecord> dimMap = pendingHosts.get(dimId);
         if (dimMap == null) {
             return null;
@@ -588,11 +575,11 @@ public final class PocketNodeManager {
         return removed;
     }
 
-    private Long2ObjectMap<PocketNodeHost> getActiveDimMap(int dimId) {
+    private Long2ObjectMap<PocketNodeHost> getActiveDimMap(String dimId) {
         return activeHosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
 
-    private Long2ObjectMap<PocketNodeRecord> getPendingDimMap(int dimId) {
+    private Long2ObjectMap<PocketNodeRecord> getPendingDimMap(String dimId) {
         return pendingHosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
 
@@ -611,11 +598,11 @@ public final class PocketNodeManager {
         syncToDimensionPlayers(record.dimensionId(), new PocketNodeRendering(record));
     }
 
-    private void syncRemove(int dimId, BlockPos pos) {
+    private void syncRemove(String dimId, BlockPos pos) {
         syncToDimensionPlayers(dimId, new PocketNodeRendering(dimId, pos));
     }
 
-    private void syncToDimensionPlayers(int dimId, PocketNodeRendering packet) {
+    private void syncToDimensionPlayers(String dimId, PocketNodeRendering packet) {
         var world = resolveWorld(dimId);
         if (world == null) {
             return;
@@ -633,7 +620,7 @@ public final class PocketNodeManager {
             if (world == null || isClientWorld(world) || !isRecoverablePocketNode(world, node)) {
                 continue;
             }
-            int dimId = getDimensionId(world);
+            String dimId = getDimensionId(world);
             long posLong = node.getPos().asLong();
             if (getActiveDimMap(dimId).containsKey(posLong) || getPendingDimMap(dimId).containsKey(posLong)) {
                 continue;

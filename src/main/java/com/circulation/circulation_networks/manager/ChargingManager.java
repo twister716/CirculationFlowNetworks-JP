@@ -14,8 +14,6 @@ import com.circulation.circulation_networks.utils.AccessoryInventoryCompat;
 import com.circulation.circulation_networks.utils.Functions;
 import com.circulation.circulation_networks.utils.PlayerInventoryCompat;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -56,9 +54,9 @@ public final class ChargingManager {
     private static final byte CHARGE_PREF_ACCESSORY = 0x20;
     private static final byte CHARGE_PREF_ALL = 0b00111111;
     private static final List<EnergyTransferParticipant> EMPTY_HANDLERS = ObjectLists.emptyList();
-    private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<ReferenceSet<IHubNode>> wideAreaHubs = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, ReferenceSet<IHubNode>> wideAreaHubs = new Object2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> tickChargeTargetsByGrid = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeChargeTargetGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTransferGrids = new ReferenceOpenHashSet<>();
@@ -376,7 +374,7 @@ public final class ChargingManager {
         coveredGrids.clear();
         reachableGrids.clear();
 
-        int dimId = WorldResolveCompat.getPlayerDimensionId(player);
+        String dimId = WorldResolveCompat.getPlayerDimensionId(player);
         var map = scopeNode.get(dimId);
         if (map != null && !map.isEmpty()) {
             var pos = player.blockPosition();
@@ -449,7 +447,7 @@ public final class ChargingManager {
         int minChunkZ = (nodeZ - range) >> 4;
         int maxChunkZ = (nodeZ + range) >> 4;
 
-        int dimId = node.getDimensionId();
+        String dimId = node.getDimensionId();
 
         Long2ObjectMap<ReferenceSet<IChargingNode>> dimScopeMap = scopeNode.get(dimId);
         if (dimScopeMap == null) {
@@ -493,7 +491,7 @@ public final class ChargingManager {
             return;
         }
 
-        int dimId = node.getDimensionId();
+        String dimId = node.getDimensionId();
 
         Object2ObjectMap<IChargingNode, LongSet> dimNodeScopeMap = nodeScope.get(dimId);
         if (dimNodeScopeMap == null) {
@@ -527,7 +525,7 @@ public final class ChargingManager {
         }
     }
 
-    private void addWideAreaHub(IHubNode hub, int dimId) {
+    private void addWideAreaHub(IHubNode hub, String dimId) {
         ReferenceSet<IHubNode> dimSet = wideAreaHubs.get(dimId);
         if (dimSet == null) {
             dimSet = new ReferenceOpenHashSet<>();
@@ -536,7 +534,7 @@ public final class ChargingManager {
         dimSet.add(hub);
     }
 
-    private void removeWideAreaHub(IHubNode hub, int dimId) {
+    private void removeWideAreaHub(IHubNode hub, String dimId) {
         ReferenceSet<IHubNode> dimSet = wideAreaHubs.get(dimId);
         if (dimSet == null) return;
         dimSet.remove(hub);
@@ -546,7 +544,7 @@ public final class ChargingManager {
     }
 
     public void refreshWideAreaState(IHubNode hub) {
-        int dimId = hub.getDimensionId();
+        String dimId = hub.getDimensionId();
         removeWideAreaHub(hub, dimId);
         var scope = getChargingPluginScope(hub);
         if (scope == ChargingPluginScope.WIDE_AREA || scope == ChargingPluginScope.DIMENSIONAL) {

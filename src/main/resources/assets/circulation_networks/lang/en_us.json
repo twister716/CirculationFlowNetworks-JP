@@ -1,4 +1,10 @@
 {
+  "block.circulation_networks.charging_node": "Circulation Charging Node",
+  "block.circulation_networks.circulation_shielder": "Circulation Shielder",
+  "block.circulation_networks.hub": "Circulation Hub",
+  "block.circulation_networks.node_pedestal": "Node Pedestal",
+  "block.circulation_networks.port_node": "Circulation Port Node",
+  "block.circulation_networks.relay_node": "Circulation Relay Node",
   "item.circulation_networks.charging_node": "Circulation Charging Node",
   "item.circulation_networks.circulation_shielder": "Circulation Shielder",
   "item.circulation_networks.circulation_shielder.tooltip.0": "§7Prevents blocks within range from interacting with energy through the network",

@@ -10,10 +10,6 @@ public final class DimensionHelper {
     private DimensionHelper() {
     }
 
-    public static int getDimensionHash(Level world) {
-        return world.dimension().identifier().hashCode();
-    }
-
     public static String getDimensionId(Level world) {
         return world.dimension().identifier().toString();
     }

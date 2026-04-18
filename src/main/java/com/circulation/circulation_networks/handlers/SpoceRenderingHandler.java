@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
 import com.circulation.circulation_networks.utils.ShaderHelper;
+import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
@@ -33,6 +34,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
+@SuppressWarnings("SameParameterValue")
 public class SpoceRenderingHandler {
 
     private static final Identifier SHADER_VERT = Identifier.fromNamespaceAndPath("circulation_networks", "shaders/sphere_depth.vsh");
@@ -44,7 +46,7 @@ public class SpoceRenderingHandler {
     private final FloatBuffer mvBuf = MemoryUtil.memAllocFloat(16);
 
     protected BlockPos targetPos;
-    protected int targetDimensionId;
+    protected String targetDimensionId;
     protected float linkScope;
     protected float energyScope;
     protected float chargingScope;
@@ -232,10 +234,10 @@ public class SpoceRenderingHandler {
             clear();
             return;
         }
-        setStaus(te.getLevel().dimension().identifier().hashCode(), te.getBlockPos(), linkScope, energyScope, chargingScope);
+        setStaus(WorldResolveCompat.getDimensionId(te.getLevel()), te.getBlockPos(), linkScope, energyScope, chargingScope);
     }
 
-    public void setStaus(int dimensionId, BlockPos pos, double linkScope, double energyScope, double chargingScope) {
+    public void setStaus(String dimensionId, BlockPos pos, double linkScope, double energyScope, double chargingScope) {
         this.targetDimensionId = dimensionId;
         this.targetPos = pos == null ? null : pos.immutable();
         this.linkScope = (float) linkScope;
@@ -257,7 +259,7 @@ public class SpoceRenderingHandler {
         cleanupGL();
         glInitialized = false;
         targetPos = null;
-        targetDimensionId = 0;
+        targetDimensionId = null;
         linkScope = 0.0F;
         energyScope = 0.0F;
         chargingScope = 0.0F;
@@ -291,7 +293,7 @@ public class SpoceRenderingHandler {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         BlockPos pos = targetPos;
-        if (player == null || mc.level == null || mc.level.dimension().identifier().hashCode() != targetDimensionId) {
+        if (player == null || mc.level == null || !WorldResolveCompat.getDimensionId(mc.level).equals(targetDimensionId)) {
             clear();
             return;
         }

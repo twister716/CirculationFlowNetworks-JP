@@ -30,7 +30,6 @@ import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
-@SuppressWarnings("resource")
 public final class NodeHudRenderingHandler {
 
     public static final NodeHudRenderingHandler INSTANCE = new NodeHudRenderingHandler();
@@ -38,7 +37,7 @@ public final class NodeHudRenderingHandler {
     private static final int HUD_WIDTH = 165;
     private static final int HUD_HEIGHT = 93;
     private static final int CRYSTAL_SIZE = 50;
-    private static final int TEXT_COLOR = 0x79d7ff;
+    private static final int TEXT_COLOR = 0xFF79d7ff;
     private static final float ROTATION_PERIOD_TICKS = 400.0f;
     private static final int REQUEST_INTERVAL = 20;
     private static final float WORLD_SCALE = 0.01F;
@@ -168,6 +167,7 @@ public final class NodeHudRenderingHandler {
 
         ComponentAtlas atlas = ComponentAtlas.INSTANCE;
         atlas.awaitReady();
+        if (!atlas.isReady()) return;
 
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushMatrix();
@@ -210,7 +210,7 @@ public final class NodeHudRenderingHandler {
         drawScrollingText(font, formattedOutput, 62, anchorX + 90, anchorY + 40, partialTick, textPose, bufferSource);
         drawScrollingText(font, formattedLatency, 62, anchorX + 90, anchorY + 54, partialTick, textPose, bufferSource);
         drawScrollingText(font, formattedNodeCount, 62, anchorX + 90, anchorY + 68, partialTick, textPose, bufferSource);
-        font.drawInBatch(tooltipText, anchorX + 3, tooltipY + 2, 0xFFFFFF, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+        font.drawInBatch(tooltipText, anchorX + 3, tooltipY + 2, 0xFFFFFFFF, false, textPose.last().pose(), bufferSource, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
         bufferSource.endBatch();
 
         modelViewStack.popMatrix();

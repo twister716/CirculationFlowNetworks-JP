@@ -21,13 +21,9 @@ public interface INode {
     @NotNull
     Level getWorld();
 
-    default int getDimensionId() {
-        return WorldResolveCompat.getDimensionId(getWorld());
-    }
-
     @NotNull
-    default String getSerializedDimensionKey() {
-        return WorldResolveCompat.getSerializedDimensionKey(getWorld());
+    default String getDimensionId() {
+        return WorldResolveCompat.getDimensionId(getWorld());
     }
 
     @NotNull

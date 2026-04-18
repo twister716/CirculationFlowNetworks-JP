@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.client.render;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.tiles.nodes.BlockEntityHub;
@@ -202,6 +203,9 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
             return;
         }
         if (hub.getLevel() == null) {
+            return;
+        }
+        if (!CFNConfig.NODE.rendering.animatedSpecialModels) {
             return;
         }
 

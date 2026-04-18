@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.blocks.nodes;
 
+import com.circulation.circulation_networks.CFNConfig;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.client.render.HubRenderLayout;
@@ -11,6 +12,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -57,7 +59,9 @@ public final class BlockHub extends BaseNodeBlock {
 
     @Override
     public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
-        return RenderShape.MODEL;
+        return CFNConfig.NODE.rendering.animatedSpecialModels
+            ? RenderShape.INVISIBLE
+            : RenderShape.MODEL;
     }
 
     @Nullable
@@ -112,14 +116,14 @@ public final class BlockHub extends BaseNodeBlock {
         }
     }
 
-    public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                         @NotNull BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
+    @Override
+    public @NotNull BlockState playerWillDestroy(@NotNull Level level, @NotNull BlockPos pos,
+                                                 @NotNull BlockState state, @NotNull Player player) {
+        if (!level.isClientSide()) {
             var be = level.getBlockEntity(pos);
             if (be instanceof BlockEntityHub hub) {
                 var inv = hub.getPlugins();
-                for (int i = 0; i < inv.getSlots(); i++) {
-                    var plugin = inv.getStackInSlot(i);
+                for (var plugin : inv) {
                     if (!plugin.isEmpty()) {
                         level.addFreshEntity(new ItemEntity(level,
                             pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -132,7 +136,20 @@ public final class BlockHub extends BaseNodeBlock {
                     level.removeBlock(shellPos, false);
                 }
             }
-            positions.remove(pos.asLong());
         }
+        positions.remove(pos.asLong());
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(@NotNull BlockState state, @NotNull ServerLevel level,
+                                               @NotNull BlockPos pos, boolean movedByPiston) {
+        for (BlockPos shellPos : shellPositions(pos)) {
+            if (level.getBlockState(shellPos).getBlock() instanceof MultiblockShellBlock) {
+                level.removeBlock(shellPos, false);
+            }
+        }
+        positions.remove(pos.asLong());
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }
 }

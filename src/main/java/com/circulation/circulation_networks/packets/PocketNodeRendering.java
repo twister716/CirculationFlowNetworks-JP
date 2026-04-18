@@ -29,11 +29,11 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
         Identifier.parse(CirculationFlowNetworks.MOD_ID + ":pocket_node_rendering")
     );
     private int mode;
-    private int dim;
+    private String dim;
     private long posLong;
     private ObjectList<PocketNodeRecord> records;
     private transient int parsedMode;
-    private transient int parsedDim;
+    private transient String parsedDim;
     private transient long parsedPosLong;
     private transient ObjectList<PocketNodeRecord> parsedRecords;
 
@@ -42,7 +42,7 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
 
     public PocketNodeRendering(ServerPlayer player) {
         this.mode = SET;
-        this.dim = DimensionHelper.getDimensionHash(player.level());
+        this.dim = DimensionHelper.getDimensionId(player.level());
         this.records = PocketNodeManager.INSTANCE.getActiveRecords(dim);
     }
 
@@ -53,17 +53,17 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
         this.records.add(record);
     }
 
-    public PocketNodeRendering(int dim, BlockPos pos) {
+    public PocketNodeRendering(String dim, BlockPos pos) {
         this.mode = REMOVE;
         this.dim = dim;
         this.posLong = pos.asLong();
     }
 
     @Override
-    public PocketNodeRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull PocketNodeRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
         PocketNodeRendering message = new PocketNodeRendering();
         message.parsedMode = buf.readByte();
-        message.parsedDim = buf.readInt();
+        message.parsedDim = buf.readUtf();
         if (message.parsedMode == REMOVE) {
             message.parsedPosLong = buf.readLong();
             return message;
@@ -84,7 +84,7 @@ public final class PocketNodeRendering implements Packet<PocketNodeRendering> {
     @Override
     public void encode(@NonNull RegistryFriendlyByteBuf buf) {
         buf.writeByte(mode);
-        buf.writeInt(dim);
+        buf.writeUtf(dim == null ? "" : dim);
         if (mode == REMOVE) {
             buf.writeLong(posLong);
             return;

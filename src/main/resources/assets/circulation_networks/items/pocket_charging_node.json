@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "circulation_networks:animated_special",
+    "base": "circulation_networks:item/pocket_charging_node",
+    "model": {
+      "type": "circulation_networks:pocket_node",
+      "kind": "charging"
+    }
+  }
+}

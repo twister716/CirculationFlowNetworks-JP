@@ -66,8 +66,8 @@ public class ItemCirculationConfigurator extends BaseItem {
         return selection;
     }
 
-    private static int getDimensionId(Level world) {
-        return DimensionHelper.getDimensionHash(world);
+    private static String getDimensionId(Level world) {
+        return DimensionHelper.getDimensionId(world);
     }
 
     private static long packPos(BlockPos pos) {
@@ -192,7 +192,7 @@ public class ItemCirculationConfigurator extends BaseItem {
         }
 
         ConfigurationMode mode = ConfigurationMode.fromID(subMode);
-        int dim = getDimensionId(world);
+        String dim = getDimensionId(world);
         if (mode == ConfigurationMode.CLEAR) {
             manager.clearOverride(dim, pos);
             ConfigOverrideRendering.sendRemove(player, packPos(pos));

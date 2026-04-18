@@ -5,13 +5,12 @@ import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
-import com.circulation.circulation_networks.utils.DimensionHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -36,7 +35,7 @@ public final class PocketNodeRenderingHandler {
     private static final float FACE_SCALE = 0.03125F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
     private static final ItemFeatureRenderer ITEM_FEATURE_RENDERER = new ItemFeatureRenderer();
-    private final Int2ObjectMap<Long2ObjectMap<PocketNodeClientHost>> hosts = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<PocketNodeClientHost>> hosts = new Object2ObjectOpenHashMap<>();
 
     private PocketNodeRenderingHandler() {
     }
@@ -52,10 +51,10 @@ public final class PocketNodeRenderingHandler {
         return pos.asLong();
     }
 
-    private static int getDimensionId(
+    private static String getDimensionId(
         Level world
     ) {
-        return DimensionHelper.getDimensionHash(world);
+        return com.circulation.circulation_networks.utils.WorldResolveCompat.getDimensionId(world);
     }
 
     private static void applyFaceTransform(PoseStack poseStack, Direction face) {
@@ -87,7 +86,7 @@ public final class PocketNodeRenderingHandler {
         poseStack.scale(FACE_SCALE, FACE_SCALE, FACE_SCALE);
     }
 
-    private Long2ObjectMap<PocketNodeClientHost> getDimHosts(int dimId) {
+    private Long2ObjectMap<PocketNodeClientHost> getDimHosts(String dimId) {
         return hosts.computeIfAbsent(dimId, ignored -> new Long2ObjectOpenHashMap<>());
     }
 
@@ -103,7 +102,7 @@ public final class PocketNodeRenderingHandler {
         return dimHosts == null ? null : dimHosts.get(pack(pos));
     }
 
-    public void setDimensionState(int dimId, ObjectList<PocketNodeRecord> records) {
+    public void setDimensionState(String dimId, ObjectList<PocketNodeRecord> records) {
         clearDimension(dimId);
         for (var record : records) {
             add(record);
@@ -117,7 +116,7 @@ public final class PocketNodeRenderingHandler {
         MachineNodeBlockEntityManager.INSTANCE.registerClientMachine(dimHosts.get(posLong));
     }
 
-    public void remove(int dimId, BlockPos pos) {
+    public void remove(String dimId, BlockPos pos) {
         Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
         if (dimHosts == null) {
             return;
@@ -128,7 +127,7 @@ public final class PocketNodeRenderingHandler {
         }
     }
 
-    public void clearDimension(int dimId) {
+    public void clearDimension(String dimId) {
         Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.remove(dimId);
         if (dimHosts == null) {
             return;
@@ -155,7 +154,7 @@ public final class PocketNodeRenderingHandler {
             return;
         }
 
-        int dimId = DimensionHelper.getDimensionHash(mc.level);
+        String dimId = getDimensionId(mc.level);
         Long2ObjectMap<PocketNodeClientHost> dimHosts = hosts.get(dimId);
         if (dimHosts == null || dimHosts.isEmpty()) {
             return;

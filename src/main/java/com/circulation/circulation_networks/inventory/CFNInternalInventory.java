@@ -14,10 +14,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 
+@SuppressWarnings("unused")
 public class CFNInternalInventory extends ItemStacksResourceHandler implements Iterable<ItemStack>, Container {
 
     protected final int[] maxStack;
@@ -295,7 +295,7 @@ public class CFNInternalInventory extends ItemStacksResourceHandler implements I
 
     @Override
     public @NotNull Iterator<ItemStack> iterator() {
-        return Collections.unmodifiableList(stacks).iterator();
+        return stacks.iterator();
     }
 
     private int getEffectiveStackLimit(int slot, @NotNull ItemStack stack) {

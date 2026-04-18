@@ -2,19 +2,20 @@ package com.circulation.circulation_networks.manager;
 
 import com.circulation.circulation_networks.api.ICirculationShielderBlockEntity;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
+@SuppressWarnings("unused")
 public final class CirculationShielderManager {
 
     public static final CirculationShielderManager INSTANCE = new CirculationShielderManager();
 
-    private final Int2ObjectMap<ReferenceSet<ICirculationShielderBlockEntity>> dimShielders = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, ReferenceSet<ICirculationShielderBlockEntity>> dimShielders = new Object2ObjectOpenHashMap<>();
 
     public CirculationShielderManager() {
         dimShielders.defaultReturnValue(ReferenceSets.emptySet());
@@ -24,19 +25,19 @@ public final class CirculationShielderManager {
         return WorldResolveCompat.isClientWorld(world);
     }
 
-    private static int getDimensionId(Level world) {
+    private static String getDimensionId(Level world) {
         return WorldResolveCompat.getDimensionId(world);
     }
 
-    public Int2ObjectMap<ReferenceSet<ICirculationShielderBlockEntity>> getDimShielders() {
+    public Object2ObjectMap<String, ReferenceSet<ICirculationShielderBlockEntity>> getDimShielders() {
         return dimShielders;
     }
 
-    public ReferenceSet<ICirculationShielderBlockEntity> getShieldersForDim(int dimId) {
+    public ReferenceSet<ICirculationShielderBlockEntity> getShieldersForDim(String dimId) {
         return dimShielders.get(dimId);
     }
 
-    public void register(ICirculationShielderBlockEntity shielder, int dimId) {
+    public void register(ICirculationShielderBlockEntity shielder, String dimId) {
         if (shielder == null) return;
 
         ReferenceSet<ICirculationShielderBlockEntity> set = dimShielders.get(dimId);
@@ -46,7 +47,7 @@ public final class CirculationShielderManager {
         set.add(shielder);
     }
 
-    public void unregister(ICirculationShielderBlockEntity shielder, int dimId) {
+    public void unregister(ICirculationShielderBlockEntity shielder, String dimId) {
         if (shielder == null) return;
 
         var shielders = dimShielders.get(dimId);
@@ -56,7 +57,7 @@ public final class CirculationShielderManager {
 
     public boolean isBlockedByShielder(BlockPos tePos, Level world) {
         if (world == null || isClientWorld(world)) return false;
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
 
         var shielders = dimShielders.get(dimId);
         if (shielders == null || shielders.isEmpty()) return false;

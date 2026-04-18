@@ -1,6 +1,5 @@
 package com.circulation.circulation_networks.utils;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -11,8 +10,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-@SuppressWarnings("resource")
 public final class WorldResolveCompat {
 
     private WorldResolveCompat() {
@@ -26,45 +25,14 @@ public final class WorldResolveCompat {
         return getCurrentServer();
     }
 
-    public static @Nullable Level resolveWorld(Int2ObjectMap<String> serializedDimensionKeys, int dimId) {
+    public static @Nullable Level resolveWorld(String dimensionKey) {
         var server = getCurrentServer();
         if (server == null) {
             return null;
         }
 
-        String dimensionKey = serializedDimensionKeys.get(dimId);
         if (dimensionKey != null && !dimensionKey.isEmpty()) {
-            var level = server.getLevel(DimensionHelper.createDimensionKey(dimensionKey));
-            if (level != null) {
-                return level;
-            }
-        }
-
-        for (Level level : server.getAllLevels()) {
-            if (DimensionHelper.getDimensionHash(level) == dimId) {
-                return level;
-            }
-        }
-        return null;
-    }
-
-    public static @Nullable Level resolveWorld(String serializedDimensionKey, int dimId) {
-        var server = getCurrentServer();
-        if (server == null) {
-            return null;
-        }
-
-        if (serializedDimensionKey != null && !serializedDimensionKey.isEmpty()) {
-            var level = server.getLevel(DimensionHelper.createDimensionKey(serializedDimensionKey));
-            if (level != null) {
-                return level;
-            }
-        }
-
-        for (Level level : server.getAllLevels()) {
-            if (DimensionHelper.getDimensionHash(level) == dimId) {
-                return level;
-            }
+            return server.getLevel(DimensionHelper.createDimensionKey(dimensionKey));
         }
         return null;
     }
@@ -85,20 +53,16 @@ public final class WorldResolveCompat {
         return world.players();
     }
 
-    public static int getDimensionId(Level world) {
-        return DimensionHelper.getDimensionHash(world);
-    }
-
-    public static String getSerializedDimensionKey(Level world) {
+    public static String getDimensionId(Level world) {
         return DimensionHelper.getDimensionId(world);
     }
 
-    public static int getPlayerDimensionId(net.minecraft.server.level.ServerPlayer player) {
-        return DimensionHelper.getDimensionHash(player.level());
+    public static String getPlayerDimensionId(net.minecraft.server.level.ServerPlayer player) {
+        return DimensionHelper.getDimensionId(player.level());
     }
 
-    public static int getPlayerDimensionId(net.minecraft.world.entity.player.Player player) {
-        return DimensionHelper.getDimensionHash(player.level());
+    public static String getPlayerDimensionId(net.minecraft.world.entity.player.Player player) {
+        return DimensionHelper.getDimensionId(player.level());
     }
 
     public static String getBlockVisualId(Level world, net.minecraft.core.BlockPos pos) {
@@ -142,6 +106,6 @@ public final class WorldResolveCompat {
     }
 
     public static Path getRootSavePath() {
-        return currentServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
+        return Objects.requireNonNull(currentServer()).getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
     }
 }

@@ -49,8 +49,6 @@ public final class TextFieldPlatformServices {
         private int height;
         private boolean enabled = true;
         private boolean visible = true;
-        @Nullable
-        private Boolean backgroundDrawing;
 
         private ModernTextField(int x, int y, int width, int height, int maxLength) {
             this.maxLength = Math.max(0, maxLength);
@@ -117,7 +115,6 @@ public final class TextFieldPlatformServices {
         public void applyState(CFNBaseGui<?> gui, boolean enabled, boolean visible, @Nullable Boolean backgroundDrawing) {
             this.enabled = enabled;
             this.visible = visible;
-            this.backgroundDrawing = backgroundDrawing;
             field.setEditable(enabled);
             field.setVisible(visible);
             if (!enabled && field.isFocused()) {

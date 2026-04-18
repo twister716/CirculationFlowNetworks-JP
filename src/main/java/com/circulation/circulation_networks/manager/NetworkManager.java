@@ -15,8 +15,6 @@ import com.circulation.circulation_networks.utils.EventHooks;
 import com.circulation.circulation_networks.utils.Functions;
 import com.circulation.circulation_networks.utils.NbtCompat;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -71,11 +69,10 @@ public final class NetworkManager {
     private static File saveFile;
     private final ReferenceSet<INode> activeNodes = new ReferenceOpenHashSet<>();
     private final Object2ObjectMap<UUID, IGrid> grids = new Object2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<String> serializedDimensionKeys = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ReferenceMap<INode>> posNodes = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> scopeNode = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Object2ObjectMap<INode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
-    private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ReferenceMap<INode>> posNodes = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<ReferenceSet<INode>>> scopeNode = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Object2ObjectMap<INode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<ReferenceSet<INode>>> nodeLocation = new Object2ObjectOpenHashMap<>();
     private final NodeValidationTracker validationTracker = new NodeValidationTracker();
     private final ObjectSet<IGrid> dirtyGrids = new ObjectOpenHashSet<>();
     private boolean init;
@@ -152,11 +149,11 @@ public final class NetworkManager {
         CompressedNbtIoCompat.writeCompressedNbt(nbt, file, FILE_IO_LOCK);
     }
 
-    private static int getDimensionId(Level world) {
+    private static String getDimensionId(Level world) {
         return WorldResolveCompat.getDimensionId(world);
     }
 
-    private static int getDimensionId(INode node) {
+    private static String getDimensionId(INode node) {
         return node.getDimensionId();
     }
 
@@ -164,28 +161,27 @@ public final class NetworkManager {
         return world.isClientSide();
     }
 
-    private static boolean isRegisteredDimension(int dimId) {
-        String dimensionKey = INSTANCE.serializedDimensionKeys.get(dimId);
-        return dimensionKey != null && !dimensionKey.isEmpty() && WorldResolveCompat.isRegisteredDimension(dimensionKey);
+    private static boolean isRegisteredDimension(String dimId) {
+        return dimId != null && !dimId.isEmpty() && WorldResolveCompat.isRegisteredDimension(dimId);
     }
 
     @Nullable
-    private static Integer resolveGridDimension(IGrid grid) {
+    private static String resolveGridDimension(IGrid grid) {
         if (grid == null || grid.getNodes().isEmpty()) {
             return null;
         }
 
-        Integer dimId = null;
+        String dimId = null;
         for (INode node : grid.getNodes()) {
             if (node == null) {
                 continue;
             }
-            int nodeDimId = node.getDimensionId();
+            String nodeDimId = node.getDimensionId();
             if (dimId == null) {
                 dimId = nodeDimId;
                 continue;
             }
-            if (dimId != nodeDimId) {
+            if (!dimId.equals(nodeDimId)) {
                 return null;
             }
         }
@@ -223,8 +219,8 @@ public final class NetworkManager {
         return incomingNeighbors;
     }
 
-    private @Nullable Level resolveWorld(int dimId) {
-        return WorldResolveCompat.resolveWorld(serializedDimensionKeys, dimId);
+    private @Nullable Level resolveWorld(String dimId) {
+        return WorldResolveCompat.resolveWorld(dimId);
     }
 
     public ReferenceSet<INode> getActiveNodes() {
@@ -235,8 +231,7 @@ public final class NetworkManager {
         return init;
     }
 
-    private void registerNodeIndices(int dimId, INode node) {
-        rememberSerializedDimensionKey(dimId, node);
+    private void registerNodeIndices(String dimId, INode node) {
         BlockPos pos = node.getPos();
 
         var pMap = posNodes.get(dimId);
@@ -288,16 +283,7 @@ public final class NetworkManager {
         nodeScopeMap.put(node, LongSets.unmodifiable(chunksCovered));
     }
 
-    private void rememberSerializedDimensionKey(int dimId, INode node) {
-        if (!serializedDimensionKeys.containsKey(dimId)) {
-            String dimensionKey = node.getSerializedDimensionKey();
-            if (!dimensionKey.isEmpty()) {
-                serializedDimensionKeys.put(dimId, dimensionKey);
-            }
-        }
-    }
-
-    private void unregisterNodeIndices(int dimId, INode node) {
+    private void unregisterNodeIndices(String dimId, INode node) {
         posNodes.get(dimId).remove(BlockPosCompat.toLong(node.getPos()));
 
         long ownChunkCoord = Functions.mergeChunkCoords(node.getPos());
@@ -323,7 +309,7 @@ public final class NetworkManager {
         if (isClientWorld(event.getWorld())) return;
         var blockEntity = event.getBlockEntity();
         if (blockEntity instanceof INodeBlockEntity nbe) {
-            int dimId = getDimensionId(event.getWorld());
+            String dimId = getDimensionId(event.getWorld());
             if (!init) {
                 validationTracker.markEarly(dimId, event.getPos());
                 return;
@@ -347,7 +333,7 @@ public final class NetworkManager {
 
     public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
         if (isClientWorld(event.getWorld())) return;
-        int dimId = getDimensionId(event.getWorld());
+        String dimId = getDimensionId(event.getWorld());
         validationTracker.clearEarly(dimId, event.getPos());
         validationTracker.removePending(dimId, event.getPos());
         removeNode(dimId, event.getPos());
@@ -360,7 +346,7 @@ public final class NetworkManager {
     public void validatePendingNodesInChunk(Level world, long chunkCoord) {
         if (isClientWorld(world)) return;
 
-        int dimId = getDimensionId(world);
+        String dimId = getDimensionId(world);
         LongSet pending = validationTracker.getChunkPositions(dimId, chunkCoord);
         if (pending == null || pending.isEmpty()) {
             return;
@@ -414,7 +400,7 @@ public final class NetworkManager {
 
         var pendingByDim = validationTracker.pendingDimensionsSnapshot();
         for (var dimEntry : pendingByDim) {
-            int dimId = dimEntry.getIntKey();
+            String dimId = dimEntry.getKey();
             var world = resolveWorld(dimId);
             if (world == null || isClientWorld(world)) {
                 continue;
@@ -449,7 +435,7 @@ public final class NetworkManager {
         return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
     }
 
-    public void removeNode(int dim, BlockPos pos) {
+    public void removeNode(String dim, BlockPos pos) {
         var pMap = posNodes.get(dim);
         if (pMap != null && pMap != posNodes.defaultReturnValue()) {
             removeNode(pMap.get(BlockPosCompat.toLong(pos)));
@@ -460,7 +446,7 @@ public final class NetworkManager {
         if (removedNode == null || isClientWorld(removedNode.getWorld()) || !activeNodes.remove(removedNode)) return;
 
         EventHooks.postRemoveNodePre(removedNode);
-        int dimId = getDimensionId(removedNode);
+        String dimId = getDimensionId(removedNode);
         validationTracker.removePending(dimId, removedNode.getPos());
 
         var players = NodeNetworkRendering.getPlayers(removedNode.getGrid());
@@ -534,7 +520,7 @@ public final class NetworkManager {
 
                 oldGrid.getNodes().clear();
                 oldGrid.setHubNode(null);
-                for (INode n : components.get(0)) {
+                for (INode n : components.getFirst()) {
                     oldGrid.getNodes().add(n);
                     n.setGrid(oldGrid);
                     if (n instanceof IHubNode h) {
@@ -591,7 +577,7 @@ public final class NetworkManager {
             return AddNodeResult.failure(AddNodeResult.Status.EVENT_CANCELED);
         }
 
-        int dimId = getDimensionId(newNode);
+        String dimId = getDimensionId(newNode);
         activeNodes.add(newNode);
         registerNodeIndices(dimId, newNode);
 
@@ -730,7 +716,6 @@ public final class NetworkManager {
         activeNodes.clear();
         grids.clear();
         posNodes.clear();
-        serializedDimensionKeys.clear();
         validationTracker.clear();
         saveFile = null;
         init = false;
@@ -786,12 +771,13 @@ public final class NetworkManager {
             var grid = Grid.deserialize(nbt);
             if (grid == null) continue;
             if (grid.getNodes().isEmpty()) {
-                file.delete();
-                continue;
+                if (file.delete()) {
+                    continue;
+                }
             }
 
-            Integer resolvedDimId = resolveGridDimension(grid);
-            if (resolvedDimId == null || !isRegisteredDimension(resolvedDimId)) {
+            String resolvedDimId = resolveGridDimension(grid);
+            if (!isRegisteredDimension(resolvedDimId)) {
                 CirculationFlowNetworks.LOGGER.warn("Skipping grid {} due to inconsistent or unavailable dimension data", file.getName());
                 continue;
             }
@@ -837,14 +823,14 @@ public final class NetworkManager {
     }
 
     private static final class NodeValidationTracker {
-        private final Int2ObjectMap<Long2ObjectMap<LongSet>> pending = new Int2ObjectOpenHashMap<>();
-        private final Int2ObjectMap<LongOpenHashSet> early = new Int2ObjectOpenHashMap<>();
+        private final Object2ObjectMap<String, Long2ObjectMap<LongSet>> pending = new Object2ObjectOpenHashMap<>();
+        private final Object2ObjectMap<String, LongOpenHashSet> early = new Object2ObjectOpenHashMap<>();
 
         {
             pending.defaultReturnValue(Long2ObjectMaps.emptyMap());
         }
 
-        void markEarly(int dimId, BlockPos pos) {
+        void markEarly(String dimId, BlockPos pos) {
             var positions = early.get(dimId);
             if (positions == null) {
                 early.put(dimId, positions = new LongOpenHashSet());
@@ -852,7 +838,7 @@ public final class NetworkManager {
             positions.add(BlockPosCompat.toLong(pos));
         }
 
-        void clearEarly(int dimId, BlockPos pos) {
+        void clearEarly(String dimId, BlockPos pos) {
             var positions = early.get(dimId);
             if (positions != null) {
                 positions.remove(BlockPosCompat.toLong(pos));
@@ -863,8 +849,8 @@ public final class NetworkManager {
         }
 
         void mergeEarlyIntoPending() {
-            for (var entry : early.int2ObjectEntrySet()) {
-                int dimId = entry.getIntKey();
+            for (var entry : early.object2ObjectEntrySet()) {
+                String dimId = entry.getKey();
                 for (long posLong : entry.getValue()) {
                     markPending(dimId, BlockPosCompat.fromLong(posLong));
                 }
@@ -872,7 +858,7 @@ public final class NetworkManager {
             early.clear();
         }
 
-        void markPending(int dimId, BlockPos pos) {
+        void markPending(String dimId, BlockPos pos) {
             long chunkCoord = Functions.mergeChunkCoords(pos);
             var dimMap = pending.get(dimId);
             if (dimMap == pending.defaultReturnValue()) {
@@ -887,18 +873,18 @@ public final class NetworkManager {
             positions.add(BlockPosCompat.toLong(pos));
         }
 
-        void removePending(int dimId, BlockPos pos) {
+        void removePending(String dimId, BlockPos pos) {
             long posLong = BlockPosCompat.toLong(pos);
             long chunkCoord = Functions.mergeChunkCoords(pos);
             removePendingInternal(dimId, posLong, chunkCoord);
         }
 
-        void removePending(int dimId, long posLong) {
+        void removePending(String dimId, long posLong) {
             long chunkCoord = Functions.mergeChunkCoords(BlockPosCompat.fromLong(posLong));
             removePendingInternal(dimId, posLong, chunkCoord);
         }
 
-        private void removePendingInternal(int dimId, long posLong, long chunkCoord) {
+        private void removePendingInternal(String dimId, long posLong, long chunkCoord) {
             var dimMap = pending.get(dimId);
             if (dimMap == pending.defaultReturnValue()) return;
             var positions = dimMap.get(chunkCoord);
@@ -908,13 +894,13 @@ public final class NetworkManager {
             if (dimMap.isEmpty()) pending.remove(dimId);
         }
 
-        void removeIfRegistered(int dimId, BlockPos pos, Long2ReferenceMap<INode> posNodesForDim, INode node) {
+        void removeIfRegistered(String dimId, BlockPos pos, Long2ReferenceMap<INode> posNodesForDim, INode node) {
             if (node != null && posNodesForDim.get(BlockPosCompat.toLong(pos)) == node) {
                 removePending(dimId, pos);
             }
         }
 
-        @Nullable LongSet getChunkPositions(int dimId, long chunkCoord) {
+        @Nullable LongSet getChunkPositions(String dimId, long chunkCoord) {
             var dimMap = pending.get(dimId);
             if (dimMap == pending.defaultReturnValue()) return null;
             var positions = dimMap.get(chunkCoord);
@@ -925,11 +911,11 @@ public final class NetworkManager {
             return pending.isEmpty();
         }
 
-        ObjectArrayList<Int2ObjectMap.Entry<Long2ObjectMap<LongSet>>> pendingDimensionsSnapshot() {
-            return new ObjectArrayList<>(pending.int2ObjectEntrySet());
+        ObjectArrayList<Object2ObjectMap.Entry<String, Long2ObjectMap<LongSet>>> pendingDimensionsSnapshot() {
+            return new ObjectArrayList<>(pending.object2ObjectEntrySet());
         }
 
-        void batchRemovePending(int dimId, LongArrayList positions) {
+        void batchRemovePending(String dimId, LongArrayList positions) {
             for (int i = 0; i < positions.size(); i++) {
                 removePending(dimId, positions.getLong(i));
             }
@@ -983,6 +969,6 @@ public final class NetworkManager {
         }
     }
 
-    record GridEntry(int dimId, IGrid grid) {
+    record GridEntry(String dimId, IGrid grid) {
     }
 }

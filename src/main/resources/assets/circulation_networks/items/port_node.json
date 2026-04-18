@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "circulation_networks:animated_special",
+    "base": "circulation_networks:item/port_node",
+    "model": {
+      "type": "circulation_networks:animated_node",
+      "kind": "port"
+    }
+  }
+}

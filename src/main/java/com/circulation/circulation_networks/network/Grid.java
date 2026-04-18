@@ -3,7 +3,6 @@ package com.circulation.circulation_networks.network;
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
-import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.registry.NodeTypes;
 import com.circulation.circulation_networks.utils.NbtCompat;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
@@ -65,15 +64,6 @@ public final class Grid implements IGrid {
         return grid;
     }
 
-    private static int getDimensionId(INode node) {
-        return node.getDimensionId();
-    }
-
-    private static boolean shouldSerializeNode(INode node) {
-        return node != null
-            && !PocketNodeManager.INSTANCE.isActivePocketNode(node.getDimensionId(), node.getPos(), node.getNodeType());
-    }
-
     public UUID getId() {
         return id;
     }
@@ -109,7 +99,7 @@ public final class Grid implements IGrid {
         NbtCompat.putUuid(nbt, "id", id);
         if (!nodes.isEmpty()) {
             for (var node : nodes) {
-                nbt.putString("dim", node.getSerializedDimensionKey());
+                nbt.putString("dim", node.getDimensionId());
                 break;
             }
             for (var node : nodes) {

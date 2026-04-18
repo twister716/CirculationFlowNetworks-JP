@@ -1,7 +1,6 @@
 package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
-import com.circulation.circulation_networks.utils.DimensionHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -26,7 +25,7 @@ public final class NodeHighlightRenderingHandler {
     private static final double EXPAND = 0.002D;
     private static final RenderType HIGHLIGHT_RENDER_TYPE = RenderTypes.lines();
     private BlockPos targetPos;
-    private int targetDimId;
+    private String targetDimId;
     private long startTick;
     private long clientTick;
 
@@ -43,7 +42,7 @@ public final class NodeHighlightRenderingHandler {
         builder.addVertex(matrix, x2, y2, z2).setColor(r, g, b, a).setNormal(pose, nx, ny, nz).setLineWidth(LINE_WIDTH);
     }
 
-    public void highlight(BlockPos pos, int dimId) {
+    public void highlight(BlockPos pos, String dimId) {
         this.targetPos = pos;
         this.targetDimId = dimId;
         this.startTick = clientTick;
@@ -51,6 +50,7 @@ public final class NodeHighlightRenderingHandler {
 
     public void clear() {
         targetPos = null;
+        targetDimId = null;
     }
 
     @SubscribeEvent
@@ -58,6 +58,7 @@ public final class NodeHighlightRenderingHandler {
         clientTick++;
         if (targetPos != null && clientTick - startTick > HIGHLIGHT_DURATION_TICKS) {
             targetPos = null;
+            targetDimId = null;
         }
     }
 
@@ -67,7 +68,7 @@ public final class NodeHighlightRenderingHandler {
         if (mc.level == null || mc.player == null || targetPos == null) {
             return;
         }
-        if (DimensionHelper.getDimensionHash(mc.level) != targetDimId) {
+        if (!com.circulation.circulation_networks.utils.WorldResolveCompat.getDimensionId(mc.level).equals(targetDimId)) {
             return;
         }
         long elapsed = clientTick - startTick;

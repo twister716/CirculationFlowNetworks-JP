@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "circulation_networks:animated_special",
+    "base": "circulation_networks:item/node_pedestal",
+    "model": {
+      "type": "circulation_networks:animated_node",
+      "kind": "pedestal"
+    }
+  }
+}

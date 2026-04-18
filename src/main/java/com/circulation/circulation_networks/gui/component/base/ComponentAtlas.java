@@ -13,14 +13,12 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 
+@SuppressWarnings("resource")
 public final class ComponentAtlas extends ComponentAtlasBase {
 
     public static final ComponentAtlas INSTANCE = new ComponentAtlas();
     private static final Identifier ATLAS_TEXTURE_LOCATION = Identifier.fromNamespaceAndPath(DOMAIN, "generated/component_atlas");
-    private final RenderType guiRenderType = RenderType.create(
-        "cfn_component_atlas_gui",
-        RenderSetup.builder(RenderPipelines.GUI_TEXTURED).withTexture("Sampler0", ATLAS_TEXTURE_LOCATION).createRenderSetup()
-    );
+    private RenderType guiRenderType;
     private DynamicTexture texture;
 
     private ComponentAtlas() {
@@ -73,6 +71,7 @@ public final class ComponentAtlas extends ComponentAtlasBase {
         if (texture != null) {
             minecraft().getTextureManager().release(ATLAS_TEXTURE_LOCATION);
             texture = null;
+            guiRenderType = null;
         }
     }
 
@@ -81,6 +80,15 @@ public final class ComponentAtlas extends ComponentAtlasBase {
     }
 
     public RenderType guiRenderType() {
+        if (texture != null) {
+            minecraft().getTextureManager().register(ATLAS_TEXTURE_LOCATION, texture);
+        }
+        if (guiRenderType == null) {
+            guiRenderType = RenderType.create(
+                "cfn_component_atlas_gui",
+                RenderSetup.builder(RenderPipelines.GUI_TEXTURED).withTexture("Sampler0", ATLAS_TEXTURE_LOCATION).createRenderSetup()
+            );
+        }
         return guiRenderType;
     }
 }

@@ -2,6 +2,7 @@ package com.circulation.circulation_networks;
 
 import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.client.render.AnimatedNodeSpecialRenderer;
+import com.circulation.circulation_networks.client.render.AnimatedSpecialItemModel;
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
@@ -43,6 +44,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterItemModelsEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -86,6 +88,7 @@ final class CirculationFlowNetworksClient {
         NeoForge.EVENT_BUS.addListener(CirculationFlowNetworksClient::onClientLoggingOut);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterMenuScreens);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterClientExtensions);
+        modEventBus.addListener(CirculationFlowNetworksClient::onRegisterItemModels);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterSpecialModelRenderers);
         modEventBus.addListener(CirculationFlowNetworksClient::onAddClientReloadListeners);
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
@@ -194,6 +197,10 @@ final class CirculationFlowNetworksClient {
     private static void onRegisterSpecialModelRenderers(RegisterSpecialModelRendererEvent event) {
         event.register(AnimatedNodeSpecialRenderer.TYPE_ID, AnimatedNodeSpecialRenderer.Unbaked.MAP_CODEC);
         event.register(PocketNodeSpecialRenderer.TYPE_ID, PocketNodeSpecialRenderer.Unbaked.MAP_CODEC);
+    }
+
+    private static void onRegisterItemModels(RegisterItemModelsEvent event) {
+        event.register(AnimatedSpecialItemModel.TYPE_ID, AnimatedSpecialItemModel.Unbaked.MAP_CODEC);
     }
 
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

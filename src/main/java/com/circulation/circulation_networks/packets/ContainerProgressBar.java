@@ -28,7 +28,7 @@ public final class ContainerProgressBar implements Packet<ContainerProgressBar> 
         this.numericValue = value;
     }
 
-    public ContainerProgressBar decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull ContainerProgressBar decode(@NonNull RegistryFriendlyByteBuf buf) {
         return new ContainerProgressBar(buf.readShort(), buf.readLong());
     }
 

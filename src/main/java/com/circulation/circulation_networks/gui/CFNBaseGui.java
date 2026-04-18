@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -276,4 +277,12 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
+    public List<Rect2i> getGuiExtraAreas() {
+        var list = new ObjectArrayList<Rect2i>();
+        for (Component component : componentController.getAllComponents()) {
+            if (!component.isVisible()) continue;
+            list.add(new Rect2i(component.getAbsoluteX(), component.getAbsoluteY(), component.width, component.height));
+        }
+        return list;
+    }
 }

@@ -45,13 +45,8 @@ public final class RegistryItems {
     }
 
     private static Item.Properties withStaticTooltip(Item.Properties properties, String itemName) {
-        TooltipTranslationsComponent component = TooltipTranslationsComponent.fromTranslationKey(
-            "item." + CirculationFlowNetworks.MOD_ID + "." + itemName
-        );
-        if (component == null) {
-            return properties;
-        }
-        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS, component);
+        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS,
+            new TooltipTranslationsComponent("item." + CirculationFlowNetworks.MOD_ID + "." + itemName, false));
     }
 
     private static <T extends Item> T register(RegisterEvent.RegisterHelper<Item> helper, String name, Function<Item.Properties, T> factory) {

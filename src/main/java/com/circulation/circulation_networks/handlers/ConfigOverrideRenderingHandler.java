@@ -42,6 +42,7 @@ public final class ConfigOverrideRenderingHandler {
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
+        if (p == null) return;
 
         var stack = p.getMainHandItem();
         if (!(stack.getItem() == CFNItems.circulationConfigurator

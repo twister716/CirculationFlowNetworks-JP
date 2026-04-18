@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "circulation_networks:item/dimensional_charging_plugin"
+  }
+}

@@ -12,6 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
+@SuppressWarnings("unused")
 public final class SpoceRendering implements Packet<SpoceRendering> {
 
     public static final Type<SpoceRendering> TYPE = new Type<>(
@@ -33,7 +34,7 @@ public final class SpoceRendering implements Packet<SpoceRendering> {
         this.chargingScope = chargingScope;
     }
 
-    public SpoceRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
+    public @NonNull SpoceRendering decode(@NonNull RegistryFriendlyByteBuf buf) {
         return new SpoceRendering(BlockPos.of(buf.readLong()), buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 
@@ -50,7 +51,7 @@ public final class SpoceRendering implements Packet<SpoceRendering> {
             if (mc.level == null || SpoceRenderingHandler.INSTANCE == null) {
                 return;
             }
-            int dimId = DimensionHelper.getDimensionHash(mc.level);
+            String dimId = DimensionHelper.getDimensionId(mc.level);
             SpoceRenderingHandler.INSTANCE.setStaus(dimId, message.pos, message.linkScope, message.energyScope, message.chargingScope);
         });
     }

@@ -14,7 +14,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import org.jetbrains.annotations.Nullable;
 
-public final class FEHandler implements IEnergyHandler {
+public class FEHandler implements IEnergyHandler {
 
     private static final Direction[] DIRECTIONS = Direction.values();
 
@@ -25,11 +25,6 @@ public final class FEHandler implements IEnergyHandler {
     private EnergyType energyType;
 
     public FEHandler() {
-    }
-
-    @Nullable
-    private static Integer clampAmount(EnergyAmount amount) {
-        return (int) amount.asLongClamped();
     }
 
     private static boolean canExtract(EnergyHandler handler) {
@@ -98,7 +93,7 @@ public final class FEHandler implements IEnergyHandler {
     @Override
     public EnergyAmount extractEnergy(EnergyAmount maxExtract, @Nullable HubNode.HubMetadata hubMetadata) {
         if (send == null) return EnergyAmounts.ZERO;
-        int amount = clampAmount(maxExtract);
+        int amount = maxExtract.intValue();
         try (Transaction transaction = Transaction.openRoot()) {
             int extracted = send.extract(amount, transaction);
             transaction.commit();
@@ -109,7 +104,7 @@ public final class FEHandler implements IEnergyHandler {
     @Override
     public EnergyAmount receiveEnergy(EnergyAmount maxReceive, @Nullable HubNode.HubMetadata hubMetadata) {
         if (receive == null) return EnergyAmounts.ZERO;
-        int amount = clampAmount(maxReceive);
+        int amount = maxReceive.intValue();
         try (Transaction transaction = Transaction.openRoot()) {
             int inserted = receive.insert(amount, transaction);
             transaction.commit();

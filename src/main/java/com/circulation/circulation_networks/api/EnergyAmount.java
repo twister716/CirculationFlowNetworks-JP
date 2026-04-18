@@ -178,7 +178,11 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     @Override
     public final int intValue() {
         if (state == STATE_LONG) {
-            return (int) longValue;
+            if (longValue >= 0) {
+                return longValue > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) longValue;
+            } else {
+                return longValue < Integer.MIN_VALUE ? Integer.MIN_VALUE : (int) longValue;
+            }
         }
         if (state == STATE_UNINITIALIZED) {
             return 0;
