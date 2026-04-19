@@ -448,6 +448,7 @@ public class SpoceRenderingHandler {
         GlStateManager.enableBlend();
         GlStateManager.disableTexture2D();
         GlStateManager.disableLighting();
+        GlStateManager.enableDepth();
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
 

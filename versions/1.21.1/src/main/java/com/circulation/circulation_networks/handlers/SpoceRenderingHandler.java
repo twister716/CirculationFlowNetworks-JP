@@ -301,6 +301,7 @@ public class SpoceRenderingHandler {
         modelViewStack.translate(tx, ty, tz);
         RenderSystem.applyModelViewMatrix();
         RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
 

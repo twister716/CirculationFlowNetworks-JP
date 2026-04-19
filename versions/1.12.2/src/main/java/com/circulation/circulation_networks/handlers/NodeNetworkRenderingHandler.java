@@ -130,7 +130,7 @@ public final class NodeNetworkRenderingHandler {
         GlStateManager.pushMatrix();
         GlStateManager.translate(-doubleX, -doubleY, -doubleZ);
         GlStateManager.enableBlend();
-        GlStateManager.enableDepth();
+        GlStateManager.disableDepth();
         GlStateManager.disableTexture2D();
         GlStateManager.disableLighting();
         GlStateManager.disableCull();
