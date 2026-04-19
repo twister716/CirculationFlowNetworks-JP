@@ -49,10 +49,8 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         var pos = blockEntity.getBlockPos();
         var rb = this.blockEntities.get(pos);
-        if (rb != null) {
+        if (rb != null && rb != blockEntity) {
             EventHooks.onBlockEntityInvalidate(this.level, pos, rb);
-            rb.setRemoved();
-            rb.setLevel(null);
         }
     }
 

@@ -36,22 +36,16 @@ public abstract class MixinLevelChunk extends ChunkAccess {
         super(p_187621_, p_187622_, p_187623_, p_187624_, p_187625_, p_187626_, p_187627_);
     }
 
-    @Inject(method = "addAndRegisterBlockEntity",at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V",shift = At.Shift.AFTER))
+    @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (blockEntity != null) {
             EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
 
-    @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;clearRemoved()V", shift = At.Shift.AFTER))
-    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
-        var pos = blockEntity.getBlockPos();
-        var rb = this.blockEntities.get(pos);
-        if (rb != null) {
-            EventHooks.onBlockEntityInvalidate(this.level, pos, rb);
-            rb.setRemoved();
-            rb.setLevel(null);
-        }
+    @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
+    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci, @Local(name = "blockentity") BlockEntity blockentity, @Local BlockPos pos) {
+        EventHooks.onBlockEntityInvalidate(this.level, pos, blockentity);
     }
 
     @Inject(method = "removeBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
