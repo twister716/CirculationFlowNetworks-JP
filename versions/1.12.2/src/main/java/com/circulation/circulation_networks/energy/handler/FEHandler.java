@@ -37,10 +37,12 @@ public class FEHandler implements IEnergyHandler {
 
     @Override
     public IEnergyHandler init(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
-        bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, null));
         for (int i = 0; i < 6 && (this.send == null || this.receive == null); i++) {
             EnumFacing facing = EnumFacing.VALUES[i];
             bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, facing));
+        }
+        if (this.send == null || this.receive == null) {
+            bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, null));
         }
         return this;
     }

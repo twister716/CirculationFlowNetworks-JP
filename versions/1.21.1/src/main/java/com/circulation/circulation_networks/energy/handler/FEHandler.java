@@ -42,10 +42,12 @@ public class FEHandler implements IEnergyHandler {
         var level = blockEntity.getLevel();
         if (level == null) return this;
         var pos = blockEntity.getBlockPos();
-        bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null));
         for (Direction direction : DIRECTIONS) {
             if (send != null && receive != null) break;
             bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction));
+        }
+        if (send == null || receive == null) {
+            bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null));
         }
         return this;
     }

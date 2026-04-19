@@ -39,10 +39,12 @@ public class FEHandler implements IEnergyHandler {
 
     @Override
     public IEnergyHandler init(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
-        blockEntity.getCapability(ForgeCapabilities.ENERGY, null).ifPresent(this::bindStorage);
         for (Direction direction : DIRECTIONS) {
             if (send != null && receive != null) break;
             blockEntity.getCapability(ForgeCapabilities.ENERGY, direction).ifPresent(this::bindStorage);
+        }
+        if (send == null || receive == null) {
+            blockEntity.getCapability(ForgeCapabilities.ENERGY, null).ifPresent(this::bindStorage);
         }
         return this;
     }
