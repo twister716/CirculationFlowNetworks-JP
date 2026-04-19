@@ -18,7 +18,6 @@ import net.minecraft.core.BlockPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4fStack;
-import org.lwjgl.opengl.GL11;
 
 public final class NodeNetworkRenderingHandler {
 
@@ -36,7 +35,7 @@ public final class NodeNetworkRenderingHandler {
     private final Multiset<Pos> machinePoss = HashMultiset.create();
 
     private static void drawSphere(float r, float g, float b, float radius, float alpha) {
-        RenderingUtils.drawSphere(r, g, b, radius, alpha);
+        RenderingUtils.drawOverlaySphere(r, g, b, radius, alpha);
     }
 
     private static double distanceSqToPoint(double x, double y, double z, Pos pos) {
@@ -130,23 +129,22 @@ public final class NodeNetworkRenderingHandler {
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         RenderSystemCompat.applyModelViewMatrix();
         RenderSystemCompat.enableBlend();
-        RenderSystemCompat.disableDepthTest();
         RenderSystemCompat.disableCull();
         RenderSystemCompat.depthMask(false);
-        RenderSystemCompat.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        RenderSystemCompat.additiveBlendFunc();
 
         if (showNodes) {
             for (var link : nodeLinks) {
                 if (distanceSqToSegment(doubleX, doubleY, doubleZ, link) > MAX_RENDER_DISTANCE_SQ) continue;
-                RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 0.3f, 0.3f, 1.0f, 0.25f);
-                RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 0.3f, 0.3f, 1.0f, 1.0f);
+                RenderingUtils.drawOverlayLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 0.3f, 0.3f, 1.0f, 0.25f);
+                RenderingUtils.drawOverlayLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 0.3f, 0.3f, 1.0f, 1.0f);
             }
         }
         if (showMachines) {
             for (var link : machineLinks) {
                 if (distanceSqToSegment(doubleX, doubleY, doubleZ, link) > MAX_RENDER_DISTANCE_SQ) continue;
-                RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 1.0f, 0.3f, 0.3f, 0.25f);
-                RenderingUtils.drawLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 1.0f, 0.3f, 0.3f, 1.0f);
+                RenderingUtils.drawOverlayLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, GLOW_RADIUS, 1.0f, 0.3f, 0.3f, 0.25f);
+                RenderingUtils.drawOverlayLaserCylinder(link.from.x, link.from.y, link.from.z, link.to.x, link.to.y, link.to.z, CORE_RADIUS, 1.0f, 0.3f, 0.3f, 1.0f);
             }
         }
 
@@ -182,7 +180,6 @@ public final class NodeNetworkRenderingHandler {
             }
         }
 
-        RenderSystemCompat.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystemCompat.depthMask(true);
         RenderSystemCompat.enableCull();
         RenderSystemCompat.enableDepthTest();

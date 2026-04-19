@@ -39,7 +39,14 @@ public abstract class RenderingBackend {
                                            float radius,
                                            float r, float g, float b, float alpha);
 
+    public abstract void drawOverlayLaserCylinder(double fromX, double fromY, double fromZ,
+                                                  double toX, double toY, double toZ,
+                                                  float radius,
+                                                  float r, float g, float b, float alpha);
+
     public abstract void drawSphere(float r, float g, float b, float radius, float alpha, int slices, int stacks);
+
+    public abstract void drawOverlaySphere(float r, float g, float b, float radius, float alpha, int slices, int stacks);
 
     public abstract void drawCachedIntersection(float[] verts, float r, float g, float b, float lineWidth);
 }

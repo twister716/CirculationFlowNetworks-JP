@@ -16,7 +16,6 @@ import com.circulation.circulation_networks.packets.RenderingClear;
 import com.circulation.circulation_networks.registry.CFNBlocks;
 import com.circulation.circulation_networks.registry.CFNCreativeTabs;
 import com.circulation.circulation_networks.registry.RegistryBlocks;
-import com.circulation.circulation_networks.registry.RegistryDataComponents;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BlockEntityMultiblockShell;
@@ -63,7 +62,6 @@ public final class CirculationFlowNetworks {
 
     public CirculationFlowNetworks(IEventBus modEventBus, ModContainer modContainer) {
         CFNConfig.register(modContainer);
-        RegistryDataComponents.register(modEventBus);
         RegistryItems.register(modEventBus);
         RegistryBlocks.register(modEventBus);
         CFNCreativeTabs.register(modEventBus);

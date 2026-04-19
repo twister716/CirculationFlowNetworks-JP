@@ -94,7 +94,6 @@ public final class CirculationShielderRenderingHandler {
             RenderSystemCompat.enableCull();
             RenderSystemCompat.enableDepthTest();
             RenderSystemCompat.defaultBlendFunc();
-            RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
             RenderSystemCompat.disableBlend();
             modelViewStack.popMatrix();
             RenderSystemCompat.applyModelViewMatrix();

@@ -139,14 +139,14 @@ public class TextFieldComponent extends Component {
 
     @Override
     protected boolean onMouseClicked(int mouseX, int mouseY, int button) {
+        if (button != 0 || !super.contains(mouseX, mouseY) || !isEnabled()) {
+            return false;
+        }
         syncTextFieldBounds();
         applyNativeState();
-        boolean handled = textField.mouseClicked(gui, mouseX, mouseY, button);
-        if (!handled && button == 0 && super.contains(mouseX, mouseY) && isEnabled()) {
-            textField.setFocused(gui, true);
-            return true;
-        }
-        return handled;
+        textField.setFocused(gui, true);
+        textField.mouseClicked(gui, mouseX, mouseY, button);
+        return true;
     }
 
     @Override

@@ -150,6 +150,38 @@ public final class RenderingGeometryCore {
         return vertices;
     }
 
+    public static float[] buildUnitSphereQuadVertices(int slices, int stacks) {
+        float[] vertices = new float[slices * stacks * 12];
+        int cursor = 0;
+        for (int i = 0; i < slices; i++) {
+            double phi1 = Math.PI * i / slices;
+            double phi2 = Math.PI * (i + 1) / slices;
+            for (int j = 0; j < stacks; j++) {
+                double theta1 = 2.0D * Math.PI * j / stacks;
+                double theta2 = 2.0D * Math.PI * (j + 1) / stacks;
+
+                float x00 = (float) (Math.sin(phi1) * Math.cos(theta1));
+                float y00 = (float) Math.cos(phi1);
+                float z00 = (float) (Math.sin(phi1) * Math.sin(theta1));
+                float x10 = (float) (Math.sin(phi2) * Math.cos(theta1));
+                float y10 = (float) Math.cos(phi2);
+                float z10 = (float) (Math.sin(phi2) * Math.sin(theta1));
+                float x11 = (float) (Math.sin(phi2) * Math.cos(theta2));
+                float y11 = (float) Math.cos(phi2);
+                float z11 = (float) (Math.sin(phi2) * Math.sin(theta2));
+                float x01 = (float) (Math.sin(phi1) * Math.cos(theta2));
+                float y01 = (float) Math.cos(phi1);
+                float z01 = (float) (Math.sin(phi1) * Math.sin(theta2));
+
+                cursor = put(vertices, cursor, x00, y00, z00);
+                cursor = put(vertices, cursor, x10, y10, z10);
+                cursor = put(vertices, cursor, x11, y11, z11);
+                cursor = put(vertices, cursor, x01, y01, z01);
+            }
+        }
+        return vertices;
+    }
+
     public static double getPlayerRenderX(float partialTicks) {
         LocalPlayer player = Minecraft.getInstance().player;
         return player.xOld + (player.getX() - player.xOld) * partialTicks;

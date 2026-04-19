@@ -25,7 +25,6 @@ import com.circulation.circulation_networks.handlers.NodeHudRenderingHandler;
 import com.circulation.circulation_networks.handlers.NodeNetworkRenderingHandler;
 import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
-import com.circulation.circulation_networks.handlers.SpoceRenderingHandlerGL46L3;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
@@ -49,15 +48,12 @@ import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import org.lwjgl.opengl.GL11;
 
 final class CirculationFlowNetworksClient {
 
     private static final Identifier COMPONENT_ATLAS_RELOAD_LISTENER_ID =
         Identifier.fromNamespaceAndPath(CirculationFlowNetworks.MOD_ID, "component_atlas");
     private static boolean clientBootstrapComplete;
-    private static OpenGLLevel openGLLevel = OpenGLLevel.GL_1_1;
-    private static String openGLVersionString = "unavailable";
 
     private CirculationFlowNetworksClient() {
     }
@@ -126,64 +122,13 @@ final class CirculationFlowNetworksClient {
             return;
         }
         ComponentAtlas.INSTANCE.restart();
-        openGLLevel = detectOpenGLLevel();
-        SpoceRenderingHandler.INSTANCE = createSpoceHandler();
+        SpoceRenderingHandler.INSTANCE = new SpoceRenderingHandler();
         clientBootstrapComplete = true;
     }
 
     private static void onAddClientReloadListeners(AddClientReloadListenersEvent event) {
         event.addListener(COMPONENT_ATLAS_RELOAD_LISTENER_ID, (ResourceManagerReloadListener) ignored -> ComponentAtlas.INSTANCE.restart());
     }
-
-    private static OpenGLLevel detectOpenGLLevel() {
-        String versionStr;
-        try {
-            versionStr = GL11.glGetString(GL11.GL_VERSION);
-        } catch (Throwable throwable) {
-            openGLVersionString = "unavailable";
-            CirculationFlowNetworks.LOGGER.warn("Failed to obtain OpenGL version", throwable);
-            return OpenGLLevel.GL_1_1;
-        }
-
-        if (versionStr == null) {
-            openGLVersionString = "unavailable";
-            CirculationFlowNetworks.LOGGER.warn("Failed to obtain OpenGL version");
-            return OpenGLLevel.GL_1_1;
-        }
-        openGLVersionString = versionStr;
-
-        try {
-            String[] parts = versionStr.split("[. ]");
-            int major = Integer.parseInt(parts[0]);
-            int minor = Integer.parseInt(parts[1]);
-            if (major > 4 || (major == 4 && minor >= 6)) {
-                return OpenGLLevel.GL_4_6;
-            }
-            if (major > 3 || (major == 3 && minor >= 2)) {
-                return OpenGLLevel.GL_3_2_PLUS;
-            }
-        } catch (Exception e) {
-            CirculationFlowNetworks.LOGGER.warn("Failed to parse OpenGL version: {}", versionStr, e);
-        }
-
-        return OpenGLLevel.GL_1_1;
-    }
-
-    private static SpoceRenderingHandler ensureSupportedOpenGL() {
-        String message = "OpenGL version too low for Circulation Flow Networks. Detected: "
-            + openGLVersionString + ". Minimum required: 3.2.";
-        CirculationFlowNetworks.LOGGER.error(message);
-        throw new IllegalStateException(message);
-    }
-
-    private static SpoceRenderingHandler createSpoceHandler() {
-        return switch (openGLLevel) {
-            case GL_4_6 -> new SpoceRenderingHandlerGL46L3();
-            case GL_3_2_PLUS -> new SpoceRenderingHandler();
-            default -> ensureSupportedOpenGL();
-        };
-    }
-
 
     private static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CFNMenuTypes.HUB_MENU, GuiHub::new);
@@ -224,11 +169,5 @@ final class CirculationFlowNetworksClient {
             return;
         }
         RotatingModelVBORenderer.removePosition(System.identityHashCode(event.getWorld()), event.getPos());
-    }
-
-    private enum OpenGLLevel {
-        GL_1_1,
-        GL_3_2_PLUS,
-        GL_4_6
     }
 }

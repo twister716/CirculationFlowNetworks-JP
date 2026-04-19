@@ -68,6 +68,11 @@ public class Component extends Rectangle {
         return topY + Math.max(0, (areaHeight - GUI_TEXT_HEIGHT) / 2);
     }
 
+    @Nullable
+    public static GuiGraphicsExtractor peekCurrentGuiGraphics() {
+        return currentGuiGraphics;
+    }
+
     public List<Component> getChildren() {
         return children;
     }
@@ -313,7 +318,6 @@ public class Component extends Rectangle {
 
                 if (topComponent && isMouseOverSlot(localMouseX, localMouseY, slot.x, slot.y)) {
                     gui.setHoveredSlot(slot);
-                    guiGraphics.fill(screenX, screenY, screenX + 16, screenY + 16, -2130706433);
                 }
             }
         }
@@ -631,7 +635,6 @@ public class Component extends Rectangle {
         RenderSystemCompat.defaultBlendFunc();
         RenderSystemCompat.disableDepthTest();
         RenderSystemCompat.disableCull();
-        RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     public void setSize(int width, int height) {

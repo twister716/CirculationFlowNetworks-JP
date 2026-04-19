@@ -28,16 +28,16 @@ public class ItemPocketNode extends BaseItem {
         this.nodeType = nodeType;
     }
 
+    private static void sendFeedback(ServerPlayer player, String key) {
+        player.sendOverlayMessage(Component.translatable(key));
+    }
+
     @Override
     protected List<LocalizedComponent> buildTooltips(ItemStack stack) {
         var tooltips = new ObjectArrayList<>(super.buildTooltips(stack));
         tooltips.add(LocalizedComponent.of(TOOLTIP_ATTACH_ON_BLOCK));
         tooltips.add(LocalizedComponent.of(TOOLTIP_DETACH_WITH_CONFIGURATOR));
         return tooltips;
-    }
-
-    private static void sendFeedback(ServerPlayer player, String key) {
-        player.sendOverlayMessage(Component.translatable(key));
     }
 
     @Override

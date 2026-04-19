@@ -79,10 +79,14 @@ public final class ComponentAtlas extends ComponentAtlasBase {
         return ATLAS_TEXTURE_LOCATION;
     }
 
-    public RenderType guiRenderType() {
+    public void ensureTextureRegistered() {
         if (texture != null) {
             minecraft().getTextureManager().register(ATLAS_TEXTURE_LOCATION, texture);
         }
+    }
+
+    public RenderType guiRenderType() {
+        ensureTextureRegistered();
         if (guiRenderType == null) {
             guiRenderType = RenderType.create(
                 "cfn_component_atlas_gui",

@@ -4,8 +4,6 @@ import com.circulation.circulation_networks.CirculationFlowNetworks;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -17,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Comparator;
@@ -264,48 +261,6 @@ public abstract class ComponentAtlasBase extends ComponentAtlasRegistry {
             .thenComparingInt(value -> value.width)
         );
         return dimensions;
-    }
-
-    protected static int uploadGlTexture(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int[] pixels = new int[width * height];
-        image.getRGB(0, 0, width, height, pixels, 0, width);
-
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder());
-        for (int pixel : pixels) {
-            byteBuffer.put((byte) ((pixel >> 16) & 0xFF));
-            byteBuffer.put((byte) ((pixel >> 8) & 0xFF));
-            byteBuffer.put((byte) (pixel & 0xFF));
-            byteBuffer.put((byte) ((pixel >> 24) & 0xFF));
-        }
-        byteBuffer.flip();
-
-        int textureId = GL11.glGenTextures();
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexImage2D(
-            GL11.GL_TEXTURE_2D,
-            0,
-            GL11.GL_RGBA8,
-            width,
-            height,
-            0,
-            GL11.GL_RGBA,
-            GL11.GL_UNSIGNED_BYTE,
-            byteBuffer
-        );
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-        return textureId;
-    }
-
-    protected static void deleteGlTexture(int textureId) {
-        if (textureId != 0) {
-            GL11.glDeleteTextures(textureId);
-        }
     }
 
     private static BufferedImage createFallback() {

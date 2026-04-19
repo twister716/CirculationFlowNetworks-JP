@@ -9,12 +9,15 @@ import com.circulation.circulation_networks.gui.component.base.ComponentScreenCo
 import com.circulation.circulation_networks.gui.component.base.RenderPhase;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.lang.reflect.Method;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +50,13 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractContainerScreen<T> {
+    private static final Identifier SLOT_HIGHLIGHT_BACK_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_back");
+    private static final Identifier SLOT_HIGHLIGHT_FRONT_SPRITE = Identifier.withDefaultNamespace("container/slot_highlight_front");
+    @Nullable
+    private static final Method ABSTRACT_CONTAINER_SCREEN_ON_STOP_HOVERING = resolveOnStopHoveringMethod();
 
     protected final T container;
     private final ComponentScreenController componentController = new ComponentScreenController();
-    @Nullable
-    protected Slot hoveredSlot;
     private float currentPartialTick;
 
     // -------------------------------------------------------------------------
@@ -65,6 +71,17 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     protected CFNBaseGui(@NotNull T container, Inventory playerInventory, net.minecraft.network.chat.Component title, int imageWidth, int imageHeight) {
         super(container, playerInventory, title, imageWidth, imageHeight);
         this.container = container;
+    }
+
+    @Nullable
+    private static Method resolveOnStopHoveringMethod() {
+        try {
+            Method method = AbstractContainerScreen.class.getDeclaredMethod("onStopHovering", Slot.class);
+            method.setAccessible(true);
+            return method;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 
     public int getGuiLeftPos() {
@@ -84,7 +101,14 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     }
 
     public void setHoveredSlot(@Nullable Slot hoveredSlot) {
+        Slot previousHoveredSlot = this.hoveredSlot;
+        if (previousHoveredSlot == hoveredSlot) {
+            return;
+        }
         this.hoveredSlot = hoveredSlot;
+        if (previousHoveredSlot != null) {
+            onHoveredSlotChanged(previousHoveredSlot);
+        }
     }
 
     public void focusComponentInput(@Nullable GuiEventListener listener) {
@@ -114,12 +138,16 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         return componentController.getTopComponentAt(mouseX, mouseY) == component;
     }
 
+    // -------------------------------------------------------------------------
+    // Component registration
+    // -------------------------------------------------------------------------
+
     public void bringComponentToFront(Component component) {
         componentController.bringToFront(component);
     }
 
     // -------------------------------------------------------------------------
-    // Component registration
+    // GUI lifecycle
     // -------------------------------------------------------------------------
 
     /**
@@ -129,8 +157,9 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     protected void buildComponents(Map<RenderPhase, List<Component>> components) {
     }
 
+
     // -------------------------------------------------------------------------
-    // GUI lifecycle
+    // Abstract rendering hooks
     // -------------------------------------------------------------------------
 
     @Override
@@ -142,32 +171,22 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         ComponentAtlas.INSTANCE.awaitReady();
     }
 
-
-    // -------------------------------------------------------------------------
-    // Abstract rendering hooks
-    // -------------------------------------------------------------------------
-
     /**
      * Draw the GUI background texture.
      */
     public abstract void drawBG(int offsetX, int offsetY, int mouseX, int mouseY);
+
+    // -------------------------------------------------------------------------
+    // Rendering
+    // -------------------------------------------------------------------------
 
     /**
      * Draw GUI foreground elements (labels, overlays, etc.).
      */
     public abstract void drawFG(int offsetX, int offsetY, int mouseX, int mouseY);
 
-    // -------------------------------------------------------------------------
-    // Rendering
-    // -------------------------------------------------------------------------
-
-    private void resetColor() {
-        RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-    }
-
     private void renderComponentPhase(GuiGraphicsExtractor guiGraphics, RenderPhase phase, int mouseX, int mouseY, float partialTicks) {
         resetGuiRenderState();
-        resetColor();
         Component.setCurrentGuiGraphics(guiGraphics);
         try {
             componentController.renderPhase(phase, mouseX, mouseY, partialTicks);
@@ -194,17 +213,31 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         RenderSystemCompat.defaultBlendFunc();
         RenderSystemCompat.disableDepthTest();
         RenderSystemCompat.disableCull();
-        RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
     public void extractContents(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         currentPartialTick = partialTicks;
         componentController.handleActiveDrag(mouseX, mouseY);
-        this.hoveredSlot = null;
-        super.extractContents(guiGraphics, mouseX, mouseY, partialTicks);
+        for (Renderable renderable : this.renderables) {
+            renderable.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
+        }
+
+        GuiGraphicsCompat.pushPose(guiGraphics);
+        GuiGraphicsCompat.translate(guiGraphics, this.leftPos, this.topPos, 0.0F);
+        this.extractLabels(guiGraphics, mouseX, mouseY);
+
+        setHoveredSlot(findHoveredSlot(mouseX, mouseY));
+        extractSlotHighlight(guiGraphics, SLOT_HIGHLIGHT_BACK_SPRITE);
+        this.extractSlots(guiGraphics, mouseX, mouseY);
+        extractSlotHighlight(guiGraphics, SLOT_HIGHLIGHT_FRONT_SPRITE);
+
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+            new net.neoforged.neoforge.client.event.ContainerScreenEvent.Render.Foreground(this, guiGraphics, mouseX, mouseY)
+        );
+        GuiGraphicsCompat.popPose(guiGraphics);
+
         resetGuiRenderState();
-        resetColor();
         this.drawFG(this.leftPos, this.topPos, mouseX, mouseY);
         renderComponentPhase(guiGraphics, RenderPhase.NORMAL, mouseX, mouseY, partialTicks);
         renderComponentPhase(guiGraphics, RenderPhase.FOREGROUND, mouseX, mouseY, partialTicks);
@@ -214,15 +247,17 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     protected void extractLabels(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         GuiGraphicsCompat.pushPose(guiGraphics);
         GuiGraphicsCompat.translate(guiGraphics, -this.leftPos, -this.topPos, 0.0F);
-        renderComponentPhase(guiGraphics, RenderPhase.BACKGROUND, mouseX, mouseY, currentPartialTick);
-        resetColor();
         this.drawBG(this.leftPos, this.topPos, mouseX, mouseY);
+        renderComponentPhase(guiGraphics, RenderPhase.BACKGROUND, mouseX, mouseY, currentPartialTick);
         GuiGraphicsCompat.popPose(guiGraphics);
-        super.extractLabels(guiGraphics, mouseX, mouseY);
     }
 
     @Override
     protected void extractTooltip(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
+        if (this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
+            super.extractTooltip(guiGraphics, mouseX, mouseY);
+            return;
+        }
         List<net.minecraft.network.chat.Component> mcTooltip = collectComponentTooltip(mouseX, mouseY);
         if (mcTooltip != null && !mcTooltip.isEmpty()) {
             guiGraphics.setComponentTooltipForNextFrame(this.font, mcTooltip, mouseX, mouseY);
@@ -235,6 +270,12 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
     // -------------------------------------------------------------------------
     // Event handling
     // -------------------------------------------------------------------------
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        componentController.updateComponents();
+    }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
@@ -285,4 +326,32 @@ public abstract class CFNBaseGui<T extends CFNBaseContainer> extends AbstractCon
         }
         return list;
     }
+
+    @Nullable
+    private Slot findHoveredSlot(double mouseX, double mouseY) {
+        for (Slot slot : this.menu.slots) {
+            if (slot.isActive() && this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+                return slot;
+            }
+        }
+        return null;
+    }
+
+    private void extractSlotHighlight(GuiGraphicsExtractor guiGraphics, Identifier sprite) {
+        if (this.hoveredSlot != null && this.hoveredSlot.isHighlightable()) {
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, this.hoveredSlot.x - 4, this.hoveredSlot.y - 4, 24, 24);
+        }
+    }
+
+    private void onHoveredSlotChanged(Slot previousHoveredSlot) {
+        Method onStopHovering = ABSTRACT_CONTAINER_SCREEN_ON_STOP_HOVERING;
+        if (onStopHovering == null) {
+            return;
+        }
+        try {
+            onStopHovering.invoke(this, previousHoveredSlot);
+        } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
 }

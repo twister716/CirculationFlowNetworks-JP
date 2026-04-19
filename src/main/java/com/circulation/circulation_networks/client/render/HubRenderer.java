@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,9 +62,9 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
         float crystalAngle = NodeRotationAnimation.hubCrystalAngle(worldTime, partialTick);
         BlockPos ambientLightSamplePos = ambientLightSamplePos(hub);
 
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, hub.getLevel(), hub.getBlockPos(), ambientLightSamplePos, state, HUB_BASE,
+        RotatingModelVBORenderer.renderAmbientLitNoCull(poseStack, hub.getLevel(), hub.getBlockPos(), ambientLightSamplePos, state, HUB_BASE,
             0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state, HUB_EMISSIVE,
+        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state, HUB_EMISSIVE,
             0.0F, CENTER, CENTER, CENTER);
         renderAmbientRotatingCached(hub, poseStack, state, HUB_RING_UP_BASE, upperAngle, HubRenderLayout.ringYOffset(),
             ambientLightSamplePos);
@@ -73,7 +74,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
         renderFullBrightRotatingCached(poseStack, state, HUB_RING_DOWN_EMISSIVE, lowerAngle, HubRenderLayout.ringYOffset());
         poseStack.pushPose();
         poseStack.translate(0.0D, HubRenderLayout.crystalYOffset(), 0.0D);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state, HUB_CRYSTAL,
+        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state, HUB_CRYSTAL,
             crystalAngle, CENTER, CENTER, CENTER);
         poseStack.popPose();
     }
@@ -121,7 +122,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
 
         poseStack.pushPose();
         poseStack.translate(offset.x(), offset.y(), offset.z());
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state,
+        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state,
             resolvePluginModel(stack, renderPos), angle, CENTER, CENTER, CENTER);
         poseStack.popPose();
     }
@@ -129,7 +130,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
     private static void renderFullBrightStaticCached(PoseStack poseStack, BlockState state, Identifier modelLocation, double yOffset) {
         poseStack.pushPose();
         poseStack.translate(0.0D, yOffset, 0.0D);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state, modelLocation,
+        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state, modelLocation,
             0.0F, CENTER, CENTER, CENTER);
         poseStack.popPose();
     }
@@ -137,7 +138,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
     private static void renderFullBrightRotatingCached(PoseStack poseStack, BlockState state, Identifier modelLocation, float angle, double yOffset) {
         poseStack.pushPose();
         poseStack.translate(0.0D, yOffset, 0.0D);
-        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state, modelLocation,
+        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state, modelLocation,
             angle, CENTER, CENTER, CENTER);
         poseStack.popPose();
     }
@@ -146,7 +147,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
                                                     Identifier modelLocation, float angle, double yOffset, BlockPos lightSamplePos) {
         poseStack.pushPose();
         poseStack.translate(0.0D, yOffset, 0.0D);
-        RotatingModelVBORenderer.renderAmbientLit(poseStack, hub.getLevel(), hub.getBlockPos(), lightSamplePos, state, modelLocation,
+        RotatingModelVBORenderer.renderAmbientLitNoCull(poseStack, hub.getLevel(), hub.getBlockPos(), lightSamplePos, state, modelLocation,
             angle, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
         poseStack.popPose();
     }
@@ -227,6 +228,19 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
     @Override
     public boolean shouldRender(@NotNull BlockEntityHub blockEntity, @NotNull Vec3 cameraPos) {
         return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos);
+    }
+
+    @Override
+    public @NotNull AABB getRenderBoundingBox(@NotNull BlockEntityHub blockEntity) {
+        BlockPos pos = blockEntity.getBlockPos();
+        return new AABB(
+            pos.getX() + HubRenderLayout.renderBoundsMinXZ(),
+            pos.getY() + HubRenderLayout.renderBoundsMinY(),
+            pos.getZ() + HubRenderLayout.renderBoundsMinXZ(),
+            pos.getX() + HubRenderLayout.renderBoundsMaxXZ(),
+            pos.getY() + HubRenderLayout.renderBoundsMaxY(),
+            pos.getZ() + HubRenderLayout.renderBoundsMaxXZ()
+        );
     }
 
     @Override

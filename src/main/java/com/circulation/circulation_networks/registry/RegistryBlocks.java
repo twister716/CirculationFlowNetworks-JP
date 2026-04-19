@@ -18,7 +18,6 @@ import com.circulation.circulation_networks.tiles.nodes.BlockEntityChargingNode;
 import com.circulation.circulation_networks.tiles.nodes.BlockEntityHub;
 import com.circulation.circulation_networks.tiles.nodes.BlockEntityPortNode;
 import com.circulation.circulation_networks.tiles.nodes.BlockEntityRelayNode;
-import com.circulation.circulation_networks.tooltip.TooltipTranslationsComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -115,14 +114,10 @@ public final class RegistryBlocks {
             id,
             new BaseBlockItem(
                 block,
-                withStaticTooltip(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)), name, "hub".equals(name))
+                new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)),
+                "hub".equals(name)
             )
         );
-    }
-
-    private static Item.Properties withStaticTooltip(Item.Properties properties, String blockName, boolean moveFirstTooltipToEnd) {
-        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS,
-            new TooltipTranslationsComponent("block." + CirculationFlowNetworks.MOD_ID + "." + blockName, moveFirstTooltipToEnd));
     }
 
     private static <T extends BlockEntity> BlockEntityType<T> registerBlockEntityType(

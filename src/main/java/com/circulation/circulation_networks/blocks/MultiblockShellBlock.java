@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.blocks;
 
 import com.circulation.circulation_networks.tiles.BlockEntityMultiblockShell;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
@@ -57,6 +59,7 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
             return true;
         }
     };
+    private static final LongSet ORIGIN_REMOVAL_GUARD = new LongOpenHashSet();
 
     public MultiblockShellBlock(ResourceKey<Block> id) {
         super(BlockBehaviour.Properties.of()
@@ -90,6 +93,45 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         }
         BlockState originState = level.getBlockState(origin);
         return originState.isAir() || originState.getBlock() instanceof MultiblockShellBlock;
+    }
+
+    public static boolean isOriginRemovalGuarded(BlockPos originPos) {
+        synchronized (ORIGIN_REMOVAL_GUARD) {
+            return ORIGIN_REMOVAL_GUARD.contains(originPos.asLong());
+        }
+    }
+
+    private static boolean enterOriginRemovalGuard(BlockPos originPos) {
+        synchronized (ORIGIN_REMOVAL_GUARD) {
+            return ORIGIN_REMOVAL_GUARD.add(originPos.asLong());
+        }
+    }
+
+    private static void exitOriginRemovalGuard(BlockPos originPos) {
+        synchronized (ORIGIN_REMOVAL_GUARD) {
+            ORIGIN_REMOVAL_GUARD.remove(originPos.asLong());
+        }
+    }
+
+    private static void redirectShellRemovalToOrigin(Level level, BlockPos shellPos) {
+        if (level.isClientSide()) {
+            return;
+        }
+        BlockPos originPos = getOriginPos(level, shellPos);
+        if (originPos == null || isOriginRemovalGuarded(originPos)) {
+            return;
+        }
+        if (!level.isLoaded(originPos) || level.getBlockState(originPos).isAir()) {
+            return;
+        }
+        if (!enterOriginRemovalGuard(originPos)) {
+            return;
+        }
+        try {
+            level.destroyBlock(originPos, true, null);
+        } finally {
+            exitOriginRemovalGuard(originPos);
+        }
     }
 
     private static @NotNull VoxelShape emptyShape() {
@@ -171,40 +213,20 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
                                        Player player, ItemStack toolStack, boolean willHarvest, FluidState fluid) {
-        if (willHarvest) {
-            return true;
-        }
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos != null && !level.isEmptyBlock(originPos)) {
-            level.removeBlock(originPos, false);
-        }
-        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, false, fluid);
+        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
     }
 
     @Override
     @NotNull
     public BlockState playerWillDestroy(Level level, BlockPos pos,
                                         BlockState state, Player player) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos != null) {
-            BlockState originState = level.getBlockState(originPos);
-            originState.getBlock().playerWillDestroy(level, originPos, originState, player);
-        }
         return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
     public void playerDestroy(Level level, Player player, BlockPos pos,
                               BlockState state, @Nullable BlockEntity be, ItemStack stack) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos != null && !level.isEmptyBlock(originPos)) {
-            BlockState originState = level.getBlockState(originPos);
-            BlockEntity originBE = level.getBlockEntity(originPos);
-            originState.getBlock().playerDestroy(level, player, originPos, originState, originBE, stack);
-        } else {
-            super.playerDestroy(level, player, pos, state, be, stack);
-        }
-        level.removeBlock(pos, false);
+        super.playerDestroy(level, player, pos, state, be, stack);
     }
 
     @Override
@@ -221,13 +243,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @Override
     protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos,
                                   Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
-        BlockPos originPos = getOriginPos(level, pos);
-        if (originPos != null && !level.isEmptyBlock(originPos)) {
-            BlockState originState = level.getBlockState(originPos);
-            BlockEntity originBE = level.getBlockEntity(originPos);
-            Block.dropResources(originState, level, originPos, originBE);
-            level.removeBlock(originPos, false);
-        }
         super.onExplosionHit(state, level, pos, explosion, dropConsumer);
     }
 
@@ -262,6 +277,12 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
             return originState.getBlock().getExplosionResistance(originState, level, originPos, explosion);
         }
         return super.getExplosionResistance(state, level, pos, explosion);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        redirectShellRemovalToOrigin(level, pos);
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }
 
     @Override

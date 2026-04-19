@@ -28,7 +28,6 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL11;
 
 public final class NodeHudRenderingHandler {
 
@@ -242,16 +241,17 @@ public final class NodeHudRenderingHandler {
         c2.div(c2.w);
         c3.div(c3.w);
         c4.div(c4.w);
-        int[] viewport = new int[4];
-        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
-        float sx1 = viewport[0] + viewport[2] * (c1.x + 1) / 2f;
-        float sy1 = viewport[1] + viewport[3] * (c1.y + 1) / 2f;
-        float sx2 = viewport[0] + viewport[2] * (c2.x + 1) / 2f;
-        float sy2 = viewport[1] + viewport[3] * (c2.y + 1) / 2f;
-        float sx3 = viewport[0] + viewport[2] * (c3.x + 1) / 2f;
-        float sy3 = viewport[1] + viewport[3] * (c3.y + 1) / 2f;
-        float sx4 = viewport[0] + viewport[2] * (c4.x + 1) / 2f;
-        float sy4 = viewport[1] + viewport[3] * (c4.y + 1) / 2f;
+        Minecraft minecraft = Minecraft.getInstance();
+        int viewportWidth = minecraft.getWindow().getWidth();
+        int viewportHeight = minecraft.getWindow().getHeight();
+        float sx1 = viewportWidth * (c1.x + 1.0F) * 0.5F;
+        float sy1 = viewportHeight * (c1.y + 1.0F) * 0.5F;
+        float sx2 = viewportWidth * (c2.x + 1.0F) * 0.5F;
+        float sy2 = viewportHeight * (c2.y + 1.0F) * 0.5F;
+        float sx3 = viewportWidth * (c3.x + 1.0F) * 0.5F;
+        float sy3 = viewportHeight * (c3.y + 1.0F) * 0.5F;
+        float sx4 = viewportWidth * (c4.x + 1.0F) * 0.5F;
+        float sy4 = viewportHeight * (c4.y + 1.0F) * 0.5F;
         float minX = Math.min(Math.min(sx1, sx2), Math.min(sx3, sx4));
         float minY = Math.min(Math.min(sy1, sy2), Math.min(sy3, sy4));
         float maxX = Math.max(Math.max(sx1, sx2), Math.max(sx3, sx4));
@@ -260,12 +260,11 @@ public final class NodeHudRenderingHandler {
         int ry = Math.round(minY);
         int rw = Math.round(maxX - minX);
         int rh = Math.round(maxY - minY);
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(rx, ry, Math.max(rw, 1), Math.max(rh, 1));
+        RenderSystem.enableScissorForRenderTypeDraws(rx, ry, Math.max(rw, 1), Math.max(rh, 1));
     }
 
     private void disableHudScissor() {
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        RenderSystem.disableScissorForRenderTypeDraws();
     }
 
     private void drawRotatedRegion(ComponentAtlas atlas, AtlasRegion region,

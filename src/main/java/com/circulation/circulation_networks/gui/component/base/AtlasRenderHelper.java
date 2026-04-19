@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -45,6 +46,12 @@ public final class AtlasRenderHelper {
 
     public static void drawRegion(ComponentAtlas atlas, AtlasRegion region, float screenX, float screenY, float renderW, float renderH,
                                   int red, int green, int blue, int alpha) {
+        GuiGraphicsExtractor guiGraphics = Component.peekCurrentGuiGraphics();
+        if (guiGraphics != null) {
+            drawRegionWithGuiGraphics(guiGraphics, atlas, region, screenX, screenY, renderW, renderH, red, green, blue, alpha);
+            return;
+        }
+
         if (batchDepth > 0 && alpha == 255 && red == 255 && green == 255 && blue == 255 && atlas == batchAtlas) {
             appendQuad(region.u0(), region.v0(), region.u1(), region.v1(), screenX, screenY, renderW, renderH, red, green, blue, alpha);
             return;
@@ -76,6 +83,26 @@ public final class AtlasRenderHelper {
         float v0 = (float) (region.y + srcY) / region.atlasHeight;
         float u1 = (float) (region.x + srcX + srcW) / region.atlasWidth;
         float v1 = (float) (region.y + srcY + srcH) / region.atlasHeight;
+
+        GuiGraphicsExtractor guiGraphics = Component.peekCurrentGuiGraphics();
+        if (guiGraphics != null) {
+            guiGraphics.blit(
+                RenderPipelines.GUI_TEXTURED,
+                atlas.textureLocation(),
+                screenX,
+                screenY,
+                region.x + srcX,
+                region.y + srcY,
+                renderW,
+                renderH,
+                srcW,
+                srcH,
+                region.atlasWidth,
+                region.atlasHeight,
+                -1
+            );
+            return;
+        }
 
         if (batchDepth > 0 && atlas == batchAtlas) {
             appendQuad(u0, v0, u1, v1, screenX, screenY, renderW, renderH, 255, 255, 255, 255);
@@ -112,6 +139,46 @@ public final class AtlasRenderHelper {
         }
         batchBuffer = null;
         batchAtlas = null;
+    }
+
+    private static void drawRegionWithGuiGraphics(GuiGraphicsExtractor guiGraphics,
+                                                  ComponentAtlas atlas,
+                                                  AtlasRegion region,
+                                                  float screenX,
+                                                  float screenY,
+                                                  float renderW,
+                                                  float renderH,
+                                                  int red,
+                                                  int green,
+                                                  int blue,
+                                                  int alpha) {
+        atlas.ensureTextureRegistered();
+        int x0 = Math.round(screenX);
+        int y0 = Math.round(screenY);
+        int x1 = Math.round(screenX + renderW);
+        int y1 = Math.round(screenY + renderH);
+        if (x1 <= x0 || y1 <= y0) {
+            return;
+        }
+        guiGraphics.blit(
+            RenderPipelines.GUI_TEXTURED,
+            atlas.textureLocation(),
+            x0,
+            y0,
+            region.x,
+            region.y,
+            x1 - x0,
+            y1 - y0,
+            region.width,
+            region.height,
+            region.atlasWidth,
+            region.atlasHeight,
+            packColor(red, green, blue, alpha)
+        );
+    }
+
+    private static int packColor(int red, int green, int blue, int alpha) {
+        return (alpha & 0xFF) << 24 | (red & 0xFF) << 16 | (green & 0xFF) << 8 | (blue & 0xFF);
     }
 
     private static void drawMesh(RenderType renderType, MeshData mesh) {

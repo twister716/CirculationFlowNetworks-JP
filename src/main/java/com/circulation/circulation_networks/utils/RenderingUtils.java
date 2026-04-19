@@ -41,12 +41,27 @@ public final class RenderingUtils {
         RenderingBackend.get().drawLaserCylinder(fromX, fromY, fromZ, toX, toY, toZ, radius, r, g, b, alpha);
     }
 
+    public static void drawOverlayLaserCylinder(double fromX, double fromY, double fromZ,
+                                                double toX, double toY, double toZ,
+                                                float radius,
+                                                float r, float g, float b, float alpha) {
+        RenderingBackend.get().drawOverlayLaserCylinder(fromX, fromY, fromZ, toX, toY, toZ, radius, r, g, b, alpha);
+    }
+
     public static void drawSphere(float r, float g, float b, float radius, float alpha) {
         drawSphere(r, g, b, radius, alpha, 32, 32);
     }
 
     public static void drawSphere(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
         RenderingBackend.get().drawSphere(r, g, b, radius, alpha, slices, stacks);
+    }
+
+    public static void drawOverlaySphere(float r, float g, float b, float radius, float alpha) {
+        drawOverlaySphere(r, g, b, radius, alpha, 32, 32);
+    }
+
+    public static void drawOverlaySphere(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
+        RenderingBackend.get().drawOverlaySphere(r, g, b, radius, alpha, slices, stacks);
     }
 
     public static double getPlayerRenderX(float partialTicks) {

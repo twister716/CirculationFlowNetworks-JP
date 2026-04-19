@@ -16,7 +16,7 @@ public final class GuiGraphicsCompat {
     }
 
     public static void drawString(GuiGraphicsExtractor guiGraphics, Font font, String text, int x, int y, int color, boolean shadow) {
-        guiGraphics.text(font, text, x, y, color, shadow);
+        guiGraphics.text(font, text, x, y, normalizeGuiTextColor(color), shadow);
     }
 
     public static void pushPose(GuiGraphicsExtractor guiGraphics) {
@@ -47,6 +47,10 @@ public final class GuiGraphicsCompat {
 
     public static void scale(GuiGraphicsExtractor guiGraphics, float x, float y, float z) {
         guiGraphics.pose().scale(x, y);
+    }
+
+    private static int normalizeGuiTextColor(int color) {
+        return (color & 0xFF000000) == 0 ? color | 0xFF000000 : color;
     }
 
     public static class CFNEditBox extends EditBox {

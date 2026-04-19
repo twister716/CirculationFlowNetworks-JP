@@ -7,7 +7,6 @@ import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
 import com.circulation.circulation_networks.items.ItemMaterial;
 import com.circulation.circulation_networks.items.ItemPocketNode;
 import com.circulation.circulation_networks.items.ItemWideAreaChargingPlugin;
-import com.circulation.circulation_networks.tooltip.TooltipTranslationsComponent;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -28,25 +27,20 @@ public final class RegistryItems {
 
     private static void onRegisterItems(RegisterEvent event) {
         event.register(net.minecraft.core.registries.Registries.ITEM, helper -> {
-            CFNItems.circulationConfigurator = register(helper, "circulation_configurator", properties -> new ItemCirculationConfigurator(withStaticTooltip(properties, "circulation_configurator")));
-            CFNItems.pocketPortNode = register(helper, "pocket_port_node", properties -> new ItemPocketNode(NodeTypes.PORT_NODE, withStaticTooltip(properties, "pocket_port_node")));
-            CFNItems.pocketChargingNode = register(helper, "pocket_charging_node", properties -> new ItemPocketNode(NodeTypes.CHARGING_NODE, withStaticTooltip(properties, "pocket_charging_node")));
-            CFNItems.pocketRelayNode = register(helper, "pocket_relay_node", properties -> new ItemPocketNode(NodeTypes.RELAY_NODE, withStaticTooltip(properties, "pocket_relay_node")));
+            CFNItems.circulationConfigurator = register(helper, "circulation_configurator", ItemCirculationConfigurator::new);
+            CFNItems.pocketPortNode = register(helper, "pocket_port_node", properties -> new ItemPocketNode(NodeTypes.PORT_NODE, properties));
+            CFNItems.pocketChargingNode = register(helper, "pocket_charging_node", properties -> new ItemPocketNode(NodeTypes.CHARGING_NODE, properties));
+            CFNItems.pocketRelayNode = register(helper, "pocket_relay_node", properties -> new ItemPocketNode(NodeTypes.RELAY_NODE, properties));
             PocketNodeItems.register(NodeTypes.PORT_NODE, CFNItems.pocketPortNode);
             PocketNodeItems.register(NodeTypes.CHARGING_NODE, CFNItems.pocketChargingNode);
             PocketNodeItems.register(NodeTypes.RELAY_NODE, CFNItems.pocketRelayNode);
-            CFNItems.hubChannelPlugin = register(helper, "hub_channel_plugin", properties -> new ItemHubChannelPlugin(withStaticTooltip(properties, "hub_channel_plugin")));
-            CFNItems.wideAreaChargingPlugin = register(helper, "wide_area_charging_plugin", properties -> new ItemWideAreaChargingPlugin(withStaticTooltip(properties, "wide_area_charging_plugin")));
-            CFNItems.dimensionalChargingPlugin = register(helper, "dimensional_charging_plugin", properties -> new ItemDimensionalChargingPlugin(withStaticTooltip(properties, "dimensional_charging_plugin")));
-            CFNItems.circulationSourceCrystal = register(helper, "circulation_source_crystal", properties -> new ItemMaterial(withStaticTooltip(properties, "circulation_source_crystal")));
-            CFNItems.infernalMeltingCrystal = register(helper, "infernal_melting_crystal", properties -> new ItemMaterial(withStaticTooltip(properties, "infernal_melting_crystal")));
-            CFNItems.endCoreCrystal = register(helper, "end_core_crystal", properties -> new ItemMaterial(withStaticTooltip(properties, "end_core_crystal")));
+            CFNItems.hubChannelPlugin = register(helper, "hub_channel_plugin", ItemHubChannelPlugin::new);
+            CFNItems.wideAreaChargingPlugin = register(helper, "wide_area_charging_plugin", ItemWideAreaChargingPlugin::new);
+            CFNItems.dimensionalChargingPlugin = register(helper, "dimensional_charging_plugin", ItemDimensionalChargingPlugin::new);
+            CFNItems.circulationSourceCrystal = register(helper, "circulation_source_crystal", ItemMaterial::new);
+            CFNItems.infernalMeltingCrystal = register(helper, "infernal_melting_crystal", ItemMaterial::new);
+            CFNItems.endCoreCrystal = register(helper, "end_core_crystal", ItemMaterial::new);
         });
-    }
-
-    private static Item.Properties withStaticTooltip(Item.Properties properties, String itemName) {
-        return properties.component(CFNDataComponents.TOOLTIP_TRANSLATIONS,
-            new TooltipTranslationsComponent("item." + CirculationFlowNetworks.MOD_ID + "." + itemName, false));
     }
 
     private static <T extends Item> T register(RegisterEvent.RegisterHelper<Item> helper, String name, Function<Item.Properties, T> factory) {

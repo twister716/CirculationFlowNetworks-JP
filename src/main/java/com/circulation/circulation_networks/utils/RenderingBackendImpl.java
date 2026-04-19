@@ -1,34 +1,46 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.LayeringTransform;
+import net.minecraft.client.renderer.rendertype.OutputTarget;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import org.joml.Matrix4fStack;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.system.MemoryUtil;
 
-import java.nio.FloatBuffer;
+import java.util.Optional;
 
 public final class RenderingBackendImpl extends RenderingBackend {
 
-    private final FloatBuffer sphereMvBuf = MemoryUtil.memAllocFloat(16);
-    private final FloatBuffer sphereProjBuf = MemoryUtil.memAllocFloat(16);
-    private int sphereVAO;
-    private int sphereVertexCount;
-    private boolean sphereVBOInitialized;
-    private int cachedSphereProgId;
-    private int locMV = -1;
-    private int locProj = -1;
-    private int locColor = -1;
+    private static final RenderPipeline OVERLAY_DEBUG_QUADS_PIPELINE = RenderPipelines.DEBUG_QUADS.toBuilder()
+                                                                                                  .withLocation("pipeline/cfn_debug_quads_overlay")
+                                                                                                  .withDepthStencilState(Optional.empty())
+                                                                                                  .build();
+    private static final RenderPipeline INTERSECTION_LINES_PIPELINE = RenderPipelines.LINES_DEPTH_BIAS.toBuilder()
+                                                                                                      .withLocation("pipeline/cfn_intersection_lines")
+                                                                                                      .build();
+    private static final RenderType OVERLAY_DEBUG_QUADS = RenderType.create(
+        "cfn_overlay_debug_quads",
+        RenderSetup.builder(OVERLAY_DEBUG_QUADS_PIPELINE)
+                   .sortOnUpload()
+                   .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                   .setOutputTarget(OutputTarget.ITEM_ENTITY_TARGET)
+                   .createRenderSetup()
+    );
+    private static final RenderType INTERSECTION_LINES = RenderType.create(
+        "cfn_intersection_lines",
+        RenderSetup.builder(INTERSECTION_LINES_PIPELINE).createRenderSetup()
+    );
+    private float[] cachedSphereQuadVertices = new float[0];
+    private int cachedSphereSlices = -1;
+    private int cachedSphereStacks = -1;
 
     private static void addLine(BufferBuilder buffer,
                                 float x1, float y1, float z1,
@@ -60,13 +72,12 @@ public final class RenderingBackendImpl extends RenderingBackend {
         RenderSystemCompat.enableCull();
         RenderSystemCompat.enableDepthTest();
         RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystemCompat.disableBlend();
     }
 
     @Override
     public void setupAdditiveBlend() {
-        RenderSystemCompat.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        RenderSystemCompat.additiveBlendFunc();
     }
 
     @Override
@@ -117,6 +128,32 @@ public final class RenderingBackendImpl extends RenderingBackend {
                                   double toX, double toY, double toZ,
                                   float radius,
                                   float r, float g, float b, float alpha) {
+        drawLaserCylinderWithRenderType(RenderTypes.debugQuads(), fromX, fromY, fromZ, toX, toY, toZ, radius, r, g, b, alpha);
+    }
+
+    @Override
+    public void drawOverlayLaserCylinder(double fromX, double fromY, double fromZ,
+                                         double toX, double toY, double toZ,
+                                         float radius,
+                                         float r, float g, float b, float alpha) {
+        drawLaserCylinderWithRenderType(OVERLAY_DEBUG_QUADS, fromX, fromY, fromZ, toX, toY, toZ, radius, r, g, b, alpha);
+    }
+
+    @Override
+    public void drawSphere(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
+        drawSphereWithRenderType(RenderTypes.debugQuads(), r, g, b, radius, alpha, slices, stacks);
+    }
+
+    @Override
+    public void drawOverlaySphere(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
+        drawSphereWithRenderType(OVERLAY_DEBUG_QUADS, r, g, b, radius, alpha, slices, stacks);
+    }
+
+    private void drawLaserCylinderWithRenderType(RenderType renderType,
+                                                 double fromX, double fromY, double fromZ,
+                                                 double toX, double toY, double toZ,
+                                                 float radius,
+                                                 float r, float g, float b, float alpha) {
         float[] vertices = RenderingGeometryCore.buildCylinderQuadVertices(fromX, fromY, fromZ, toX, toY, toZ, radius);
         if (vertices.length == 0) {
             return;
@@ -129,12 +166,33 @@ public final class RenderingBackendImpl extends RenderingBackend {
         for (int i = 0; i < vertices.length; i += 3) {
             addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
         }
-        RenderTypes.debugQuads().draw(buffer.buildOrThrow());
+        renderType.draw(buffer.buildOrThrow());
     }
 
-    @Override
-    public void drawSphere(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
-        drawSphereVBO(r, g, b, radius, alpha, slices, stacks);
+    private void drawSphereWithRenderType(RenderType renderType,
+                                          float r, float g, float b, float radius, float alpha, int slices, int stacks) {
+        ensureSphereGeometry(slices, stacks);
+        if (cachedSphereQuadVertices.length == 0) {
+            return;
+        }
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        int ri = RenderingGeometryCore.toColorComponent(r);
+        int gi = RenderingGeometryCore.toColorComponent(g);
+        int bi = RenderingGeometryCore.toColorComponent(b);
+        int ai = RenderingGeometryCore.toColorComponent(alpha);
+        for (int i = 0; i < cachedSphereQuadVertices.length; i += 3) {
+            addVertex(
+                buffer,
+                cachedSphereQuadVertices[i] * radius,
+                cachedSphereQuadVertices[i + 1] * radius,
+                cachedSphereQuadVertices[i + 2] * radius,
+                ri,
+                gi,
+                bi,
+                ai
+            );
+        }
+        renderType.draw(buffer.buildOrThrow());
     }
 
     @Override
@@ -142,7 +200,6 @@ public final class RenderingBackendImpl extends RenderingBackend {
         if (verts.length == 0) {
             return;
         }
-        GL11.glDepthRange(0.0D, 0.9998D);
         int ri = RenderingGeometryCore.toColorComponent(r);
         int gi = RenderingGeometryCore.toColorComponent(g);
         int bi = RenderingGeometryCore.toColorComponent(b);
@@ -150,68 +207,15 @@ public final class RenderingBackendImpl extends RenderingBackend {
         for (int i = 0; i + 5 < verts.length; i += 6) {
             addLine(buffer, verts[i], verts[i + 1], verts[i + 2], verts[i + 3], verts[i + 4], verts[i + 5], ri, gi, bi, 255, lineWidth);
         }
-        RenderTypes.lines().draw(buffer.buildOrThrow());
-        GL11.glDepthRange(0.0D, 1.0D);
+        INTERSECTION_LINES.draw(buffer.buildOrThrow());
     }
 
-    private void ensureSphereVBO(int slices, int stacks) {
-        if (sphereVBOInitialized) {
+    private void ensureSphereGeometry(int slices, int stacks) {
+        if (cachedSphereSlices == slices && cachedSphereStacks == stacks) {
             return;
         }
-        float[] sphereVertices = RenderingGeometryCore.buildUnitSphereVertices(slices, stacks);
-        FloatBuffer data = MemoryUtil.memAllocFloat(sphereVertices.length);
-        data.put(sphereVertices).flip();
-        try {
-            sphereVertexCount = data.remaining() / 3;
-            int sphereVBO = GlStateManager._glGenBuffers();
-            sphereVAO = GL30.glGenVertexArrays();
-            GlStateManager._glBindVertexArray(sphereVAO);
-            GlStateManager._glBindBuffer(GL15.GL_ARRAY_BUFFER, sphereVBO);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-            GL20.glEnableVertexAttribArray(0);
-            GlStateManager._glBindVertexArray(0);
-            GlStateManager._glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        } finally {
-            MemoryUtil.memFree(data);
-        }
-        sphereVBOInitialized = true;
-    }
-
-    private void drawSphereVBO(float r, float g, float b, float radius, float alpha, int slices, int stacks) {
-        ensureSphereVBO(slices, stacks);
-        int progId = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        if (progId <= 0) {
-            return;
-        }
-        if (progId != cachedSphereProgId) {
-            cachedSphereProgId = progId;
-            locMV = GL20.glGetUniformLocation(progId, "ModelViewMat");
-            locProj = GL20.glGetUniformLocation(progId, "ProjMat");
-            locColor = GL20.glGetUniformLocation(progId, "ColorModulator");
-        }
-
-        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.pushMatrix();
-        mvStack.scale(radius, radius, radius);
-        sphereMvBuf.clear();
-        mvStack.get(sphereMvBuf);
-        sphereMvBuf.rewind();
-
-        sphereProjBuf.clear();
-        RenderSystemCompat.getProjectionMatrix().get(sphereProjBuf);
-        sphereProjBuf.rewind();
-
-        GlStateManager._glUseProgram(progId);
-        GL20.glUniformMatrix4fv(locMV, false, sphereMvBuf);
-        GL20.glUniformMatrix4fv(locProj, false, sphereProjBuf);
-        GL20.glUniform4f(locColor, r, g, b, alpha);
-
-        GlStateManager._glBindVertexArray(sphereVAO);
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, sphereVertexCount);
-        GlStateManager._glBindVertexArray(0);
-        GlStateManager._glUseProgram(0);
-
-        mvStack.popMatrix();
+        cachedSphereQuadVertices = RenderingGeometryCore.buildUnitSphereQuadVertices(slices, stacks);
+        cachedSphereSlices = slices;
+        cachedSphereStacks = stacks;
     }
 }
