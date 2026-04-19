@@ -31,6 +31,9 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Shadow
     @Final
     Level level;
+
+    @Shadow protected abstract boolean isInLevel();
+
     @Unique
     private BlockEntity cfn$blockEntity;
 
@@ -38,9 +41,9 @@ public abstract class MixinLevelChunk extends ChunkAccess {
         super(p_187621_, p_187622_, p_187623_, p_187624_, p_187625_, p_187626_, p_187627_);
     }
 
-    @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER, remap = false))
+    @Inject(method = "addAndRegisterBlockEntity", at = @At("TAIL"))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
-        if (blockEntity != null) {
+        if (this.isInLevel() && blockEntity != null) {
             EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
