@@ -50,9 +50,9 @@ public final class CFNCreativeTabs {
         consumer.accept(CFNItems.hubChannelPlugin);
         consumer.accept(CFNItems.wideAreaChargingPlugin);
         consumer.accept(CFNItems.dimensionalChargingPlugin);
-        consumer.accept(CFNItems.circulationSourceCrystal);
-        consumer.accept(CFNItems.infernalMeltingCrystal);
-        consumer.accept(CFNItems.endCoreCrystal);
+        consumer.accept(CFNItems.sourceflowCrystal);
+        consumer.accept(CFNItems.netherforgedCrystal);
+        consumer.accept(CFNItems.endercoreCrystal);
     }
 
     private static CreativeModeTab registerTab(RegisterEvent.RegisterHelper<CreativeModeTab> helper, String name, CreativeModeTab tab) {

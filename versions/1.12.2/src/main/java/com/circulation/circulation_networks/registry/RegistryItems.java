@@ -35,9 +35,9 @@ public final class RegistryItems {
         CFNItems.hubChannelPlugin = registryItem(new ItemHubChannelPlugin());
         CFNItems.wideAreaChargingPlugin = registryItem(new ItemWideAreaChargingPlugin());
         CFNItems.dimensionalChargingPlugin = registryItem(new ItemDimensionalChargingPlugin());
-        CFNItems.circulationSourceCrystal = registryItem(new ItemMaterial("circulation_source_crystal"));
-        CFNItems.infernalMeltingCrystal = registryItem(new ItemMaterial("infernal_melting_crystal"));
-        CFNItems.endCoreCrystal = registryItem(new ItemMaterial("end_core_crystal"));
+        CFNItems.sourceflowCrystal = registryItem(new ItemMaterial("sourceflow_crystal"));
+        CFNItems.netherforgedCrystal = registryItem(new ItemMaterial("netherforged_crystal"));
+        CFNItems.endercoreCrystal = registryItem(new ItemMaterial("endercore_crystal"));
         ITEMS_TO_REGISTER.forEach(event.getRegistry()::register);
         ITEMS_TO_REGISTER.clear();
     }

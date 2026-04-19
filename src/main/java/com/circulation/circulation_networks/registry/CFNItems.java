@@ -15,7 +15,7 @@ public final class CFNItems {
     public static ItemHubChannelPlugin hubChannelPlugin;
     public static ItemWideAreaChargingPlugin wideAreaChargingPlugin;
     public static ItemDimensionalChargingPlugin dimensionalChargingPlugin;
-    public static ItemMaterial circulationSourceCrystal;
-    public static ItemMaterial infernalMeltingCrystal;
-    public static ItemMaterial endCoreCrystal;
+    public static ItemMaterial sourceflowCrystal;
+    public static ItemMaterial netherforgedCrystal;
+    public static ItemMaterial endercoreCrystal;
 }

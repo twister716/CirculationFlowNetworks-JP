@@ -48,9 +48,9 @@ item.circulation_networks.circulation_configurator.config.node_blocked=§cNode m
 item.circulation_networks.circulation_configurator.mode.inspection.description=Sneak + Right-click node machine to display node-specific information
 item.circulation_networks.circulation_configurator.mode.configuration.description=Sneak + Right-click machine to override network automation machine type detection
 
-item.circulation_networks.circulation_source_crystal.name=Circulation Source Crystal
-item.circulation_networks.infernal_melting_crystal.name=Infernal Melting Crystal
-item.circulation_networks.end_core_crystal.name=End Core Crystal
+item.circulation_networks.sourceflow_crystal.name=Sourceflow Crystal
+item.circulation_networks.netherforged_crystal.name=Netherforged Crystal
+item.circulation_networks.endercore_crystal.name=Endercore Crystal
 
 item.circulation_networks.hub_channel_plugin.name=Hub Channel Plugin
 item.circulation_networks.hub_channel_plugin.channel=§7Channel: §b%s §7(§b%s§7)

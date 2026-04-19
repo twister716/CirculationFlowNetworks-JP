@@ -34,9 +34,9 @@ public final class RegistryItems {
             CFNItems.hubChannelPlugin = register(helper, "hub_channel_plugin", new ItemHubChannelPlugin(new Item.Properties()));
             CFNItems.wideAreaChargingPlugin = register(helper, "wide_area_charging_plugin", new ItemWideAreaChargingPlugin(new Item.Properties()));
             CFNItems.dimensionalChargingPlugin = register(helper, "dimensional_charging_plugin", new ItemDimensionalChargingPlugin(new Item.Properties()));
-            CFNItems.circulationSourceCrystal = register(helper, "circulation_source_crystal", new ItemMaterial(new Item.Properties()));
-            CFNItems.infernalMeltingCrystal = register(helper, "infernal_melting_crystal", new ItemMaterial(new Item.Properties()));
-            CFNItems.endCoreCrystal = register(helper, "end_core_crystal", new ItemMaterial(new Item.Properties()));
+            CFNItems.sourceflowCrystal = register(helper, "sourceflow_crystal", new ItemMaterial(new Item.Properties()));
+            CFNItems.netherforgedCrystal = register(helper, "netherforged_crystal", new ItemMaterial(new Item.Properties()));
+            CFNItems.endercoreCrystal = register(helper, "endercore_crystal", new ItemMaterial(new Item.Properties()));
         });
     }
 

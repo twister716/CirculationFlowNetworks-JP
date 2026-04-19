@@ -48,9 +48,9 @@ item.circulation_networks.circulation_configurator.config.node_blocked=§c节点
 item.circulation_networks.circulation_configurator.mode.inspection.description=潜行 + 右键节点机器以显示节点的特定信息
 item.circulation_networks.circulation_configurator.mode.configuration.description=潜行 + 右键机器以覆盖网络自动化的机器类型检测
 
-item.circulation_networks.circulation_source_crystal.name=环流源晶
-item.circulation_networks.infernal_melting_crystal.name=狱生熔晶
-item.circulation_networks.end_core_crystal.name=终末核晶
+item.circulation_networks.sourceflow_crystal.name=环流源晶
+item.circulation_networks.netherforged_crystal.name=狱生熔晶
+item.circulation_networks.endercore_crystal.name=终末核晶
 
 item.circulation_networks.hub_channel_plugin.name=中枢频道插件
 item.circulation_networks.hub_channel_plugin.channel=§7频道：§b%s §7(§b%s§7)
