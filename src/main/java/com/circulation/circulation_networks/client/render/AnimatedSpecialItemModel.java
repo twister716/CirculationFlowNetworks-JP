@@ -82,7 +82,8 @@ public final class AnimatedSpecialItemModel<T> implements ItemModel {
         this.properties.applyToLayer(layer, displayContext);
     }
 
-    public record Unbaked(Identifier base, Optional<Transformation> transformation, SpecialModelRenderer.Unbaked<?> specialModel) implements ItemModel.Unbaked {
+    public record Unbaked(Identifier base, Optional<Transformation> transformation,
+                          SpecialModelRenderer.Unbaked<?> specialModel) implements ItemModel.Unbaked {
 
         public static final MapCodec<Unbaked> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Identifier.CODEC.fieldOf("base").forGetter(Unbaked::base),

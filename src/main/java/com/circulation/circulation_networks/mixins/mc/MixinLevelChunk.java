@@ -43,7 +43,7 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     }
 
     @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
-    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci,@Local(name = "previousEntry") BlockEntity previousEntry ,@Local(name = "pos") BlockPos pos) {
+    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci, @Local(name = "previousEntry") BlockEntity previousEntry, @Local(name = "pos") BlockPos pos) {
         EventHooks.onBlockEntityInvalidate(this.level, pos, previousEntry);
     }
 

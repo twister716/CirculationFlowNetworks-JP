@@ -3,6 +3,8 @@ package com.circulation.circulation_networks.items;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.manager.PocketNodeManager.RegisterPocketNodeResult;
+import com.circulation.circulation_networks.tooltip.LocalizedComponent;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -13,13 +15,25 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class ItemPocketNode extends BaseItem {
 
+    private static final String TOOLTIP_ATTACH_ON_BLOCK = "tooltip.circulation_networks.pocket_node_attach_on_block";
+    private static final String TOOLTIP_DETACH_WITH_CONFIGURATOR = "tooltip.circulation_networks.pocket_node_detach_with_configurator";
     private final NodeType<?> nodeType;
 
     public ItemPocketNode(NodeType<?> nodeType, Properties properties) {
         super(properties);
         this.nodeType = nodeType;
+    }
+
+    @Override
+    protected List<LocalizedComponent> buildTooltips(ItemStack stack) {
+        var tooltips = new ObjectArrayList<>(super.buildTooltips(stack));
+        tooltips.add(LocalizedComponent.of(TOOLTIP_ATTACH_ON_BLOCK));
+        tooltips.add(LocalizedComponent.of(TOOLTIP_DETACH_WITH_CONFIGURATOR));
+        return tooltips;
     }
 
     private static void sendFeedback(ServerPlayer player, String key) {

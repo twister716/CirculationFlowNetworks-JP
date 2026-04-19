@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 
 @SuppressWarnings("unused")
-public record PocketNodeRecord(String dimensionId, BlockPos pos, NodeType<?> nodeType, @Nullable Direction attachmentFace,
+public record PocketNodeRecord(String dimensionId, BlockPos pos, NodeType<?> nodeType,
+                               @Nullable Direction attachmentFace,
                                @Nullable String customName, @Nullable String hostBlockId) {
 
     public static @Nullable PocketNodeRecord deserialize(@Nullable CompoundTag tag) {

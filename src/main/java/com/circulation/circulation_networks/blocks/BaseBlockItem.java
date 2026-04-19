@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.blocks;
 
+import com.circulation.circulation_networks.registry.CFNDataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -7,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
-import com.circulation.circulation_networks.registry.CFNDataComponents;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;

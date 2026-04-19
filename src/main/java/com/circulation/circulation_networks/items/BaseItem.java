@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.items;
 
+import com.circulation.circulation_networks.registry.CFNDataComponents;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.chat.Component;
@@ -7,7 +8,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
-import com.circulation.circulation_networks.registry.CFNDataComponents;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

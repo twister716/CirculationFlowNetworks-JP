@@ -4,9 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -298,11 +298,6 @@ public final class RotatingModelVBORenderer {
         }
     }
 
-    @FunctionalInterface
-    private interface PassRenderer {
-        void render(PoseStack.Pose pose, VertexConsumer buffer, boolean translucentPass);
-    }
-
     private static void endRenderSession() {
         if (renderSessionDepth <= 0) {
             return;
@@ -311,6 +306,11 @@ public final class RotatingModelVBORenderer {
             return;
         }
         renderSessionCollector = null;
+    }
+
+    @FunctionalInterface
+    private interface PassRenderer {
+        void render(PoseStack.Pose pose, VertexConsumer buffer, boolean translucentPass);
     }
 
     public static final class RenderSession implements AutoCloseable {
