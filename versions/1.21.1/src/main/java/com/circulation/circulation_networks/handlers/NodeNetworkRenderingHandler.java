@@ -133,7 +133,7 @@ public final class NodeNetworkRenderingHandler {
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         RenderSystem.applyModelViewMatrix();
         RenderSystem.enableBlend();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
         RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
