@@ -1,7 +1,7 @@
 {
   "variants": {
     "normal": {
-      "model": "circulation_networks:block/circulation_shielder"
+      "model": "circulation_networks:circulation_shielder"
     }
   }
 }
