@@ -13,7 +13,8 @@
       "item": "minecraft:obsidian"
     },
     "L": {
-      "item": "minecraft:lapis_lazuli"
+      "item": "minecraft:dye",
+      "data": 4
     },
     "D": {
       "item": "minecraft:diamond_block"
