@@ -89,7 +89,7 @@ public final class CirculationShielderRenderingHandler {
     }
 
     @SubscribeEvent
-    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentParticles event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 

@@ -262,7 +262,7 @@ public class SpoceRenderingHandler {
     }
 
     @SubscribeEvent
-    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentParticles event) {
         if (targetPos == null || rs == null) {
             return;
         }

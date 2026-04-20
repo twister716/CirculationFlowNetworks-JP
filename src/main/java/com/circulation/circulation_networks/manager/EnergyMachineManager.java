@@ -64,6 +64,7 @@ public final class EnergyMachineManager {
     private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
     private final Object2ObjectOpenHashMap<String, LongSet> warningPositionsScratch = new Object2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
+    private final ReferenceOpenHashSet<IGrid> dedupGridScratch = new ReferenceOpenHashSet<>();
     private final ReferenceSet<BlockEntity> cache = new ReferenceOpenHashSet<>();
     private final Object2ObjectOpenHashMap<String, Long2LongMap> lastWarningTicks = new Object2ObjectOpenHashMap<>();
     private final LongOpenHashSet visibleWarningsScratch = new LongOpenHashSet();
@@ -264,9 +265,11 @@ public final class EnergyMachineManager {
             String dimId = WorldResolveCompat.getDimensionId(world);
             var override = overrideManager == null ? null : overrideManager.getOverride(dimId, pos);
             WarningTarget warningTarget = null;
+            dedupGridScratch.clear();
             for (var node : entry.getValue()) {
                 var grid = node.getGrid();
                 if (grid == null) continue;
+                if (!dedupGridScratch.add(grid)) continue;
 
                 var hubMetadata = getHubMetadata(grid);
                 var handler = getOrCreateTickMachineHandler(te, hubMetadata);

@@ -65,7 +65,7 @@ final class CirculationFlowNetworksClient {
         ComponentAtlas.INSTANCE.configure(modConfigDir);
         // Use addListener instead of register() to avoid NeoForge restriction
         // on @SubscribeEvent methods in superclass when registering a subclass
-        NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterTranslucentBlocks e) -> {
+        NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterTranslucentParticles e) -> {
             ensureClientBootstrap();
             if (SpoceRenderingHandler.INSTANCE != null) SpoceRenderingHandler.INSTANCE.onRenderWorldLast(e);
         });

@@ -37,7 +37,7 @@ public final class ConfigOverrideRenderingHandler {
     }
 
     @SubscribeEvent
-    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentParticles event) {
         if (overrides.isEmpty()) return;
 
         Minecraft mc = Minecraft.getInstance();

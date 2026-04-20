@@ -133,7 +133,7 @@ public final class NodeHudRenderingHandler {
     }
 
     @SubscribeEvent
-    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void onRenderWorldLast(RenderLevelStageEvent.AfterTranslucentParticles event) {
         if (!hasData) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;

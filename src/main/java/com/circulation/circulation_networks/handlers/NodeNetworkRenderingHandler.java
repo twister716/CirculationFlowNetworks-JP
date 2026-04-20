@@ -103,7 +103,7 @@ public final class NodeNetworkRenderingHandler {
     }
 
     @SubscribeEvent
-    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentParticles event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null) return;

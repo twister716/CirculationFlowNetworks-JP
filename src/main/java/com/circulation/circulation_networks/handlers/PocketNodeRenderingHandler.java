@@ -149,7 +149,7 @@ public final class PocketNodeRenderingHandler {
     }
 
     @SubscribeEvent
-    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+    public void renderWorldLastEvent(RenderLevelStageEvent.AfterTranslucentParticles event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || mc.level == null) {
