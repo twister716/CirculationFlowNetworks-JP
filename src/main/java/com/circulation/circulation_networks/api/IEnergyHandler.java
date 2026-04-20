@@ -1,8 +1,8 @@
 package com.circulation.circulation_networks.api;
 
+import com.circulation.circulation_networks.utils.ObjectPool;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
@@ -10,11 +10,11 @@ import net.minecraft.tileentity.TileEntity;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.Map;
-import java.util.Queue;
 
 public interface IEnergyHandler {
 
-    Map<Class<? extends IEnergyHandler>, Queue<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
+    int MAX_POOL_SIZE = 4096;
+    Map<Class<? extends IEnergyHandler>, ObjectPool<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
 
     //~ if >=1.20 '(TileEntity ' -> '(BlockEntity ' {
     static @org.jetbrains.annotations.Nullable IEnergyHandler release(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
@@ -22,7 +22,7 @@ public interface IEnergyHandler {
         var m = RegistryEnergyHandler.getEnergyManager(tileEntity);
         if (m == null) return null;
         var q = POOL.get(m.getEnergyHandlerClass());
-        var t = q == null || q.isEmpty() ? m.newBlockEntityInstance() : q.poll();
+        var t = q == null ? m.newBlockEntityInstance() : q.obtain();
         return t.init(tileEntity, hubMetadata);
     }
 
@@ -31,7 +31,7 @@ public interface IEnergyHandler {
         var m = RegistryEnergyHandler.getEnergyManager(stack);
         if (m == null) return null;
         var q = POOL.get(m.getEnergyHandlerClass());
-        var t = q == null || q.isEmpty() ? m.newItemInstance() : q.poll();
+        var t = q == null ? m.newItemInstance() : q.obtain();
         return t.init(stack, hubMetadata);
     }
 
@@ -55,17 +55,12 @@ public interface IEnergyHandler {
     boolean canReceive(IEnergyHandler sendHandler, @Nullable HubNode.HubMetadata hubMetadata);
 
     default void recycle() {
-        this.clear();
         var queue = POOL.get(this.getClass());
-        //? if <1.20 {
-        if (queue != null && queue.size() < EnergyMachineManager.INSTANCE.getMachineGridMap().size()) {
-            queue.add(this);
+        if (queue != null) {
+            queue.recycle(this);
+        } else {
+            this.clear();
         }
-        //?} else {
-        /*if (queue != null) {
-            queue.add(this);
-        }
-        *///?}
     }
 
     EnergyType getType(@Nullable HubNode.HubMetadata hubMetadata);

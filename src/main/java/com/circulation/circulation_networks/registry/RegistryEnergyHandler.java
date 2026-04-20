@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IEnergyHandlerManager;
 import com.circulation.circulation_networks.api.IMachineNodeBlockEntity;
+import com.circulation.circulation_networks.utils.ObjectPool;
 import com.circulation.circulation_networks.CFNConfig;
 //~ mc_imports
 //? if <1.20
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ArrayDeque;
 
 @SuppressWarnings("unused")
 public final class RegistryEnergyHandler {
@@ -48,7 +48,7 @@ public final class RegistryEnergyHandler {
      */
     public static void registerEnergyHandler(IEnergyHandlerManager manager) {
         list.add(manager);
-        IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ArrayDeque<>());
+        IEnergyHandler.POOL.put(manager.getEnergyHandlerClass(), new ObjectPool<>(manager::newBlockEntityInstance, IEnergyHandler::clear, IEnergyHandler.MAX_POOL_SIZE));
         referenceSet.add(new Pair(manager.getMultiplying(), manager.getUnit(), manager.getPriority()));
     }
 
