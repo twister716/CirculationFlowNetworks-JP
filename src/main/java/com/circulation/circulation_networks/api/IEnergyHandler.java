@@ -2,24 +2,24 @@ package com.circulation.circulation_networks.api;
 
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
+import com.circulation.circulation_networks.utils.ObjectPool;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Queue;
 
 public interface IEnergyHandler {
 
-    Map<Class<? extends IEnergyHandler>, Queue<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
+    Map<Class<? extends IEnergyHandler>, ObjectPool<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
 
     static @Nullable IEnergyHandler release(BlockEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         if (tileEntity instanceof IMachineNodeBlockEntity mbe) return mbe.getEnergyHandler();
         var m = RegistryEnergyHandler.getEnergyManager(tileEntity);
         if (m == null) return null;
         var q = POOL.get(m.getEnergyHandlerClass());
-        var t = q == null || q.isEmpty() ? m.newBlockEntityInstance() : q.poll();
+        var t = q == null ? m.newBlockEntityInstance() : q.obtain();
         return t.init(tileEntity, hubMetadata);
     }
 
@@ -28,7 +28,7 @@ public interface IEnergyHandler {
         var m = RegistryEnergyHandler.getEnergyManager(stack);
         if (m == null) return null;
         var q = POOL.get(m.getEnergyHandlerClass());
-        var t = q == null || q.isEmpty() ? m.newItemInstance() : q.poll();
+        var t = q == null ? m.newItemInstance() : q.obtain();
         return t.init(stack, hubMetadata);
     }
 
@@ -51,10 +51,11 @@ public interface IEnergyHandler {
     boolean canReceive(IEnergyHandler sendHandler, @Nullable HubNode.HubMetadata hubMetadata);
 
     default void recycle() {
-        this.clear();
         var queue = POOL.get(this.getClass());
         if (queue != null) {
-            queue.add(this);
+            queue.recycle(this);
+        } else {
+            this.clear();
         }
     }
 

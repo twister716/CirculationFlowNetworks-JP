@@ -1,12 +1,11 @@
 package com.circulation.circulation_networks.api;
 
+import com.circulation.circulation_networks.utils.ObjectPool;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.ArrayDeque;
-import java.util.Deque;
 
 /**
  * Mutable pooled energy value that stays in {@code long} mode for the common
@@ -24,7 +23,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     protected static final BigInteger BIG_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
     protected static final BigInteger BIG_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
     protected static final BigInteger BIG_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    protected static final Deque<EnergyAmount> POOL = new ArrayDeque<>();
+    protected static final ObjectPool<EnergyAmount> POOL = new ObjectPool<>(EnergyAmount::new, EnergyAmount::clear, MAX_POOL_SIZE);
     protected byte state = STATE_UNINITIALIZED;
     private long longValue;
     private BigInteger bigValue;
@@ -41,13 +40,11 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public static EnergyAmount obtain(long value) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount(value) : amount.init(value);
+        return POOL.obtain().init(value);
     }
 
     public static EnergyAmount obtain(BigInteger value) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount(value) : amount.init(value);
+        return POOL.obtain().init(value);
     }
 
     public static EnergyAmount obtain(String value) {
@@ -56,8 +53,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public static EnergyAmount obtain(EnergyAmount other) {
-        EnergyAmount amount = POOL.pollFirst();
-        return amount == null ? new EnergyAmount().copyFrom(other) : amount.copyFrom(other);
+        return POOL.obtain().copyFrom(other);
     }
 
     private static BigInteger truncateToInteger(BigDecimal value) {
@@ -162,6 +158,14 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         return left < Long.MAX_VALUE / right;
     }
 
+    private static boolean canAddWithoutOverflow(long left, long right) {
+        return right > 0L ? left <= Long.MAX_VALUE - right : left >= Long.MIN_VALUE - right;
+    }
+
+    private static boolean canSubtractWithoutOverflow(long left, long right) {
+        return right > 0L ? left >= Long.MIN_VALUE + right : left <= Long.MAX_VALUE + right;
+    }
+
     private static boolean fitsInLong(BigInteger value) {
         return value.bitLength() <= 63;
     }
@@ -177,6 +181,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
 
     @Override
     public final int intValue() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             if (longValue >= 0) {
                 return longValue > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) longValue;
@@ -193,6 +198,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
 
     @Override
     public final long longValue() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue;
         }
@@ -205,6 +211,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
 
     @Override
     public final float floatValue() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue;
         }
@@ -216,6 +223,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
 
     @Override
     public final double doubleValue() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue;
         }
@@ -268,10 +276,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public void recycle() {
-        clear();
-        if (POOL.size() < MAX_POOL_SIZE) {
-            POOL.addFirst(this);
-        }
+        POOL.recycle(this);
     }
 
     public final boolean isInitialized() {
@@ -283,6 +288,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final boolean isZero() {
+        flushPendingLong();
         if (state == STATE_UNINITIALIZED || state == STATE_LONG) {
             return longValue == 0L;
         }
@@ -290,6 +296,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final boolean isPositive() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue > 0L;
         }
@@ -300,6 +307,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final boolean isNegative() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue < 0L;
         }
@@ -310,10 +318,12 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final boolean fitsLong() {
+        flushPendingLong();
         return state == STATE_LONG || (state == STATE_BIG && fitsInLong(bigValue));
     }
 
     public final long asLongExact() {
+        flushPendingLong();
         if (state == STATE_LONG) {
             return longValue;
         }
@@ -328,6 +338,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final BigInteger asBigInteger() {
+        flushPendingLong();
         if (state == STATE_BIG) {
             return bigValue;
         }
@@ -346,14 +357,19 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
             return init(value);
         }
         if (state == STATE_LONG) {
-            if (value > 0 ? longValue <= Long.MAX_VALUE - value : longValue >= Long.MIN_VALUE - value) {
+            if (canAddWithoutOverflow(longValue, value)) {
                 longValue += value;
                 return this;
             }
             return init(toBigInteger(longValue).add(toBigInteger(value)));
         }
-        bigValue = bigValue.add(toBigInteger(value));
-        normalize();
+        if (!canAddWithoutOverflow(longValue, value)) {
+            flushPendingLong();
+            if (state == STATE_LONG) {
+                return add(value);
+            }
+        }
+        longValue += value;
         return this;
     }
 
@@ -364,9 +380,10 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (!isInitialized()) {
             return copyFrom(other);
         }
-        if (state == STATE_LONG && other.state == STATE_LONG) {
+        if (other.state == STATE_LONG) {
             return add(other.longValue);
         }
+        flushPendingLong();
         bigValue = asBigInteger().add(other.asBigInteger());
         state = STATE_BIG;
         longValue = 0L;
@@ -382,14 +399,19 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
             return init(toBigInteger(value).negate());
         }
         if (state == STATE_LONG) {
-            if (value > 0 ? longValue >= Long.MIN_VALUE + value : longValue <= Long.MAX_VALUE + value) {
+            if (canSubtractWithoutOverflow(longValue, value)) {
                 longValue -= value;
                 return this;
             }
             return init(toBigInteger(longValue).subtract(toBigInteger(value)));
         }
-        bigValue = bigValue.subtract(toBigInteger(value));
-        normalize();
+        if (!canSubtractWithoutOverflow(longValue, value)) {
+            flushPendingLong();
+            if (state == STATE_LONG) {
+                return subtract(value);
+            }
+        }
+        longValue -= value;
         return this;
     }
 
@@ -400,9 +422,10 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (!isInitialized()) {
             return init(other.asBigInteger().negate());
         }
-        if (state == STATE_LONG && other.state == STATE_LONG) {
+        if (other.state == STATE_LONG) {
             return subtract(other.longValue);
         }
+        flushPendingLong();
         bigValue = asBigInteger().subtract(other.asBigInteger());
         state = STATE_BIG;
         longValue = 0L;
@@ -420,6 +443,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (value == 1L) {
             return this;
         }
+        flushPendingLong();
         if (state == STATE_LONG) {
             if (willMultiplyOverflow(longValue, value)) {
                 return init(toBigInteger(longValue).multiply(toBigInteger(value)));
@@ -442,6 +466,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (value == 1.0D) {
             return this;
         }
+        flushPendingLong();
         if (state == STATE_LONG) {
             long wholeValue = asWholeLong(value);
             if (value == (double) wholeValue) {
@@ -455,6 +480,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (other == null || !other.isInitialized()) {
             return setZero();
         }
+        flushPendingLong();
         if (state == STATE_LONG && other.state == STATE_LONG) {
             return multiply(other.longValue);
         }
@@ -471,6 +497,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (value == 1L) {
             return this;
         }
+        flushPendingLong();
         if (state == STATE_LONG) {
             if (longValue == Long.MIN_VALUE && value == -1L) {
                 return init(toBigInteger(longValue).divide(toBigInteger(value)));
@@ -494,6 +521,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (value == 1.0D) {
             return this;
         }
+        flushPendingLong();
         if (state == STATE_LONG) {
             long wholeValue = asWholeLong(value);
             if (value == (double) wholeValue) {
@@ -510,6 +538,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (!isInitialized()) {
             return setZero();
         }
+        flushPendingLong();
         if (state == STATE_LONG && other.state == STATE_LONG) {
             return divide(other.longValue);
         }
@@ -535,6 +564,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     public final int compareTo(long value) {
+        flushPendingLong();
         if (state == STATE_UNINITIALIZED) {
             return Long.compare(0L, value);
         }
@@ -550,6 +580,8 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
         if (other == null || !other.isInitialized()) {
             return compareTo(0L);
         }
+        flushPendingLong();
+        other.flushPendingLong();
         if (state == STATE_UNINITIALIZED) {
             return -other.compareTo(0L);
         }
@@ -570,6 +602,7 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
 
     @Override
     public final String toString() {
+        flushPendingLong();
         if (state == STATE_UNINITIALIZED) {
             return "0";
         }
@@ -577,12 +610,13 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
     }
 
     private void normalize() {
-        if (state == STATE_BIG && fitsInLong(bigValue)) {
+        if (state == STATE_BIG && longValue == 0L && fitsInLong(bigValue)) {
             init(bigValue.longValue());
         }
     }
 
     private BigDecimal asBigDecimal() {
+        flushPendingLong();
         if (state == STATE_BIG) {
             return new BigDecimal(bigValue);
         }
@@ -590,6 +624,15 @@ public class EnergyAmount extends Number implements Comparable<EnergyAmount> {
             return BigDecimal.ZERO;
         }
         return BigDecimal.valueOf(longValue);
+    }
+
+    private void flushPendingLong() {
+        if (state != STATE_BIG || longValue == 0L) {
+            return;
+        }
+        bigValue = bigValue.add(toBigInteger(longValue));
+        longValue = 0L;
+        normalize();
     }
 
 }

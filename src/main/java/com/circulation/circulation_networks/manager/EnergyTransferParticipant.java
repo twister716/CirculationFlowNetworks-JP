@@ -4,15 +4,15 @@ import com.circulation.circulation_networks.api.EnergyAmount;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.api.IGrid;
 import com.circulation.circulation_networks.network.nodes.HubNode;
+import com.circulation.circulation_networks.utils.ObjectPool;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
-
 final class EnergyTransferParticipant {
 
-    private static final int MAX_POOL_SIZE = 256;
-    private static final ArrayDeque<EnergyTransferParticipant> POOL = new ArrayDeque<>();
+    private static final int MAX_POOL_SIZE = 4096;
+    private static final ObjectPool<EnergyTransferParticipant> POOL =
+        new ObjectPool<>(EnergyTransferParticipant::new, EnergyTransferParticipant::reset, MAX_POOL_SIZE);
 
     private IEnergyHandler handler;
     @Nullable
@@ -38,8 +38,7 @@ final class EnergyTransferParticipant {
                                             @Nullable HubNode.HubMetadata hubMetadata,
                                             @Nullable EnergyMachineManager.Interaction interaction,
                                             boolean recycleHandlerOnRecycle) {
-        EnergyTransferParticipant p = POOL.pollFirst();
-        if (p == null) p = new EnergyTransferParticipant();
+        EnergyTransferParticipant p = POOL.obtain();
         p.handler = handler;
         p.grid = grid;
         p.hubMetadata = hubMetadata;
@@ -90,13 +89,14 @@ final class EnergyTransferParticipant {
         if (recycleHandlerOnRecycle) {
             handler.recycle();
         }
+        POOL.recycle(this);
+    }
+
+    private void reset() {
         handler = null;
         grid = null;
         hubMetadata = null;
         interaction = null;
         recycleHandlerOnRecycle = false;
-        if (POOL.size() < MAX_POOL_SIZE) {
-            POOL.addFirst(this);
-        }
     }
 }

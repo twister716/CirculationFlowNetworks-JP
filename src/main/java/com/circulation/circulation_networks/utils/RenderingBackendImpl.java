@@ -105,18 +105,10 @@ public final class RenderingBackendImpl extends RenderingBackend {
         int bi = RenderingGeometryCore.toColorComponent(b);
         int ai = RenderingGeometryCore.toColorComponent(a);
         float[] vertices = RenderingGeometryCore.buildFilledBoxVertices(x0, y0, z0, x1, y1, z1);
-        for (int i = 0; i < vertices.length; i += 12) {
-            addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
-            addVertex(buffer, vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai);
-            addVertex(buffer, vertices[i + 6], vertices[i + 7], vertices[i + 8], ri, gi, bi, ai);
-            addVertex(buffer, vertices[i + 9], vertices[i + 10], vertices[i + 11], ri, gi, bi, ai);
-
-            addVertex(buffer, vertices[i + 9], vertices[i + 10], vertices[i + 11], ri, gi, bi, ai);
-            addVertex(buffer, vertices[i + 6], vertices[i + 7], vertices[i + 8], ri, gi, bi, ai);
-            addVertex(buffer, vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai);
+        for (int i = 0; i < vertices.length; i += 3) {
             addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
         }
-        RenderTypes.debugFilledBox().draw(buffer.buildOrThrow());
+        RenderTypes.debugQuads().draw(buffer.buildOrThrow());
     }
 
     @Override

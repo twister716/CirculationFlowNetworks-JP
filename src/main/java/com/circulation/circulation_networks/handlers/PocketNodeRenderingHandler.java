@@ -13,16 +13,17 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.feature.CustomFeatureRenderer;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -35,6 +36,7 @@ public final class PocketNodeRenderingHandler {
     private static final float FACE_SCALE = 0.03125F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
     private static final ItemFeatureRenderer ITEM_FEATURE_RENDERER = new ItemFeatureRenderer();
+    private static final CustomFeatureRenderer CUSTOM_FEATURE_RENDERER = new CustomFeatureRenderer();
     private final Object2ObjectMap<String, Long2ObjectMap<PocketNodeClientHost>> hosts = new Object2ObjectOpenHashMap<>();
 
     private PocketNodeRenderingHandler() {
@@ -174,7 +176,6 @@ public final class PocketNodeRenderingHandler {
             if (host.getRenderStack().isEmpty()) {
                 continue;
             }
-
             BlockPos pos = host.getRecord().getPos();
             double dx = pos.getX() + 0.5D - cameraX;
             double dy = pos.getY() + 0.5D - cameraY;
@@ -197,14 +198,15 @@ public final class PocketNodeRenderingHandler {
                 continue;
             }
 
-            int light = LevelRenderer.getLightCoords(mc.level, pos);
-            itemState.submit(poseStack, submitNodeStorage, light, OverlayTexture.NO_OVERLAY, 0);
+            itemState.submit(poseStack, submitNodeStorage, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
             renderedAny = true;
             poseStack.popPose();
         }
         if (renderedAny) {
             for (SubmitNodeCollection submitNodeCollection : submitNodeStorage.getSubmitsPerOrder().values()) {
+                CUSTOM_FEATURE_RENDERER.renderSolid(submitNodeCollection, bufferSource);
                 ITEM_FEATURE_RENDERER.renderSolid(submitNodeCollection, bufferSource, outlineBufferSource);
+                CUSTOM_FEATURE_RENDERER.renderTranslucent(submitNodeCollection, bufferSource);
                 ITEM_FEATURE_RENDERER.renderTranslucent(submitNodeCollection, bufferSource, outlineBufferSource);
             }
             bufferSource.endBatch();

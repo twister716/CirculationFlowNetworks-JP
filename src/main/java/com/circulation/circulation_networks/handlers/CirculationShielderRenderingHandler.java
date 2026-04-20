@@ -5,7 +5,6 @@ import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
 import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -102,7 +101,6 @@ public final class CirculationShielderRenderingHandler {
 
         if (clientShielders.isEmpty()) return;
 
-        PoseStack currentWorldPoseStack = event.getPoseStack();
         cachedEventViewMatrix = new org.joml.Matrix4f(event.getModelViewMatrix());
         for (ICirculationShielderBlockEntity shielder : clientShielders) {
             if (shielder.isShowingRange()) {

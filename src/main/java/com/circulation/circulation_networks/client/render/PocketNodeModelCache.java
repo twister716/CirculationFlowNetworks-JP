@@ -26,7 +26,7 @@ public final class PocketNodeModelCache {
 
         Minecraft minecraft = Minecraft.getInstance();
         ItemModelResolver resolver = new ItemModelResolver(minecraft.getModelManager());
-        resolver.updateForTopItem(renderState, resolved, ItemDisplayContext.FIXED, minecraft.level, null, 0);
+        resolver.updateForTopItem(renderState, resolved, ItemDisplayContext.GUI, minecraft.level, null, 0);
         return renderState;
     }
 
