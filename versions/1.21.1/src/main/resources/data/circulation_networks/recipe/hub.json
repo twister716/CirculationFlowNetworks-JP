@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SNS",
+    "LGL",
+    "SNS"
+  ],
+  "key": {
+    "S": {
+      "item": "circulation_networks:sourceflow_crystal"
+    },
+    "N": {
+      "item": "circulation_networks:netherforged_crystal"
+    },
+    "L": {
+      "item": "minecraft:lapis_block"
+    },
+    "G": {
+      "item": "minecraft:gold_block"
+    }
+  },
+  "result": {
+    "id": "circulation_networks:hub",
+    "count": 1
+  }
+}

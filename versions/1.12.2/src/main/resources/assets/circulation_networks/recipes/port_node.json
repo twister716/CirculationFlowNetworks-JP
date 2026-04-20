@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ISI",
+    "LRL",
+    "ISI"
+  ],
+  "key": {
+    "S": {
+      "item": "circulation_networks:sourceflow_crystal"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "L": {
+      "item": "minecraft:lapis_block"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
+    }
+  },
+  "result": {
+    "item": "circulation_networks:port_node",
+    "count": 1
+  }
+}

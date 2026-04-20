@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LII",
+    "BSB",
+    "III"
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "minecraft:redstone_block"
+    },
+    "S": {
+      "item": "circulation_networks:sourceflow_crystal"
+    }
+  },
+  "result": {
+    "item": "circulation_networks:circulation_shielder",
+    "count": 1
+  }
+}

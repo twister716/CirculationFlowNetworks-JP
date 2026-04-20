@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "EWE",
+    "WAW",
+    "EWE"
+  ],
+  "key": {
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "W": {
+      "item": "circulation_networks:wide_area_charging_plugin"
+    },
+    "A": {
+      "item": "circulation_networks:endercore_crystal"
+    }
+  },
+  "result": {
+    "item": "circulation_networks:dimensional_charging_plugin",
+    "count": 1
+  }
+}

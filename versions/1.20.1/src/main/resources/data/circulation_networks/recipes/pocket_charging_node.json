@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "S",
+    "C",
+    "N"
+  ],
+  "key": {
+    "S": {
+      "item": "circulation_networks:sourceflow_crystal"
+    },
+    "C": {
+      "item": "circulation_networks:charging_node"
+    },
+    "N": {
+      "item": "circulation_networks:node_pedestal"
+    }
+  },
+  "result": {
+    "item": "circulation_networks:pocket_charging_node",
+    "count": 1
+  }
+}

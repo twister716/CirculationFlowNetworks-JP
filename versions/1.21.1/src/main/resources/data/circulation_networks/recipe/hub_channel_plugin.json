@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IDI",
+    "DND",
+    "IDI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_block"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "N": {
+      "item": "circulation_networks:netherforged_crystal"
+    }
+  },
+  "result": {
+    "id": "circulation_networks:hub_channel_plugin",
+    "count": 1
+  }
+}

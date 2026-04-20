@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NGI",
+    " IL",
+    "NGS"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:gold_nugget"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "L": {
+      "item": "minecraft:lapis_block"
+    },
+    "S": {
+      "item": "circulation_networks:sourceflow_crystal"
+    }
+  },
+  "result": {
+    "id": "circulation_networks:circulation_configurator",
+    "count": 1
+  }
+}
