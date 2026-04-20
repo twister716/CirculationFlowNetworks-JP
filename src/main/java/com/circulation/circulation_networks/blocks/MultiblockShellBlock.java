@@ -134,6 +134,29 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         }
     }
 
+    private static boolean destroyOriginByPlayer(Level level, BlockPos originPos, Player player,
+                                                 ItemStack toolStack, boolean willHarvest) {
+        BlockState originState = level.getBlockState(originPos);
+        if (originState.isAir()) {
+            return false;
+        }
+
+        BlockEntity originBlockEntity = originState.hasBlockEntity() ? level.getBlockEntity(originPos) : null;
+        Block originBlock = originState.getBlock();
+        BlockState adjustedState = originBlock.playerWillDestroy(level, originPos, originState, player);
+        boolean removed = adjustedState.onDestroyedByPlayer(level, originPos, player, toolStack,
+            willHarvest, level.getFluidState(originPos));
+        if (!removed) {
+            return false;
+        }
+
+        adjustedState.getBlock().destroy(level, originPos, adjustedState);
+        if (willHarvest) {
+            originBlock.playerDestroy(level, player, originPos, adjustedState, originBlockEntity, toolStack);
+        }
+        return true;
+    }
+
     private static @NotNull VoxelShape emptyShape() {
         return Shapes.empty();
     }
@@ -213,7 +236,24 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
                                        Player player, ItemStack toolStack, boolean willHarvest, FluidState fluid) {
-        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
+        BlockPos originPos = getOriginPos(level, pos);
+        if (originPos == null) {
+            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
+        }
+        if (level.isClientSide()) {
+            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
+        }
+        if (isOriginRemovalGuarded(originPos)) {
+            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
+        }
+        if (!enterOriginRemovalGuard(originPos)) {
+            return false;
+        }
+        try {
+            return destroyOriginByPlayer(level, originPos, player, toolStack, willHarvest);
+        } finally {
+            exitOriginRemovalGuard(originPos);
+        }
     }
 
     @Override
