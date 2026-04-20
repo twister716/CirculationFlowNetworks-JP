@@ -211,6 +211,30 @@ if (isVersionProject) {
     tasks.named("compileJava") {
         dependsOn(generateComponentAtlasRegistration)
     }
+    val collectVersionBuildArtifacts =
+        rootProject.tasks.findByName("collectVersionBuildArtifacts")?.let {
+            rootProject.tasks.named(it.name)
+        } ?: rootProject.tasks.register("collectVersionBuildArtifacts") {
+            group = "build"
+            description = "Collect built child version artifacts into the root libs directory."
+        }
+    val syncBuildArtifactsToRoot = rootProject.tasks.register<Copy>(
+        "copy${project.path.replace(':', '_').replace('.', '_').replace('-', '_')}BuildArtifactsToRoot"
+    ) {
+        group = "build"
+        description = "Copy ${project.path} build artifacts into the root libs directory."
+        dependsOn(tasks.named("jar"))
+        into(rootProject.layout.buildDirectory.dir("libs"))
+        from(layout.buildDirectory.dir("libs")) {
+            include("*.jar")
+        }
+    }
+    collectVersionBuildArtifacts.configure {
+        dependsOn(syncBuildArtifactsToRoot)
+    }
+    tasks.named("build") {
+        finalizedBy(syncBuildArtifactsToRoot)
+    }
 
     tasks.named<ProcessResources>("processResources") {
         val expansionMap = mapOf(
