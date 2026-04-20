@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class FEHandler implements IEnergyHandler {
 
+    private static final int PROBE_AMOUNT = 1;
+
     @Nullable
     private IEnergyStorage send;
     @Nullable
@@ -23,14 +25,22 @@ public class FEHandler implements IEnergyHandler {
     public FEHandler() {
     }
 
+    private static boolean canExtractEffectively(IEnergyStorage storage) {
+        return storage.extractEnergy(PROBE_AMOUNT, true) > 0;
+    }
+
+    private static boolean canReceiveEffectively(IEnergyStorage storage) {
+        return storage.receiveEnergy(PROBE_AMOUNT, true) > 0;
+    }
+
     private void bindStorage(@Nullable IEnergyStorage storage) {
         if (storage == null) {
             return;
         }
-        if (send == null && storage.canExtract()) {
+        if (send == null && canExtractEffectively(storage)) {
             send = storage;
         }
-        if (receive == null && storage.canReceive()) {
+        if (receive == null && canReceiveEffectively(storage)) {
             receive = storage;
         }
     }
@@ -51,9 +61,10 @@ public class FEHandler implements IEnergyHandler {
     public IEnergyHandler init(ItemStack itemStack, @Nullable HubNode.HubMetadata hubMetadata) {
         var ies = itemStack.getCapability(CapabilityEnergy.ENERGY, null);
         if (ies == null) return this;
-        if (ies.canReceive()) {
+        if (canReceiveEffectively(ies)) {
             this.receive = ies;
         }
+        energyType = EnergyType.RECEIVE;
         return this;
     }
 

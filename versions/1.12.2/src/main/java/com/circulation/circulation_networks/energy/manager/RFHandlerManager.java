@@ -41,7 +41,7 @@ public final class RFHandlerManager implements IEnergyHandlerManager {
 
     @Override
     public int getPriority() {
-        return -1;
+        return 11;
     }
 
     @Override

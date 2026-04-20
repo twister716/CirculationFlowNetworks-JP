@@ -41,11 +41,11 @@ public class RFHandler implements IEnergyHandler {
         if (!(tileEntity instanceof IEnergyConnection connection) || !connection.canConnectEnergy(facing)) {
             return;
         }
-        if (send == null && tileEntity instanceof IEnergyProvider provider) {
+        if (send == null && tileEntity instanceof IEnergyProvider provider && provider.extractEnergy(facing, Integer.MAX_VALUE, true) > 0) {
             send = provider;
             sendFacing = facing;
         }
-        if (receive == null && tileEntity instanceof IEnergyReceiver receiver) {
+        if (receive == null && tileEntity instanceof IEnergyReceiver receiver && receiver.receiveEnergy(facing, Integer.MAX_VALUE, true) > 0) {
             receive = receiver;
             receiveFacing = facing;
         }
