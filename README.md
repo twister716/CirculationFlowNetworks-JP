@@ -6,18 +6,18 @@
 
 ## Overview
 
-Tired of running cables between every machine and re-routing them every time you add something new?
+Tired of laying heaps of cables between machines and re-routing them for every new device?
 
-Drop a few nodes and your energy network is ready. Generators, consumers, and storage blocks within range are automatically detected and connected, with energy flowing where it's needed. Expanding your base? Just place another node. Use Relay Nodes to extend coverage and let your network grow like Wi-Fi.
+Circulation Flow Networks replaces cables with nodes: place a node, and generators, consumers, and storage blocks within range automatically join the network — energy flows instantly. The network is wireless by nature — nodes sense each other, link automatically, and coverage grows as you expand. Relay Nodes help you extend it wherever you need.
 
-Need more control? Place a Hub to unlock the plugin system, channel system, and permission management — turning a simple energy mesh into managed infrastructure.
+Place a Hub and your network gains a management center — plugin system, channel isolation, and permission control, all in one block.
 
-Step into the range of a Charging Node and the equipment in your inventory starts charging — you don't even need to stop moving.
+Step into a Charging Node's range and the equipment on you recharges automatically.
 
-Running separate bases? Insert a Hub Channel Plugin to connect multiple networks to the same channel and share energy across them — even across dimensions.
+Install a Hub Channel Plugin, connect multiple networks to the same channel, and they share energy seamlessly — even across dimensions.
 
 **More than just convenience:**
-- **Energy compatibility** — native FE support, with an API for mod developers to register custom energy types
+- **Energy compatibility** — native FE support, with an API for mod developers to register custom compatible energy types
 - **Channels & permissions** — public, team, and private modes with built-in FTB Teams support
 - **Built for scale** — optimized for large networks without hurting server performance
 - **Developer-friendly** — full API for extending node types and energy handlers
