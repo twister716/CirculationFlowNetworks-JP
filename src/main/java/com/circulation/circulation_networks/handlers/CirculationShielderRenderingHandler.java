@@ -200,7 +200,7 @@ public final class CirculationShielderRenderingHandler {
         float partialTicks = event.getPartialTicks();
         //?} else if <1.21 {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -212,7 +212,7 @@ public final class CirculationShielderRenderingHandler {
         float partialTicks = event.getPartialTick();
     *///?} else {
     /*public void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -230,7 +230,7 @@ public final class CirculationShielderRenderingHandler {
         /*currentWorldPoseStack = event.getPoseStack();
         *///?}
         //? if >=1.21 {
-        /*cachedEventViewMatrix = event.getModelViewMatrix();
+        /*cachedEventViewMatrix = new org.joml.Matrix4f(event.getModelViewMatrix());
         *///?}
         for (ICirculationShielderBlockEntity shielder : clientShielders) {
             if (shielder.isShowingRange()) {
