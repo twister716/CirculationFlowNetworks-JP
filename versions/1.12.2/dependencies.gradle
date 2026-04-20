@@ -31,4 +31,7 @@ dependencies {
     deobfRuntimeOnly("curse.maven:ender-utilities-224320:2977010")
     deobfRuntimeOnly("curse.maven:flare-692142:6598523")
     deobfImplementation("curse.maven:mekanism-268560:2835175")
+    deobfRuntimeOnly("curse.maven:brandons-core-231382:3408276")
+    deobfRuntimeOnly("curse.maven:draconic-evolution-223565:3431261")
+    deobfRuntimeOnly("curse.maven:CodeChickenLib-242818:2779848")
 }

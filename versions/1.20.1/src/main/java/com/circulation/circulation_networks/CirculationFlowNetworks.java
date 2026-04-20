@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.energy.manager.DEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
 import com.circulation.circulation_networks.manager.ChargingManager;
@@ -92,6 +93,9 @@ public final class CirculationFlowNetworks {
 
     private void registerEnergyHandlers() {
         RegistryEnergyHandler.registerEnergyHandler(new FEHandlerManager());
+        if (ModList.get().isLoaded("draconicevolution")) {
+            RegistryEnergyHandler.registerEnergyHandler(new DEHandlerManager());
+        }
         if (ModList.get().isLoaded("mekanism")) {
             RegistryEnergyHandler.registerEnergyHandler(new MEKHandlerManager());
         }
