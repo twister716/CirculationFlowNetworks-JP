@@ -44,6 +44,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterItemModelsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -85,6 +86,7 @@ final class CirculationFlowNetworksClient {
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterMenuScreens);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterClientExtensions);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterItemModels);
+        modEventBus.addListener(CirculationFlowNetworksClient::onRegisterRenderPipelines);
         modEventBus.addListener(CirculationFlowNetworksClient::onRegisterSpecialModelRenderers);
         modEventBus.addListener(CirculationFlowNetworksClient::onAddClientReloadListeners);
         modEventBus.addListener(RotatingBlockModelCache::onRegisterAdditionalModels);
@@ -146,6 +148,10 @@ final class CirculationFlowNetworksClient {
 
     private static void onRegisterItemModels(RegisterItemModelsEvent event) {
         event.register(AnimatedSpecialItemModel.TYPE_ID, AnimatedSpecialItemModel.Unbaked.MAP_CODEC);
+    }
+
+    private static void onRegisterRenderPipelines(RegisterRenderPipelinesEvent event) {
+        SpoceRenderingHandler.onRegisterRenderPipelines(event);
     }
 
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

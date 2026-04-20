@@ -60,9 +60,6 @@ public final class ConfigOverrideRenderingHandler {
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         RenderSystemCompat.applyModelViewMatrix();
         try {
-            RenderingUtils.setupWorldRenderState();
-            RenderingUtils.setupAdditiveBlend();
-
             for (var entry : overrides.long2ObjectEntrySet()) {
                 BlockPos pos = BlockPos.of(entry.getLongKey());
                 IEnergyHandler.EnergyType type = entry.getValue();
@@ -103,11 +100,10 @@ public final class ConfigOverrideRenderingHandler {
                 double y1 = pos.getY() + 1.0 - INSET;
                 double z1 = pos.getZ() + 1.0 - INSET;
 
-                RenderingUtils.drawFilledBox(x0, y0, z0, x1, y1, z1, r, g, b, 0.15f);
-                RenderingUtils.drawBoxEdges(x0, y0, z0, x1, y1, z1, r, g, b, 0.6f, 2.0f);
+                RenderingUtils.drawOverlayFilledBox(x0, y0, z0, x1, y1, z1, r, g, b, 0.15f);
+                RenderingUtils.drawOverlayBoxEdges(x0, y0, z0, x1, y1, z1, r, g, b, 0.6f, 2.0f);
             }
         } finally {
-            RenderingUtils.restoreWorldRenderState();
             RenderSystem.getModelViewStack().popMatrix();
             RenderSystemCompat.applyModelViewMatrix();
         }

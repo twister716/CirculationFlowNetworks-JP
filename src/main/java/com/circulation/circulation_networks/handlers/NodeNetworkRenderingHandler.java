@@ -128,10 +128,6 @@ public final class NodeNetworkRenderingHandler {
         mvStack.set(event.getModelViewMatrix());
         mvStack.translate((float) -doubleX, (float) -doubleY, (float) -doubleZ);
         RenderSystemCompat.applyModelViewMatrix();
-        RenderSystemCompat.enableBlend();
-        RenderSystemCompat.disableCull();
-        RenderSystemCompat.depthMask(false);
-        RenderSystemCompat.additiveBlendFunc();
 
         if (showNodes) {
             for (var link : nodeLinks) {
@@ -180,11 +176,6 @@ public final class NodeNetworkRenderingHandler {
             }
         }
 
-        RenderSystemCompat.depthMask(true);
-        RenderSystemCompat.enableCull();
-        RenderSystemCompat.enableDepthTest();
-        RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.disableBlend();
         mvStack.popMatrix();
         RenderSystemCompat.applyModelViewMatrix();
     }

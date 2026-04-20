@@ -1,16 +1,21 @@
 package com.circulation.circulation_networks.handlers;
 
-import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.core.BlockPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+
+import java.util.Optional;
 
 public final class NodeHighlightRenderingHandler {
 
@@ -23,7 +28,15 @@ public final class NodeHighlightRenderingHandler {
     private static final float BOX_B = 0.0F;
     private static final float BOX_ALPHA = 0.85F;
     private static final double EXPAND = 0.002D;
-    private static final RenderType HIGHLIGHT_RENDER_TYPE = RenderTypes.lines();
+    private static final RenderPipeline HIGHLIGHT_LINES_PIPELINE = RenderPipelines.LINES.toBuilder()
+                                                                                   .withLocation("pipeline/cfn_node_highlight_lines")
+                                                                                   .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+                                                                                   .withDepthStencilState(Optional.empty())
+                                                                                   .build();
+    private static final RenderType HIGHLIGHT_RENDER_TYPE = RenderType.create(
+        "cfn_node_highlight_lines",
+        RenderSetup.builder(HIGHLIGHT_LINES_PIPELINE).createRenderSetup()
+    );
     private BlockPos targetPos;
     private String targetDimId;
     private long startTick;
@@ -91,12 +104,6 @@ public final class NodeHighlightRenderingHandler {
         poseStack.pushPose();
         poseStack.translate(x, y, z);
 
-        RenderSystemCompat.disableDepthTest();
-        RenderSystemCompat.enableBlend();
-        RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.disableCull();
-        RenderSystemCompat.lineWidth(LINE_WIDTH);
-
         var matrix = poseStack.last().pose();
         var pose = poseStack.last();
 
@@ -123,10 +130,6 @@ public final class NodeHighlightRenderingHandler {
         addLine(builder, pose, matrix, maxX, minY, maxZ, maxX, maxY, maxZ, ri, gi, bi, ai);
         addLine(builder, pose, matrix, minX, minY, maxZ, minX, maxY, maxZ, ri, gi, bi, ai);
         bufferSource.endBatch(HIGHLIGHT_RENDER_TYPE);
-
-        RenderSystemCompat.enableDepthTest();
-        RenderSystemCompat.enableCull();
-        RenderSystemCompat.disableBlend();
         poseStack.popPose();
     }
 }

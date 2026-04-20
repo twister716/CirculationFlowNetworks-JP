@@ -6,34 +6,61 @@ import com.circulation.circulation_networks.items.CirculationConfiguratorModeMod
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
 import com.circulation.circulation_networks.items.CirculationConfiguratorState;
 import com.circulation.circulation_networks.math.Vec3d;
+import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.BuckyBallGeometry;
 import com.circulation.circulation_networks.utils.RenderingGeometryCore;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
+import java.util.OptionalInt;
 import java.util.Arrays;
 
 @SuppressWarnings("SameParameterValue")
 public class SpoceRenderingHandler {
 
     private static final float BUCKY_LINE_WIDTH = 2.0F;
+    private static final Identifier INTERSECTION_PIPELINE_ID =
+        Identifier.fromNamespaceAndPath(CirculationFlowNetworks.MOD_ID, "scope_intersection");
+    private static final float[] UNIT_SPHERE_VERTICES = RenderingGeometryCore.buildUnitSphereVertices(32, 32);
+    private static final RenderPipeline INTERSECTION_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+        .withLocation(INTERSECTION_PIPELINE_ID)
+        .withVertexShader(Identifier.fromNamespaceAndPath(CirculationFlowNetworks.MOD_ID, "core/sphere_depth"))
+        .withFragmentShader(Identifier.fromNamespaceAndPath(CirculationFlowNetworks.MOD_ID, "core/sphere_depth"))
+        .withSampler("DepthSampler")
+        .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
+        .withCull(false)
+        .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
+        .build();
 
     public static SpoceRenderingHandler INSTANCE;
 
@@ -46,6 +73,53 @@ public class SpoceRenderingHandler {
     private float lastAnimProgress;
     private float animProgress;
     private float[] rs;
+    private MainTarget depthCopyTarget;
+    private float pendingIntersectionR;
+    private float pendingIntersectionG;
+    private float pendingIntersectionB;
+
+    private static float bright(float value) {
+        return Math.min(1.0F, value * 1.3F);
+    }
+
+    public static void onRegisterRenderPipelines(RegisterRenderPipelinesEvent event) {
+        event.registerPipeline(INTERSECTION_PIPELINE);
+    }
+
+    private void onPreRender() {
+        captureSceneDepth();
+    }
+
+    private void captureSceneDepth() {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget mainRenderTarget = mc.getMainRenderTarget();
+        if (mainRenderTarget == null || mainRenderTarget.getDepthTexture() == null) {
+            return;
+        }
+
+        int width = mainRenderTarget.width;
+        int height = mainRenderTarget.height;
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        ensureDepthCopyTarget(width, height);
+        if (depthCopyTarget == null) {
+            return;
+        }
+
+        depthCopyTarget.copyDepthFrom(mainRenderTarget);
+    }
+
+    private void ensureDepthCopyTarget(int width, int height) {
+        if (depthCopyTarget != null && depthCopyTarget.width == width && depthCopyTarget.height == height) {
+            return;
+        }
+        if (depthCopyTarget != null) {
+            depthCopyTarget.destroyBuffers();
+        }
+        depthCopyTarget = new MainTarget(width, height);
+    }
 
     private void draw(float rotation, float r, float g, float b, float radius, float wireR, float wireG, float wireB) {
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
@@ -61,6 +135,63 @@ public class SpoceRenderingHandler {
 
     private void drawSphere(float r, float g, float b, float radius, float alpha) {
         RenderingUtils.drawSphere(r, g, b, radius, alpha);
+        drawIntersectionOverlay(radius);
+    }
+
+    private void drawIntersectionOverlay(float radius) {
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget mainRenderTarget = mc.getMainRenderTarget();
+        if (depthCopyTarget == null
+            || depthCopyTarget.getDepthTextureView() == null
+            || mainRenderTarget == null
+            || mainRenderTarget.getColorTextureView() == null) {
+            return;
+        }
+
+        Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
+        Matrix4f modelView = new Matrix4f(modelViewStack).scale(radius);
+
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        int ri = RenderingGeometryCore.toColorComponent(pendingIntersectionR);
+        int gi = RenderingGeometryCore.toColorComponent(pendingIntersectionG);
+        int bi = RenderingGeometryCore.toColorComponent(pendingIntersectionB);
+        int ai = 242;
+
+        for (int i = 0; i < UNIT_SPHERE_VERTICES.length; i += 3) {
+            buffer.addVertex(
+                UNIT_SPHERE_VERTICES[i],
+                UNIT_SPHERE_VERTICES[i + 1],
+                UNIT_SPHERE_VERTICES[i + 2]
+            ).setColor(ri, gi, bi, ai);
+        }
+
+        try (MeshData mesh = buffer.buildOrThrow()) {
+            var vertices = DefaultVertexFormat.POSITION_COLOR.uploadImmediateVertexBuffer(mesh.vertexBuffer());
+            var dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
+                modelView,
+                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
+                new Vector3f(),
+                new Matrix4f()
+            );
+            try (var renderPass = RenderSystem.getDevice()
+                .createCommandEncoder()
+                .createRenderPass(
+                    () -> "CFN scope intersection",
+                    mainRenderTarget.getColorTextureView(),
+                    OptionalInt.empty()
+                )) {
+                renderPass.setPipeline(INTERSECTION_PIPELINE);
+                RenderSystem.bindDefaultUniforms(renderPass);
+                renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+                renderPass.bindTexture(
+                    "DepthSampler",
+                    depthCopyTarget.getDepthTextureView(),
+                    RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+                );
+                renderPass.setVertexBuffer(0, vertices);
+                renderPass.draw(0, mesh.drawState().vertexCount());
+            }
+        }
     }
 
     private void drawBuckyBallWireframe(float r, float g, float b, float alpha) {
@@ -172,10 +303,7 @@ public class SpoceRenderingHandler {
         modelViewStack.set(event.getModelViewMatrix());
         modelViewStack.translate(tx, ty, tz);
         RenderSystemCompat.applyModelViewMatrix();
-        RenderSystemCompat.enableBlend();
-        RenderSystemCompat.enableDepthTest();
-        RenderSystemCompat.disableCull();
-        RenderSystemCompat.depthMask(false);
+        onPreRender();
 
         float time = level.getGameTime() + partial;
         float rotation = time * 0.8F;
@@ -185,7 +313,9 @@ public class SpoceRenderingHandler {
             float wr = 0.4F;
             float wg = 0.8F;
             float wb = 1.0F;
-            RenderSystemCompat.defaultBlendFunc();
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             draw(rotation * rs[0], 0.0F, 0.4F, 0.8F, radius, wr, wg, wb);
         }
 
@@ -194,7 +324,9 @@ public class SpoceRenderingHandler {
             float wr = 0.8F;
             float wg = 0.6F;
             float wb = 1.0F;
-            RenderSystemCompat.defaultBlendFunc();
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             draw(rotation * rs[1], 0.4F, 0.2F, 0.8F, radius, wr, wg, wb);
         }
 
@@ -203,14 +335,12 @@ public class SpoceRenderingHandler {
             float wr = 0.4F;
             float wg = 1.0F;
             float wb = 0.4F;
-            RenderSystemCompat.defaultBlendFunc();
+            pendingIntersectionR = bright(wr);
+            pendingIntersectionG = bright(wg);
+            pendingIntersectionB = bright(wb);
             draw(rotation * rs[2], 0.0F, 0.5F, 0.1F, radius, wr, wg, wb);
         }
 
-        RenderSystemCompat.depthMask(true);
-        RenderSystemCompat.enableCull();
-        RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.disableBlend();
         modelViewStack.popMatrix();
         RenderSystemCompat.applyModelViewMatrix();
     }

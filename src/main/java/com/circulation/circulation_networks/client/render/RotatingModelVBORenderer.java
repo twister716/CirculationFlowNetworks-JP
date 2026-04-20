@@ -31,7 +31,7 @@ public final class RotatingModelVBORenderer {
     private static final QuadInstance FULL_BRIGHT_QUAD = new QuadInstance();
     private static final RenderType WORLD_CUTOUT_RENDER_TYPE = Sheets.cutoutBlockSheet();
     private static final RenderType WORLD_TRANSLUCENT_RENDER_TYPE = NeoForgeRenderTypes.BLOCK_ITEM_UNSORTED_TRANSLUCENT.get();
-    private static final RenderType WORLD_CUTOUT_NO_CULL_RENDER_TYPE = NeoForgeRenderTypes.getEntityCutoutMipped(TextureAtlas.LOCATION_BLOCKS);
+    private static final RenderType WORLD_CUTOUT_NO_CULL_RENDER_TYPE = RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS);
     private static final RenderType WORLD_TRANSLUCENT_NO_CULL_RENDER_TYPE = RenderTypes.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
     private static final RenderType ITEM_CUTOUT_RENDER_TYPE = Sheets.cutoutBlockItemSheet();
     private static final RenderType ITEM_TRANSLUCENT_RENDER_TYPE = NeoForgeRenderTypes.BLOCK_ITEM_UNSORTED_TRANSLUCENT.get();
@@ -138,20 +138,6 @@ public final class RotatingModelVBORenderer {
                                         float angle, float pivotX, float pivotY, float pivotZ,
                                         float axisX, float axisY, float axisZ) {
         renderAmbientLit(poseStack, level, pos, pos, state, modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ, false);
-    }
-
-    public static void renderAmbientLit(PoseStack poseStack, Level level, BlockPos originPos, BlockPos lightSamplePos,
-                                        BlockState state, Identifier modelLocation,
-                                        float angle, float pivotX, float pivotY, float pivotZ,
-                                        float axisX, float axisY, float axisZ) {
-        renderAmbientLit(poseStack, level, originPos, lightSamplePos, state, modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ, false);
-    }
-
-    public static void renderAmbientLitNoCull(PoseStack poseStack, Level level, BlockPos pos,
-                                              BlockState state, Identifier modelLocation,
-                                              float angle, float pivotX, float pivotY, float pivotZ,
-                                              float axisX, float axisY, float axisZ) {
-        renderAmbientLit(poseStack, level, pos, pos, state, modelLocation, angle, pivotX, pivotY, pivotZ, axisX, axisY, axisZ, true);
     }
 
     public static void renderAmbientLitNoCull(PoseStack poseStack, Level level, BlockPos originPos, BlockPos lightSamplePos,

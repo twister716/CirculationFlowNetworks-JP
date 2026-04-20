@@ -66,12 +66,6 @@ public final class CirculationShielderRenderingHandler {
         modelViewStack.translate((float) -playerX, (float) -playerY, (float) -playerZ);
         RenderSystemCompat.applyModelViewMatrix();
 
-        RenderSystemCompat.enableBlend();
-        RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.disableCull();
-        RenderSystemCompat.enableDepthTest();
-        RenderSystemCompat.depthMask(false);
-
         try {
             int scope = shielder.getScope();
             double x = shielder.getBEPos().getX();
@@ -84,17 +78,12 @@ public final class CirculationShielderRenderingHandler {
             float easedProgress = AnimationUtils.easeOutCubic(interpolatedProgress);
             float expandedScope = scope * easedProgress + RANGE_EXPANSION;
 
-            RenderingUtils.drawFilledBox(
+            RenderingUtils.drawFilledBoxDoubleSided(
                 x - expandedScope, y - expandedScope, z - expandedScope,
                 x + expandedScope + 1, y + expandedScope + 1, z + expandedScope + 1,
                 ORANGE_R, ORANGE_G, ORANGE_B, ALPHA
             );
         } finally {
-            RenderSystemCompat.depthMask(true);
-            RenderSystemCompat.enableCull();
-            RenderSystemCompat.enableDepthTest();
-            RenderSystemCompat.defaultBlendFunc();
-            RenderSystemCompat.disableBlend();
             modelViewStack.popMatrix();
             RenderSystemCompat.applyModelViewMatrix();
         }

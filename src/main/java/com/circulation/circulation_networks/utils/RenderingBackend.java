@@ -17,22 +17,29 @@ public abstract class RenderingBackend {
         return INSTANCE;
     }
 
-    public abstract void setupWorldRenderState();
-
-    public abstract void restoreWorldRenderState();
-
-    public abstract void setupAdditiveBlend();
-
     public abstract void seedModelViewFromPoseStack(Object poseStack);
 
     public abstract void drawFilledBox(double x0, double y0, double z0,
                                        double x1, double y1, double z1,
                                        float r, float g, float b, float a);
 
+    public abstract void drawFilledBoxDoubleSided(double x0, double y0, double z0,
+                                                  double x1, double y1, double z1,
+                                                  float r, float g, float b, float a);
+
+    public abstract void drawOverlayFilledBox(double x0, double y0, double z0,
+                                              double x1, double y1, double z1,
+                                              float r, float g, float b, float a);
+
     public abstract void drawBoxEdges(double x0, double y0, double z0,
                                       double x1, double y1, double z1,
                                       float r, float g, float b, float a,
                                       float lineWidth);
+
+    public abstract void drawOverlayBoxEdges(double x0, double y0, double z0,
+                                             double x1, double y1, double z1,
+                                             float r, float g, float b, float a,
+                                             float lineWidth);
 
     public abstract void drawLaserCylinder(double fromX, double fromY, double fromZ,
                                            double toX, double toY, double toZ,

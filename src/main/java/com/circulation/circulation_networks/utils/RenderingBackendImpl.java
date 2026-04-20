@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.client.compat.RenderSystemCompat;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -21,8 +23,14 @@ public final class RenderingBackendImpl extends RenderingBackend {
 
     private static final RenderPipeline OVERLAY_DEBUG_QUADS_PIPELINE = RenderPipelines.DEBUG_QUADS.toBuilder()
                                                                                                   .withLocation("pipeline/cfn_debug_quads_overlay")
+                                                                                                  .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
                                                                                                   .withDepthStencilState(Optional.empty())
                                                                                                   .build();
+    private static final RenderPipeline OVERLAY_LINES_PIPELINE = RenderPipelines.LINES.toBuilder()
+                                                                                      .withLocation("pipeline/cfn_overlay_lines")
+                                                                                      .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
+                                                                                      .withDepthStencilState(Optional.empty())
+                                                                                      .build();
     private static final RenderPipeline INTERSECTION_LINES_PIPELINE = RenderPipelines.LINES_DEPTH_BIAS.toBuilder()
                                                                                                       .withLocation("pipeline/cfn_intersection_lines")
                                                                                                       .build();
@@ -37,6 +45,10 @@ public final class RenderingBackendImpl extends RenderingBackend {
     private static final RenderType INTERSECTION_LINES = RenderType.create(
         "cfn_intersection_lines",
         RenderSetup.builder(INTERSECTION_LINES_PIPELINE).createRenderSetup()
+    );
+    private static final RenderType OVERLAY_LINES = RenderType.create(
+        "cfn_overlay_lines",
+        RenderSetup.builder(OVERLAY_LINES_PIPELINE).createRenderSetup()
     );
     private float[] cachedSphereQuadVertices = new float[0];
     private int cachedSphereSlices = -1;
@@ -58,29 +70,6 @@ public final class RenderingBackendImpl extends RenderingBackend {
         buffer.addVertex(x, y, z).setColor(r, g, b, a);
     }
 
-    @Override
-    public void setupWorldRenderState() {
-        RenderSystemCompat.enableBlend();
-        RenderSystemCompat.disableDepthTest();
-        RenderSystemCompat.disableCull();
-        RenderSystemCompat.depthMask(false);
-    }
-
-    @Override
-    public void restoreWorldRenderState() {
-        RenderSystemCompat.depthMask(true);
-        RenderSystemCompat.enableCull();
-        RenderSystemCompat.enableDepthTest();
-        RenderSystemCompat.defaultBlendFunc();
-        RenderSystemCompat.disableBlend();
-    }
-
-    @Override
-    public void setupAdditiveBlend() {
-        RenderSystemCompat.additiveBlendFunc();
-    }
-
-    @Override
     public void seedModelViewFromPoseStack(Object poseStack) {
         PoseStack actualPoseStack = (PoseStack) poseStack;
         if (poseStack == null) {
@@ -107,6 +96,46 @@ public final class RenderingBackendImpl extends RenderingBackend {
     }
 
     @Override
+    public void drawFilledBoxDoubleSided(double x0, double y0, double z0,
+                                         double x1, double y1, double z1,
+                                         float r, float g, float b, float a) {
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        int ri = RenderingGeometryCore.toColorComponent(r);
+        int gi = RenderingGeometryCore.toColorComponent(g);
+        int bi = RenderingGeometryCore.toColorComponent(b);
+        int ai = RenderingGeometryCore.toColorComponent(a);
+        float[] vertices = RenderingGeometryCore.buildFilledBoxVertices(x0, y0, z0, x1, y1, z1);
+        for (int i = 0; i < vertices.length; i += 12) {
+            addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i + 6], vertices[i + 7], vertices[i + 8], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i + 9], vertices[i + 10], vertices[i + 11], ri, gi, bi, ai);
+
+            addVertex(buffer, vertices[i + 9], vertices[i + 10], vertices[i + 11], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i + 6], vertices[i + 7], vertices[i + 8], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai);
+            addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
+        }
+        RenderTypes.debugFilledBox().draw(buffer.buildOrThrow());
+    }
+
+    @Override
+    public void drawOverlayFilledBox(double x0, double y0, double z0,
+                                     double x1, double y1, double z1,
+                                     float r, float g, float b, float a) {
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        int ri = RenderingGeometryCore.toColorComponent(r);
+        int gi = RenderingGeometryCore.toColorComponent(g);
+        int bi = RenderingGeometryCore.toColorComponent(b);
+        int ai = RenderingGeometryCore.toColorComponent(a);
+        float[] vertices = RenderingGeometryCore.buildFilledBoxVertices(x0, y0, z0, x1, y1, z1);
+        for (int i = 0; i < vertices.length; i += 3) {
+            addVertex(buffer, vertices[i], vertices[i + 1], vertices[i + 2], ri, gi, bi, ai);
+        }
+        OVERLAY_DEBUG_QUADS.draw(buffer.buildOrThrow());
+    }
+
+    @Override
     public void drawBoxEdges(double x0, double y0, double z0,
                              double x1, double y1, double z1,
                              float r, float g, float b, float a,
@@ -121,6 +150,23 @@ public final class RenderingBackendImpl extends RenderingBackend {
             addLine(buffer, vertices[i], vertices[i + 1], vertices[i + 2], vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai, lineWidth);
         }
         RenderTypes.linesTranslucent().draw(buffer.buildOrThrow());
+    }
+
+    @Override
+    public void drawOverlayBoxEdges(double x0, double y0, double z0,
+                                    double x1, double y1, double z1,
+                                    float r, float g, float b, float a,
+                                    float lineWidth) {
+        BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
+        int ri = RenderingGeometryCore.toColorComponent(r);
+        int gi = RenderingGeometryCore.toColorComponent(g);
+        int bi = RenderingGeometryCore.toColorComponent(b);
+        int ai = RenderingGeometryCore.toColorComponent(a);
+        float[] vertices = RenderingGeometryCore.buildBoxEdgeVertices(x0, y0, z0, x1, y1, z1);
+        for (int i = 0; i < vertices.length; i += 6) {
+            addLine(buffer, vertices[i], vertices[i + 1], vertices[i + 2], vertices[i + 3], vertices[i + 4], vertices[i + 5], ri, gi, bi, ai, lineWidth);
+        }
+        OVERLAY_LINES.draw(buffer.buildOrThrow());
     }
 
     @Override

@@ -64,7 +64,7 @@ public final class HubRenderer implements BlockEntityRenderer<BlockEntityHub, CF
 
         RotatingModelVBORenderer.renderAmbientLitNoCull(poseStack, hub.getLevel(), hub.getBlockPos(), ambientLightSamplePos, state, HUB_BASE,
             0.0F, CENTER, CENTER, CENTER, 0.0F, 1.0F, 0.0F);
-        RotatingModelVBORenderer.renderFullBrightNoCullYAxis(poseStack, state, HUB_EMISSIVE,
+        RotatingModelVBORenderer.renderFullBrightYAxis(poseStack, state, HUB_EMISSIVE,
             0.0F, CENTER, CENTER, CENTER);
         renderAmbientRotatingCached(hub, poseStack, state, HUB_RING_UP_BASE, upperAngle, HubRenderLayout.ringYOffset(),
             ambientLightSamplePos);

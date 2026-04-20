@@ -5,18 +5,6 @@ public final class RenderingUtils {
     private RenderingUtils() {
     }
 
-    public static void setupWorldRenderState() {
-        RenderingBackend.get().setupWorldRenderState();
-    }
-
-    public static void restoreWorldRenderState() {
-        RenderingBackend.get().restoreWorldRenderState();
-    }
-
-    public static void setupAdditiveBlend() {
-        RenderingBackend.get().setupAdditiveBlend();
-    }
-
     public static void seedModelViewFromPoseStack(Object poseStack) {
         RenderingBackend.get().seedModelViewFromPoseStack(poseStack);
     }
@@ -27,11 +15,30 @@ public final class RenderingUtils {
         RenderingBackend.get().drawFilledBox(x0, y0, z0, x1, y1, z1, r, g, b, a);
     }
 
+    public static void drawFilledBoxDoubleSided(double x0, double y0, double z0,
+                                                double x1, double y1, double z1,
+                                                float r, float g, float b, float a) {
+        RenderingBackend.get().drawFilledBoxDoubleSided(x0, y0, z0, x1, y1, z1, r, g, b, a);
+    }
+
+    public static void drawOverlayFilledBox(double x0, double y0, double z0,
+                                            double x1, double y1, double z1,
+                                            float r, float g, float b, float a) {
+        RenderingBackend.get().drawOverlayFilledBox(x0, y0, z0, x1, y1, z1, r, g, b, a);
+    }
+
     public static void drawBoxEdges(double x0, double y0, double z0,
                                     double x1, double y1, double z1,
                                     float r, float g, float b, float a,
                                     float lineWidth) {
         RenderingBackend.get().drawBoxEdges(x0, y0, z0, x1, y1, z1, r, g, b, a, lineWidth);
+    }
+
+    public static void drawOverlayBoxEdges(double x0, double y0, double z0,
+                                           double x1, double y1, double z1,
+                                           float r, float g, float b, float a,
+                                           float lineWidth) {
+        RenderingBackend.get().drawOverlayBoxEdges(x0, y0, z0, x1, y1, z1, r, g, b, a, lineWidth);
     }
 
     public static void drawLaserCylinder(double fromX, double fromY, double fromZ,
