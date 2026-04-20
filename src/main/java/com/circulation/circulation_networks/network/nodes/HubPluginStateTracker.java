@@ -4,6 +4,7 @@ import com.circulation.circulation_networks.api.hub.IHubPlugin;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.items.HubChannelPluginData;
 import com.circulation.circulation_networks.manager.ChargingManager;
+import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 //~ mc_imports
@@ -100,6 +101,7 @@ public final class HubPluginStateTracker {
 
         node.removePluginData(capability);
         if (capability == HubCapabilitys.CHANNEL_CAPABILITY) {
+            HubChannelManager.INSTANCE.unregister(node);
             node.clearChannelBinding();
         }
     }
