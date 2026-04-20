@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GQW",
+    "QEQ",
+    "WQG"
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "Q": "minecraft:quartz",
+    "W": "minecraft:nether_wart",
+    "E": "minecraft:nether_star"
+  },
+  "result": {
+    "id": "circulation_networks:netherforged_crystal",
+    "count": 2
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IGI",
+    "LSL",
+    "IGI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "G": "minecraft:gold_ingot",
+    "S": "circulation_networks:sourceflow_crystal",
+    "L": "minecraft:lapis_block"
+  },
+  "result": {
+    "id": "circulation_networks:charging_node",
+    "count": 1
+  }
+}

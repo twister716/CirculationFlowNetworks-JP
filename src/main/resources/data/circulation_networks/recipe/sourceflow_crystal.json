@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IOL",
+    "ODO",
+    "LOI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "O": "minecraft:obsidian",
+    "L": "minecraft:lapis_lazuli",
+    "D": "minecraft:diamond_block"
+  },
+  "result": {
+    "id": "circulation_networks:sourceflow_crystal",
+    "count": 2
+  }
+}

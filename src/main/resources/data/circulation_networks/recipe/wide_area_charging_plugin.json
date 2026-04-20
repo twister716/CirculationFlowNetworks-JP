@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LSG",
+    "SNS",
+    "GSR"
+  ],
+  "key": {
+    "L": "minecraft:lapis_lazuli",
+    "S": "circulation_networks:sourceflow_crystal",
+    "G": "minecraft:gold_ingot",
+    "N": "circulation_networks:netherforged_crystal",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "circulation_networks:wide_area_charging_plugin",
+    "count": 1
+  }
+}

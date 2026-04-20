@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BES",
+    "ENE",
+    "SEB"
+  ],
+  "key": {
+    "B": "minecraft:dragon_breath",
+    "E": "minecraft:ender_eye",
+    "S": "minecraft:end_stone",
+    "N": "minecraft:end_crystal"
+  },
+  "result": {
+    "id": "circulation_networks:endercore_crystal",
+    "count": 1
+  }
+}

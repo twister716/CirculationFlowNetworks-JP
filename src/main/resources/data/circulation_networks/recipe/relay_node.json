@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "LSL",
+    "IRI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "L": "minecraft:lapis_block",
+    "S": "circulation_networks:sourceflow_crystal"
+  },
+  "result": {
+    "id": "circulation_networks:relay_node",
+    "count": 1
+  }
+}
