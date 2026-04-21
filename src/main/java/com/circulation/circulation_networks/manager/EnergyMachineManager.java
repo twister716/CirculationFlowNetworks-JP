@@ -28,6 +28,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.Reference2LongMap;
+import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -51,6 +53,7 @@ public final class EnergyMachineManager {
     public static final EnergyMachineManager INSTANCE = new EnergyMachineManager();
     private static final int WARNING_SEND_INTERVAL_TICKS = 20;
     private static final int WARNING_STALE_TICKS = 200;
+    private static final long NODE_RESCAN_COOLDOWN_TICKS = 40L;
     private static final double WARNING_RENDER_DISTANCE_SQ = 48.0D * 48.0D;
     private final Object2ObjectMap<String, Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<String, Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
@@ -62,6 +65,7 @@ public final class EnergyMachineManager {
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
     private final Reference2ObjectMap<BlockEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<BlockEntity, IEnergyHandler.EnergyType> machineEnergyTypeCache = new Reference2ObjectOpenHashMap<>();
+    private final Reference2LongMap<IEnergySupplyNode> nodeRescanTicks = new Reference2LongOpenHashMap<>();
     private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
     private final Object2ObjectMap<String, LongSet> warningPositionsScratch = new Object2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
@@ -75,6 +79,7 @@ public final class EnergyMachineManager {
 
     {
         gridMachineMap.defaultReturnValue(ReferenceSets.emptySet());
+        nodeRescanTicks.defaultReturnValue(Long.MIN_VALUE);
     }
 
     static void transferEnergy(Collection<EnergyTransferParticipant> send,
@@ -376,8 +381,10 @@ public final class EnergyMachineManager {
         ReferenceSet<IEnergySupplyNode> set = map.get(chunkCoord);
         if (!set.isEmpty()) {
             var s = machineGridMap.get(blockEntity);
+            boolean hasExistingAssociations = s != null;
             if (s == null) s = new ReferenceOpenHashSet<>();
             for (var node : set) {
+                if (s.contains(node)) continue;
                 if (!node.supplyScopeCheck(pos)) continue;
                 if (node.isBlacklisted(blockEntity)) continue;
 
@@ -396,7 +403,9 @@ public final class EnergyMachineManager {
                 }
             }
             if (s.isEmpty()) return;
-            machineGridMap.putIfAbsent(blockEntity, s);
+            if (!hasExistingAssociations) {
+                machineGridMap.put(blockEntity, s);
+            }
         }
     }
 
@@ -500,6 +509,32 @@ public final class EnergyMachineManager {
         }
     }
 
+    public boolean rescanMachinesAroundNode(IEnergySupplyNode node) {
+        long currentTick = warningTickCounter;
+        long lastTick = nodeRescanTicks.getLong(node);
+        if (currentTick - lastTick < NODE_RESCAN_COOLDOWN_TICKS) {
+            return false;
+        }
+        nodeRescanTicks.put(node, currentTick);
+
+        int nodeX = node.getPos().getX();
+        int nodeZ = node.getPos().getZ();
+        int range = (int) node.getEnergyScope();
+        int minChunkX = (nodeX - range) >> 4;
+        int maxChunkX = (nodeX + range) >> 4;
+        int minChunkZ = (nodeZ - range) >> 4;
+        int maxChunkZ = (nodeZ + range) >> 4;
+
+        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
+                for (var blockEntity : WorldResolveCompat.getLoadedChunkBlockEntities(node.getWorld(), cx, cz)) {
+                    addMachine(blockEntity);
+                }
+            }
+        }
+        return true;
+    }
+
     void initGrid(Collection<NetworkManager.GridEntry> entries) {
         for (var entry : entries) {
             var dim = entry.dimId();
@@ -555,6 +590,7 @@ public final class EnergyMachineManager {
 
     public void removeNode(INode node) {
         if (node instanceof IEnergySupplyNode removedNode) {
+            nodeRescanTicks.removeLong(removedNode);
             String dimId = removedNode.getDimensionId();
 
             var nodeScopeMap = nodeScope.get(dimId);
@@ -598,6 +634,7 @@ public final class EnergyMachineManager {
         activeTickGrids.clear();
         processedTickGrids.clear();
         machineEnergyTypeCache.clear();
+        nodeRescanTicks.clear();
         warningPositionsScratch.clear();
         visibleWarningsScratch.clear();
         lastWarningTicks.clear();
