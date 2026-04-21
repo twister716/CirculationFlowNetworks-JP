@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 *///?}
 import net.minecraft.server.MinecraftServer;
 
+import net.minecraftforge.fml.server.FMLServerHandler;
 import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +64,7 @@ public final class EnergyTypeOverrideManager {
 
     //? if <1.20 {
     private static MinecraftServer getServer() {
-        return com.circulation.circulation_networks.CirculationFlowNetworks.server;
+        return FMLServerHandler.instance().getServer();
     }
 
     private static int getPlayerDimensionId(EntityPlayerMP player) {

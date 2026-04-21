@@ -14,7 +14,6 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -22,7 +21,6 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
@@ -51,7 +49,6 @@ public class CirculationFlowNetworks {
     public static CommonProxy proxy = null;
     @Mod.Instance(MOD_ID)
     public static CirculationFlowNetworks instance;
-    public static MinecraftServer server;
 
     public static void openGui(EntityPlayer player, World world, int x, int y, int z) {
         openGui(0, player, world, x, y, z);
@@ -85,11 +82,6 @@ public class CirculationFlowNetworks {
     }
 
     @Mod.EventHandler
-    public void serverStarting(FMLServerStartingEvent event) {
-        server = event.getServer();
-    }
-
-    @Mod.EventHandler
     public void serverStarted(FMLServerStartedEvent event) {
         NetworkManager.INSTANCE.initGrid();
         PocketNodeManager.INSTANCE.load();
@@ -97,7 +89,6 @@ public class CirculationFlowNetworks {
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
-        server = null;
         NetworkManager.INSTANCE.saveGrid();
         PocketNodeManager.INSTANCE.save();
         NetworkManager.INSTANCE.onServerStop();

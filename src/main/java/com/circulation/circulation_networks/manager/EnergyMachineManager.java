@@ -47,6 +47,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 /*import net.minecraft.server.level.ServerPlayer;
  *///?}
 
+import net.minecraftforge.fml.server.FMLServerHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
@@ -166,7 +167,7 @@ public final class EnergyMachineManager {
 
     //? if <1.20 {
     private static MinecraftServer getServer() {
-        return CirculationFlowNetworks.server;
+        return FMLServerHandler.instance().getServer();
     }
 
     private static boolean isClientWorld(World world) {
