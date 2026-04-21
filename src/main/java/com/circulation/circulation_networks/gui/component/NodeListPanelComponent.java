@@ -15,6 +15,7 @@ import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -29,7 +30,6 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public final class NodeListPanelComponent extends DraggableComponent implements SliderParent {
@@ -86,7 +86,7 @@ public final class NodeListPanelComponent extends DraggableComponent implements 
     private final ContainerHub container;
     private final SliderComponent slider;
     private final EditableNameField[] nameFields = new EditableNameField[MAX_VISIBLE_ENTRIES_WITHOUT_SCROLL];
-    private final Map<String, ItemStack> stackCache = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, ItemStack> stackCache = new Object2ObjectOpenHashMap<>();
 
     private int firstVisibleEntryIndex;
     private double lastSliderValue;

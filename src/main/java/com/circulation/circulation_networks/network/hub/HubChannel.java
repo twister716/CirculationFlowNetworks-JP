@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.api.hub.HubPermissionLevel;
 import com.circulation.circulation_networks.api.hub.IHubChannel;
 import com.circulation.circulation_networks.api.hub.PermissionMode;
 import com.circulation.circulation_networks.utils.HubTeamServices;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
@@ -20,8 +21,8 @@ public class HubChannel implements IHubChannel {
 
     private final UUID channelId;
     private final ReferenceSet<IGrid> grids = new ReferenceOpenHashSet<>();
-    private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
-    private final Map<UUID, ChargingPreference> chargingPreferences = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, ChargingPreference> chargingPreferences = new Object2ObjectOpenHashMap<>();
     private String name;
     private PermissionMode permissionMode;
     @Nullable

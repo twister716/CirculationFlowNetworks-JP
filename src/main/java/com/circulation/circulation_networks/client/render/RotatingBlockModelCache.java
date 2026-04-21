@@ -1,8 +1,10 @@
 package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.resources.Identifier;
@@ -10,13 +12,10 @@ import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
 import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 
-import java.util.List;
-import java.util.Map;
-
 public final class RotatingBlockModelCache {
 
-    private static final List<Identifier> REGISTERED_MODELS = new ObjectArrayList<>();
-    private static final Map<Identifier, StandaloneModelKey<BlockStateModel>> MODEL_KEYS = new Object2ObjectOpenHashMap<>();
+    private static final ObjectList<Identifier> REGISTERED_MODELS = new ObjectArrayList<>();
+    private static final Object2ObjectMap<Identifier, StandaloneModelKey<BlockStateModel>> MODEL_KEYS = new Object2ObjectOpenHashMap<>();
 
     public static final Identifier NODE_CRYSTAL = register("node_crystal");
     public static final Identifier RELAY_TOP_SPIRAL_BASE = register("relay_node/relay_node_top_spiral_base");

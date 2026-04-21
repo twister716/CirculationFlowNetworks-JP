@@ -12,6 +12,7 @@ import com.circulation.circulation_networks.network.hub.HubChannel;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.registry.NodeTypes;
 import com.circulation.circulation_networks.utils.NbtCompat;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -33,8 +34,8 @@ public final class HubNode extends Node implements IHubNode {
     private final double energyScopeSq;
     private final double chargingScope;
     private final double chargingScopeSq;
-    private final Map<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
-    private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
     private final HubMetadata hubData = new HubMetadata();
 
     private PermissionMode permissionMode = PermissionMode.PUBLIC;

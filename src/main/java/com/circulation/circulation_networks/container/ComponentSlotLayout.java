@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.container;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -11,9 +12,9 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public class ComponentSlotLayout {
 
-    private final List<SlotFactory> specs = new ObjectArrayList<>();
-    private final List<ComponentSlot> prebuilt = new ObjectArrayList<>();
-    private final List<ComponentSlot> slots = new ObjectArrayList<>();
+    private final ObjectList<SlotFactory> specs = new ObjectArrayList<>();
+    private final ObjectList<ComponentSlot> prebuilt = new ObjectArrayList<>();
+    private final ObjectList<ComponentSlot> slots = new ObjectArrayList<>();
     private boolean registered = false;
 
     public static ComponentSlotLayout playerInventory(Inventory inventoryPlayer) {

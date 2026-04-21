@@ -3,11 +3,11 @@ package com.circulation.circulation_networks.gui.component.base;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Shared atlas registry state used by version-specific atlas loaders.
@@ -19,7 +19,7 @@ import java.util.Set;
 public abstract class ComponentAtlasRegistry {
 
     private final Object2ObjectMap<String, AtlasRegion> regions = new Object2ObjectOpenHashMap<>();
-    private final Set<String> registeredSprites = new ObjectLinkedOpenHashSet<>();
+    private final ObjectSet<String> registeredSprites = new ObjectLinkedOpenHashSet<>();
 
     @Nullable
     public final AtlasRegion getRegion(String name) {

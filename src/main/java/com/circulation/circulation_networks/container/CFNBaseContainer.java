@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.container;
 
 import com.circulation.circulation_networks.utils.GuiSyncManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -11,13 +12,11 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 public abstract class CFNBaseContainer extends AbstractContainerMenu {
 
     protected final Player player;
     private final GuiSyncManager guiSyncManager = new GuiSyncManager();
-    private final List<LayoutEntry> layouts = new ObjectArrayList<>();
+    private final ObjectList<LayoutEntry> layouts = new ObjectArrayList<>();
 
     {
         guiSyncManager.scan(this, this::onUpdate);

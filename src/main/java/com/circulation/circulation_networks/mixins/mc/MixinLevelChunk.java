@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.mixins.mc;
 
 import com.circulation.circulation_networks.manager.PocketNodeManager;
-import com.circulation.circulation_networks.utils.EventHooks;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleHooks;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
@@ -38,18 +38,18 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (blockEntity != null) {
-            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            BlockEntityLifecycleHooks.onValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
 
     @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
     private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci, @Local(name = "previousEntry") BlockEntity previousEntry, @Local(name = "pos") BlockPos pos) {
-        EventHooks.onBlockEntityInvalidate(this.level, pos, previousEntry);
+        BlockEntityLifecycleHooks.onInvalidate(this.level, pos, previousEntry);
     }
 
     @Inject(method = "removeBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
     private void removeBlockEntity(BlockPos blockPos, CallbackInfo ci, @Local(name = "removeThis") BlockEntity removeThis) {
-        EventHooks.onBlockEntityInvalidate(this.level, blockPos, removeThis);
+        BlockEntityLifecycleHooks.onInvalidate(this.level, blockPos, removeThis);
     }
 
     @Inject(method = "setBlockState", at = @At("TAIL"))

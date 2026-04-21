@@ -4,7 +4,6 @@ import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
-import com.circulation.circulation_networks.utils.PocketNodeInteractionHelper;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -69,11 +68,9 @@ public abstract class BaseBlock extends Block implements EntityBlock {
     protected @NotNull InteractionResult useItemOn(@NotNull ItemStack stack, @NotNull BlockState state, @NotNull Level level,
                                                    @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand,
                                                    @NotNull BlockHitResult hit) {
-        if (PocketNodeInteractionHelper.shouldPrioritizeConfiguratorDetach(
-            hand == InteractionHand.MAIN_HAND,
-            player.isShiftKeyDown(),
-            stack.getItem() == CFNItems.circulationConfigurator
-        )) {
+        if (hand == InteractionHand.MAIN_HAND
+            && !player.isShiftKeyDown()
+            && stack.getItem() == CFNItems.circulationConfigurator) {
             if (level.isClientSide()) {
                 if (API.getNodeAt(level, pos) != null) {
                     return InteractionResult.SUCCESS;

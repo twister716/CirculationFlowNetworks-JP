@@ -11,7 +11,7 @@ import com.circulation.circulation_networks.network.Grid;
 import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.utils.BlockPosCompat;
 import com.circulation.circulation_networks.utils.CompressedNbtIoCompat;
-import com.circulation.circulation_networks.utils.EventHooks;
+import com.circulation.circulation_networks.utils.NodeEventHooks;
 import com.circulation.circulation_networks.utils.Functions;
 import com.circulation.circulation_networks.utils.NbtCompat;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
@@ -446,7 +446,7 @@ public final class NetworkManager {
     public void removeNode(INode removedNode) {
         if (removedNode == null || isClientWorld(removedNode.getWorld()) || !activeNodes.remove(removedNode)) return;
 
-        EventHooks.postRemoveNodePre(removedNode);
+        NodeEventHooks.postRemoveNodePre(removedNode);
         String dimId = getDimensionId(removedNode);
         validationTracker.removePending(dimId, removedNode.getPos());
 
@@ -553,7 +553,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.removeNode(removedNode);
         ChargingManager.INSTANCE.removeNode(removedNode);
 
-        EventHooks.postRemoveNodePost(removedNode);
+        NodeEventHooks.postRemoveNodePost(removedNode);
     }
 
     public @NotNull AddNodeResult addNode(INode newNode) {
@@ -574,7 +574,7 @@ public final class NetworkManager {
             return AddNodeResult.failure(AddNodeResult.Status.ALREADY_ACTIVE);
         }
 
-        if (EventHooks.postAddNodePre(newNode, blockEntity)) {
+        if (NodeEventHooks.postAddNodePre(newNode, blockEntity)) {
             return AddNodeResult.failure(AddNodeResult.Status.EVENT_CANCELED);
         }
 
@@ -684,7 +684,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.addNode(newNode);
         ChargingManager.INSTANCE.addNode(newNode);
 
-        EventHooks.postAddNodePost(newNode, blockEntity);
+        NodeEventHooks.postAddNodePost(newNode, blockEntity);
         return AddNodeResult.success(newNode.getGrid());
     }
 
