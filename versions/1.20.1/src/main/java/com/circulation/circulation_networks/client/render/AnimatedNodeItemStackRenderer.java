@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -147,7 +148,7 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
     private static void renderModel(PoseStack poseStack, MultiBufferSource bufferSource,
                                     ResourceLocation modelLocation, int packedLight, int packedOverlay) {
         BakedModel model = RotatingBlockModelCache.get(modelLocation);
-        VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS));
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
             poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
         );
@@ -185,7 +186,7 @@ public final class AnimatedNodeItemStackRenderer extends BlockEntityWithoutLevel
             (float) Math.toRadians(angle), axisX, axisY, axisZ));
         poseStack.translate(-pivotX, -pivotY, -pivotZ);
 
-        VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS));
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(
             poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
         );

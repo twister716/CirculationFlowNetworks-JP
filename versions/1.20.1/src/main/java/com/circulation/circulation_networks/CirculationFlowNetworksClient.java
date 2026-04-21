@@ -3,6 +3,7 @@ package com.circulation.circulation_networks;
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
+import com.circulation.circulation_networks.client.render.PocketNodeItemStackRenderer;
 import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
 import com.circulation.circulation_networks.client.render.PortNodeRenderer;
 import com.circulation.circulation_networks.client.render.RelayNodeRenderer;
@@ -73,6 +74,7 @@ final class CirculationFlowNetworksClient {
         modEventBus.addListener((ModelEvent.BakingCompleted event) -> {
             RotatingBlockModelCache.clear();
             PocketNodeModelCache.clear();
+            PocketNodeItemStackRenderer.clearCache();
         });
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);

@@ -39,7 +39,7 @@ public final class CFNConfig {
             "Examples:",
             "  - 'com.example.CustomEnergyTile' Exact match",
             "  - 'com.example' Prefix match, includes all classes starting with this"
-        ).defineListAllowEmpty(List.of("classNames"), List::of, obj -> obj instanceof String);
+        ).defineListAllowEmpty(List.of("classNames"), List.of("sonar.fluxnetworks.common.device.TileFluxDevice"), obj -> obj instanceof String);
 
         SUPPLY_CLASS_NAMES = builder.comment(
             "Energy device blacklist for generic supply nodes (non-specialized).",

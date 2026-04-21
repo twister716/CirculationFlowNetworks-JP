@@ -204,6 +204,7 @@ public final class RotatingModelVBORenderer {
         }
         renderSessionShader = null;
         VertexBuffer.unbind();
+        Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
         RenderSystem.enableCull();
     }
 

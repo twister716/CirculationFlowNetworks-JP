@@ -51,6 +51,12 @@ public final class PocketNodeItemStackRenderer extends BlockEntityWithoutLevelRe
         return BRIGHT_ITEM_MODELS.computeIfAbsent(model, BrightItemBakedModel::new);
     }
 
+    public static void clearCache() {
+        BRIGHT_ITEM_MODELS.clear();
+        BrightItemBakedModel.NO_DIFFUSE_QUADS.clear();
+        BrightItemBakedModel.NO_DIFFUSE_QUAD_LISTS.clear();
+    }
+
     @Override
     public void renderByItem(ItemStack stack, @NotNull ItemDisplayContext displayContext, @NotNull PoseStack poseStack,
                              @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
