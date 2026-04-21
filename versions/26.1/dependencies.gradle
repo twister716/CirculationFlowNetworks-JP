@@ -4,4 +4,5 @@ dependencies {
     implementation "curse.maven:jei-238222:7920926"
     implementation "curse.maven:ftb-library-forge-404465:7921509"
     implementation "curse.maven:ftb-teams-forge-404468:7921353"
+    implementation "curse.maven:ender-io-64578:7958101"
 }

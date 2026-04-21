@@ -6,6 +6,7 @@ import com.mojang.math.Transformation;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
@@ -44,7 +45,7 @@ public final class AnimatedSpecialItemModel<T> implements ItemModel {
         this.specialRenderer = specialRenderer;
         this.properties = properties;
         this.extents = Suppliers.memoize(() -> {
-            ObjectOpenHashSet<Vector3fc> results = new ObjectOpenHashSet<>();
+            ObjectSet<Vector3fc> results = new ObjectOpenHashSet<>();
             specialRenderer.getExtents(results::add);
             return results.toArray(new Vector3fc[0]);
         });

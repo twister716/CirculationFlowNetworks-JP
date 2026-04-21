@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -824,7 +825,7 @@ public final class NetworkManager {
 
     private static final class NodeValidationTracker {
         private final Object2ObjectMap<String, Long2ObjectMap<LongSet>> pending = new Object2ObjectOpenHashMap<>();
-        private final Object2ObjectMap<String, LongOpenHashSet> early = new Object2ObjectOpenHashMap<>();
+        private final Object2ObjectMap<String, LongSet> early = new Object2ObjectOpenHashMap<>();
 
         {
             pending.defaultReturnValue(Long2ObjectMaps.emptyMap());
@@ -911,7 +912,7 @@ public final class NetworkManager {
             return pending.isEmpty();
         }
 
-        ObjectArrayList<Object2ObjectMap.Entry<String, Long2ObjectMap<LongSet>>> pendingDimensionsSnapshot() {
+        ObjectList<Object2ObjectMap.Entry<String, Long2ObjectMap<LongSet>>> pendingDimensionsSnapshot() {
             return new ObjectArrayList<>(pending.object2ObjectEntrySet());
         }
 

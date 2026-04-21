@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.utils.NbtCompat;
 import com.circulation.circulation_networks.utils.WorldResolveCompat;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -23,7 +24,7 @@ public final class EnergyTypeOverrideManager {
 
     private static volatile EnergyTypeOverrideManager INSTANCE;
 
-    private final Object2ObjectOpenHashMap<String, Long2ObjectMap<IEnergyHandler.EnergyType>> overrides = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<IEnergyHandler.EnergyType>> overrides = new Object2ObjectOpenHashMap<>();
     private boolean m;
 
     private EnergyTypeOverrideManager() {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -86,7 +87,7 @@ public final class RotatingModelVBORenderer {
             return;
         }
         BlockStateModel model = RotatingBlockModelCache.get(modelLocation);
-        ObjectArrayList<BlockStateModelPart> parts = collectParts(model);
+        ObjectList<BlockStateModelPart> parts = collectParts(model);
         submitModelPasses(
             poseStack,
             submitNodeCollector,
@@ -116,7 +117,7 @@ public final class RotatingModelVBORenderer {
             return;
         }
         BlockStateModel model = RotatingBlockModelCache.get(modelLocation);
-        ObjectArrayList<BlockStateModelPart> parts = collectParts(model);
+        ObjectList<BlockStateModelPart> parts = collectParts(model);
         submitModelPasses(
             poseStack,
             submitNodeCollector,
@@ -156,7 +157,7 @@ public final class RotatingModelVBORenderer {
             return;
         }
         BlockStateModel model = RotatingBlockModelCache.get(modelLocation);
-        ObjectArrayList<BlockStateModelPart> parts = collectParts(model);
+        ObjectList<BlockStateModelPart> parts = collectParts(model);
         int lightCoords = LevelRenderer.getLightCoords(clientLevel, lightSamplePos);
         submitModelPasses(
             poseStack,
@@ -193,7 +194,7 @@ public final class RotatingModelVBORenderer {
             return;
         }
         BlockStateModel model = RotatingBlockModelCache.get(modelLocation);
-        ObjectArrayList<BlockStateModelPart> parts = collectParts(model);
+        ObjectList<BlockStateModelPart> parts = collectParts(model);
         submitModelPasses(
             poseStack,
             submitNodeCollector,
@@ -275,8 +276,8 @@ public final class RotatingModelVBORenderer {
     }
 
     @SuppressWarnings("deprecation")
-    private static ObjectArrayList<BlockStateModelPart> collectParts(BlockStateModel model) {
-        ObjectArrayList<BlockStateModelPart> parts = new ObjectArrayList<>();
+    private static ObjectList<BlockStateModelPart> collectParts(BlockStateModel model) {
+        ObjectList<BlockStateModelPart> parts = new ObjectArrayList<>();
         model.collectParts(RandomSource.create(42L), parts);
         return parts;
     }

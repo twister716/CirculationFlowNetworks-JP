@@ -38,9 +38,9 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -185,7 +185,7 @@ public final class CirculationFlowNetworks {
         PocketNodeManager.INSTANCE.onChunkLoad(level, chunk.getPos().x(), chunk.getPos().z());
     }
 
-    private void onBlockBreak(BlockEvent.BreakEvent event) {
+    private void onBlockBreak(BreakBlockEvent event) {
         if (event.getLevel() instanceof Level level && !level.isClientSide()) {
             PocketNodeManager.INSTANCE.onHostBlockBroken(level, event.getPos());
         }

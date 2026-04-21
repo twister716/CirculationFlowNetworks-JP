@@ -27,14 +27,6 @@ public class FEHandler implements IEnergyHandler {
     public FEHandler() {
     }
 
-    private static boolean canExtract(EnergyHandler handler) {
-        return handler.getAmountAsLong() > 0L || simulateExtract(handler, 1) > 0;
-    }
-
-    private static boolean canReceive(EnergyHandler handler) {
-        return handler.getAmountAsLong() < handler.getCapacityAsLong() || simulateInsert(handler, 1) > 0;
-    }
-
     private static int simulateExtract(EnergyHandler handler, int amount) {
         try (Transaction transaction = Transaction.openRoot()) {
             return handler.extract(amount, transaction);
@@ -51,10 +43,10 @@ public class FEHandler implements IEnergyHandler {
         if (storage == null) {
             return;
         }
-        if (send == null && canExtract(storage)) {
+        if (send == null && simulateExtract(storage, 1) > 0) {
             send = storage;
         }
-        if (receive == null && canReceive(storage)) {
+        if (receive == null && simulateInsert(storage, 1) > 0) {
             receive = storage;
         }
     }
@@ -64,7 +56,6 @@ public class FEHandler implements IEnergyHandler {
         var level = blockEntity.getLevel();
         if (level == null) return this;
         var pos = blockEntity.getBlockPos();
-        bindStorage(level.getCapability(Capabilities.Energy.BLOCK, pos, null));
         for (Direction direction : DIRECTIONS) {
             if (send != null && receive != null) break;
             bindStorage(level.getCapability(Capabilities.Energy.BLOCK, pos, direction));
@@ -77,7 +68,7 @@ public class FEHandler implements IEnergyHandler {
         if (itemStack.isEmpty()) return this;
         var ies = ItemAccess.forStack(itemStack).getCapability(Capabilities.Energy.ITEM);
         if (ies == null) return this;
-        if (canReceive(ies)) {
+        if (simulateInsert(ies, 1) > 0) {
             this.receive = ies;
         }
         return this;

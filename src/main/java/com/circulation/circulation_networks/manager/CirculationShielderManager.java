@@ -15,7 +15,7 @@ public final class CirculationShielderManager {
 
     public static final CirculationShielderManager INSTANCE = new CirculationShielderManager();
 
-    private final Object2ObjectOpenHashMap<String, ReferenceSet<ICirculationShielderBlockEntity>> dimShielders = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, ReferenceSet<ICirculationShielderBlockEntity>> dimShielders = new Object2ObjectOpenHashMap<>();
 
     public CirculationShielderManager() {
         dimShielders.defaultReturnValue(ReferenceSets.emptySet());

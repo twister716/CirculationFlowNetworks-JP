@@ -14,6 +14,7 @@ import com.circulation.circulation_networks.gui.component.base.DraggableComponen
 import com.circulation.circulation_networks.packets.UpdateHubChannelPermission;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.CI18n;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
@@ -49,7 +50,7 @@ public final class PermissionListPanelComponent extends DraggableComponent imple
     private final ContainerHub container;
     private final SliderComponent slider;
     private final TextFieldComponent searchField;
-    private final Object2BooleanOpenHashMap<UUID> expandedEntries = new Object2BooleanOpenHashMap<>();
+    private final Object2BooleanMap<UUID> expandedEntries = new Object2BooleanOpenHashMap<>();
 
     private double lastSliderValue;
     private boolean syncingSlider;

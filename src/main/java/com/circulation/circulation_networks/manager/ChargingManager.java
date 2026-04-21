@@ -54,14 +54,14 @@ public final class ChargingManager {
     private static final byte CHARGE_PREF_ACCESSORY = 0x20;
     private static final byte CHARGE_PREF_ALL = 0b00111111;
     private static final List<EnergyTransferParticipant> EMPTY_HANDLERS = ObjectLists.emptyList();
-    private final Object2ObjectOpenHashMap<String, Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
-    private final Object2ObjectOpenHashMap<String, Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
-    private final Object2ObjectOpenHashMap<String, ReferenceSet<IHubNode>> wideAreaHubs = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, ReferenceSet<IHubNode>> wideAreaHubs = new Object2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> tickChargeTargetsByGrid = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeChargeTargetGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTransferGrids = new ReferenceOpenHashSet<>();
     private final ChannelTransferScratch channelTransferScratch = new ChannelTransferScratch();
-    private final ObjectArrayList<PlayerChargeState> playerStates = new ObjectArrayList<>();
+    private final ObjectList<PlayerChargeState> playerStates = new ObjectArrayList<>();
 
     private static void collectChargeablesForGrid(IGrid grid,
                                                   Player player,
@@ -129,7 +129,7 @@ public final class ChargingManager {
             return;
         }
 
-        ObjectArrayList<EnergyTransferParticipant> handlers = null;
+        ObjectList<EnergyTransferParticipant> handlers = null;
         for (int i = startIndex; i < endIndex; i++) {
             if (i >= items.size()) break;
             var stack = items.get(i);
@@ -228,8 +228,8 @@ public final class ChargingManager {
         }
     }
 
-    private static void syncBackSenders(ReferenceOpenHashSet<EnergyTransferParticipant> send,
-                                        ReferenceOpenHashSet<EnergyTransferParticipant> storage,
+    private static void syncBackSenders(ReferenceSet<EnergyTransferParticipant> send,
+                                        ReferenceSet<EnergyTransferParticipant> storage,
                                         Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap) {
         for (var p : send) {
             var h = machineMap.get(p.grid());
@@ -323,7 +323,9 @@ public final class ChargingManager {
         prepareChargeTargetScratch();
         processedTransferGrids.clear();
         playerStates.clear();
-        playerStates.ensureCapacity(players.size());
+        if (playerStates instanceof ObjectArrayList<PlayerChargeState> objectArrayList) {
+            objectArrayList.ensureCapacity(players.size());
+        }
 
         for (var player : players) {
             var playerState = new PlayerChargeState(player);
@@ -574,9 +576,9 @@ public final class ChargingManager {
     enum ChargingPluginScope {NONE, WIDE_AREA, DIMENSIONAL}
 
     private static final class ChannelTransferScratch {
-        final ReferenceOpenHashSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
-        final ReferenceOpenHashSet<EnergyTransferParticipant> targets = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> send = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> storage = new ReferenceOpenHashSet<>();
+        final ReferenceSet<EnergyTransferParticipant> targets = new ReferenceOpenHashSet<>();
         final ReferenceSet<IGrid> timedGrids = new ReferenceOpenHashSet<>();
 
         ChannelTransferScratch prepare() {
@@ -592,7 +594,7 @@ public final class ChargingManager {
         final EnumMap<ChargingDefinition, List<EnergyTransferParticipant>> cache = new EnumMap<>(ChargingDefinition.class);
         final List<ItemStack> inventory;
         final List<ItemStack> armor;
-        final ObjectArrayList<EnergyTransferParticipant> scratch = new ObjectArrayList<>();
+        final ObjectList<EnergyTransferParticipant> scratch = new ObjectArrayList<>();
         final ReferenceSet<IGrid> coveredGrids = new ReferenceOpenHashSet<>();
         final ReferenceSet<IGrid> reachableGrids = new ReferenceOpenHashSet<>();
 

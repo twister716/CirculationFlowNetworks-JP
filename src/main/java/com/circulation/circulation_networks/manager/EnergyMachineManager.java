@@ -52,22 +52,23 @@ public final class EnergyMachineManager {
     private static final int WARNING_SEND_INTERVAL_TICKS = 20;
     private static final int WARNING_STALE_TICKS = 200;
     private static final double WARNING_RENDER_DISTANCE_SQ = 48.0D * 48.0D;
-    private final Object2ObjectOpenHashMap<String, Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
-    private final Object2ObjectOpenHashMap<String, Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Object2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<INode, Set<BlockEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
-    private final Reference2ObjectOpenHashMap<BlockEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<BlockEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
-    private final Reference2ObjectOpenHashMap<BlockEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<BlockEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<BlockEntity, IEnergyHandler.EnergyType> machineEnergyTypeCache = new Reference2ObjectOpenHashMap<>();
     private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
-    private final Object2ObjectOpenHashMap<String, LongSet> warningPositionsScratch = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, LongSet> warningPositionsScratch = new Object2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
-    private final ReferenceOpenHashSet<IGrid> dedupGridScratch = new ReferenceOpenHashSet<>();
+    private final ReferenceSet<IGrid> dedupGridScratch = new ReferenceOpenHashSet<>();
     private final ReferenceSet<BlockEntity> cache = new ReferenceOpenHashSet<>();
-    private final Object2ObjectOpenHashMap<String, Long2LongMap> lastWarningTicks = new Object2ObjectOpenHashMap<>();
-    private final LongOpenHashSet visibleWarningsScratch = new LongOpenHashSet();
+    private final Object2ObjectMap<String, Long2LongMap> lastWarningTicks = new Object2ObjectOpenHashMap<>();
+    private final LongSet visibleWarningsScratch = new LongOpenHashSet();
     private long warningTickCounter;
     private long lastWarningCleanupTick;
     private long interactionEpoch;
@@ -278,7 +279,7 @@ public final class EnergyMachineManager {
                 }
                 var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid), false);
 
-                var type = override != null ? override : participant.getType();
+                var type = override != null ? override : stabilizeEnergyType(te, participant.getType());
                 if (type == IEnergyHandler.EnergyType.INVALID) {
                     participant.recycle();
                     continue;
@@ -400,6 +401,7 @@ public final class EnergyMachineManager {
     }
 
     public void removeMachine(BlockEntity blockEntity) {
+        machineEnergyTypeCache.remove(blockEntity);
         var set = machineGridMap.remove(blockEntity);
         if (set == null || set.isEmpty()) return;
         for (var node : set) {
@@ -595,6 +597,7 @@ public final class EnergyMachineManager {
         tickGridData.clear();
         activeTickGrids.clear();
         processedTickGrids.clear();
+        machineEnergyTypeCache.clear();
         warningPositionsScratch.clear();
         visibleWarningsScratch.clear();
         lastWarningTicks.clear();
@@ -630,6 +633,25 @@ public final class EnergyMachineManager {
         return data;
     }
 
+    private IEnergyHandler.EnergyType stabilizeEnergyType(BlockEntity blockEntity, IEnergyHandler.EnergyType currentType) {
+        if (currentType == IEnergyHandler.EnergyType.INVALID) {
+            return currentType;
+        }
+        IEnergyHandler.EnergyType cachedType = machineEnergyTypeCache.get(blockEntity);
+        if (cachedType == null) {
+            machineEnergyTypeCache.put(blockEntity, currentType);
+            return currentType;
+        }
+        if (cachedType == IEnergyHandler.EnergyType.STORAGE) {
+            return IEnergyHandler.EnergyType.STORAGE;
+        }
+        if (cachedType == currentType) {
+            return currentType;
+        }
+        machineEnergyTypeCache.put(blockEntity, IEnergyHandler.EnergyType.STORAGE);
+        return IEnergyHandler.EnergyType.STORAGE;
+    }
+
     @Nullable
     private IEnergyHandler getOrCreateTickMachineHandler(BlockEntity blockEntity, @Nullable HubNode.HubMetadata hubMetadata) {
         IEnergyHandler handler = tickMachineHandlers.get(blockEntity);
@@ -661,7 +683,7 @@ public final class EnergyMachineManager {
 
     private void collectWarningPositions(Set<EnergyTransferParticipant> receiveHandlers,
                                          Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets,
-                                         Object2ObjectOpenHashMap<String, LongSet> warningPositions) {
+                                         Object2ObjectMap<String, LongSet> warningPositions) {
         if (receiveHandlers.isEmpty() || receiveTargets == null || receiveTargets.isEmpty()) {
             return;
         }
@@ -709,7 +731,7 @@ public final class EnergyMachineManager {
         dimWarnings.put(target.posLong, warningTickCounter);
     }
 
-    private void sendWarningsToNearbyPlayers(MinecraftServer server, Object2ObjectOpenHashMap<String, LongSet> warningPositions) {
+    private void sendWarningsToNearbyPlayers(MinecraftServer server, Object2ObjectMap<String, LongSet> warningPositions) {
         if (warningPositions.isEmpty()) {
             return;
         }

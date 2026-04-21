@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.utils.AnimationUtils;
 import com.circulation.circulation_networks.utils.RenderingUtils;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import net.minecraft.client.Minecraft;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -25,7 +26,7 @@ public final class CirculationShielderRenderingHandler {
     private static final float RANGE_EXPANSION = 0.01f;
     private static final float ANIMATION_DURATION = 2.0f;
 
-    private final ReferenceOpenHashSet<ICirculationShielderBlockEntity> clientShielders = new ReferenceOpenHashSet<>();
+    private final ReferenceSet<ICirculationShielderBlockEntity> clientShielders = new ReferenceOpenHashSet<>();
     private final Map<ICirculationShielderBlockEntity, Float> animProgress = new WeakHashMap<>();
     private final Map<ICirculationShielderBlockEntity, Float> lastAnimProgress = new WeakHashMap<>();
     private org.joml.Matrix4f cachedEventViewMatrix;
