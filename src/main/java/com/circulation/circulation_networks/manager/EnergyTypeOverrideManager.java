@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.manager;
 
+import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.IEnergyHandler;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
@@ -14,7 +15,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.server.FMLServerHandler;
 //?} else {
 /*import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -63,7 +63,7 @@ public final class EnergyTypeOverrideManager {
 
     //? if <1.20 {
     private static MinecraftServer getServer() {
-        return FMLServerHandler.instance().getServer();
+        return CirculationFlowNetworks.server;
     }
 
     private static int getPlayerDimensionId(EntityPlayerMP player) {

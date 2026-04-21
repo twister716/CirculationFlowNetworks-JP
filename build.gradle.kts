@@ -9,7 +9,7 @@ import groovy.lang.GroovyObject
 import groovy.lang.GroovyShell
 import groovy.text.SimpleTemplateEngine
 import org.gradle.jvm.tasks.Jar
-import org.gradle.api.tasks.Sync
+import org.gradle.api.tasks.Copy
 import java.util.Properties
 
 plugins {
@@ -855,9 +855,9 @@ if (project != rootProject) {
         val extra = rootProject.extensions.extraProperties
         if (extra.has(taskKey)) {
             @Suppress("UNCHECKED_CAST")
-            extra.get(taskKey) as TaskProvider<Sync>
+            extra.get(taskKey) as TaskProvider<Copy>
         } else {
-            rootProject.tasks.register<Sync>("aggregateVersionArtifacts") {
+            rootProject.tasks.register<Copy>("aggregateVersionArtifacts") {
                 group = "build"
                 description = "Collect versioned jars into the root build/libs directory."
 

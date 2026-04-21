@@ -67,7 +67,6 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.server.FMLServerHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -278,11 +277,11 @@ public class CommonProxy implements IGuiHandler {
     private static class MyHubPlatformServices extends HubPlatformServices {
         @Override
         public List<PlayerIdentity> getOnlinePlayers() {
-            if (FMLServerHandler.instance().getServer() == null) {
+            if (CirculationFlowNetworks.server == null) {
                 return Collections.emptyList();
             }
             List<PlayerIdentity> players = new ArrayList<>();
-            for (EntityPlayerMP player : FMLServerHandler.instance().getServer().getPlayerList().getPlayers()) {
+            for (EntityPlayerMP player : CirculationFlowNetworks.server.getPlayerList().getPlayers()) {
                 players.add(new PlayerIdentity(player.getUniqueID(), player.getName()));
             }
             return players;

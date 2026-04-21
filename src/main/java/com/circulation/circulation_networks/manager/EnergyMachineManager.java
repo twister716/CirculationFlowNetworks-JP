@@ -42,7 +42,6 @@ import net.minecraft.world.World;
 //? if <1.20 {
 import com.github.bsideup.jabel.Desugar;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraftforge.fml.server.FMLServerHandler;
 //?} else {
 /*import net.minecraft.server.level.ServerPlayer;
  *///?}
@@ -166,7 +165,7 @@ public final class EnergyMachineManager {
 
     //? if <1.20 {
     private static MinecraftServer getServer() {
-        return FMLServerHandler.instance().getServer();
+        return CirculationFlowNetworks.server;
     }
 
     private static boolean isClientWorld(World world) {
