@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.handlers;
 
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
+import com.circulation.circulation_networks.client.render.PocketNodeItemStackRenderer;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.pocket.PocketNodeClientHost;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
@@ -263,14 +264,10 @@ public final class PocketNodeRenderingHandler {
                 poseStack.scale(1.0F, 1.0F, 0.002F);
             }
 
-            BakedModel itemModel = PocketNodeModelCache.get(host.getRenderStack());
+            BakedModel itemModel = PocketNodeItemStackRenderer.toBrightItemModel(PocketNodeModelCache.get(host.getRenderStack()));
             itemModel.getTransforms().getTransform(ItemDisplayContext.GUI).apply(false, poseStack);
             poseStack.translate(-0.5F, -0.5F, -0.5F);
             VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
-            mc.getBlockRenderer().getModelRenderer().renderModel(
-                poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
-                LevelRenderer.getLightColor(mc.level, pos), OverlayTexture.NO_OVERLAY
-            );
             mc.getBlockRenderer().getModelRenderer().renderModel(
                 poseStack.last(), consumer, null, itemModel, 1.0F, 1.0F, 1.0F,
                 LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
@@ -343,11 +340,9 @@ public final class PocketNodeRenderingHandler {
             if (host.isGui3d()) {
                 GlStateManager.scale(1.0F, 1.0F, 0.002F);
             }
-            IBakedModel model = PocketNodeModelCache.get(host.getRenderStack());
+            IBakedModel model = PocketNodeItemStackRenderer.toBrightItemModel(PocketNodeModelCache.get(host.getRenderStack()));
             model = ForgeHooksClient.handleCameraTransforms(model, ItemCameraTransforms.TransformType.GUI, false);
             RenderHelper.disableStandardItemLighting();
-            applyWorldLight(mc, pos);
-            mc.getRenderItem().renderItem(host.getRenderStack(), model);
             applyFullBrightLight();
             mc.getRenderItem().renderItem(host.getRenderStack(), model);
             GlStateManager.depthMask(true);

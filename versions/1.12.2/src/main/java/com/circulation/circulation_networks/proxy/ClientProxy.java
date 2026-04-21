@@ -159,6 +159,7 @@ public final class ClientProxy extends CommonProxy {
         RotatingModelRenderHelper.clearDisplayLists();
         RotatingBlockModelCache.clear();
         PocketNodeModelCache.clear();
+        PocketNodeItemStackRenderer.clearCache();
         // 1.12.2 bakes hub sub-models on demand, so their dynamic-only sprites must be stitched explicitly.
         RotatingBlockModelCache.registerAdditionalSprites(event.getMap());
         PocketNodeModelCache.registerAdditionalSprites(event.getMap());

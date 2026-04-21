@@ -88,6 +88,7 @@ final class CirculationFlowNetworksClient {
         modEventBus.addListener((ModelEvent.BakingCompleted event) -> {
             RotatingBlockModelCache.clear();
             PocketNodeModelCache.clear();
+            PocketNodeItemStackRenderer.clearCache();
         });
         modEventBus.addListener((EntityRenderersEvent.RegisterRenderers event) -> {
             event.registerBlockEntityRenderer(CFNBlockEntityTypes.RELAY_NODE, RelayNodeRenderer::new);

@@ -47,6 +47,12 @@ public final class PocketNodeItemStackRenderer extends TileEntityItemStackRender
         return BRIGHT_ITEM_MODELS.computeIfAbsent(model, BrightItemBakedModel::new);
     }
 
+    public static void clearCache() {
+        BRIGHT_ITEM_MODELS.clear();
+        BrightItemBakedModel.NO_DIFFUSE_QUADS.clear();
+        BrightItemBakedModel.NO_DIFFUSE_QUAD_LISTS.clear();
+    }
+
     @Override
     public void renderByItem(ItemStack stack, float partialTicks) {
         if (stack.isEmpty()) {
@@ -54,7 +60,7 @@ public final class PocketNodeItemStackRenderer extends TileEntityItemStackRender
         }
 
         Minecraft minecraft = Minecraft.getMinecraft();
-        IBakedModel model = PocketNodeModelCache.get(stack);
+        IBakedModel model = toBrightItemModel(PocketNodeModelCache.get(stack));
         minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
@@ -80,7 +86,6 @@ public final class PocketNodeItemStackRenderer extends TileEntityItemStackRender
         try {
             GlStateManager.pushMatrix();
             GlStateManager.translate(0.5F, 0.5F, 0.5F);
-            minecraft.getRenderItem().renderItem(stack, model);
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
             GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             minecraft.getRenderItem().renderItem(stack, model);

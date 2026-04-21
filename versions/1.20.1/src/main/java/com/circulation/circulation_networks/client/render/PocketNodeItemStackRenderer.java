@@ -65,11 +65,8 @@ public final class PocketNodeItemStackRenderer extends BlockEntityWithoutLevelRe
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        BakedModel model = PocketNodeModelCache.get(stack);
+        BakedModel model = toBrightItemModel(PocketNodeModelCache.get(stack));
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
-        minecraft.getBlockRenderer().getModelRenderer().renderModel(
-            poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, ModelData.EMPTY, null
-        );
         minecraft.getBlockRenderer().getModelRenderer().renderModel(
             poseStack.last(), consumer, null, model, 1.0F, 1.0F, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null
         );
