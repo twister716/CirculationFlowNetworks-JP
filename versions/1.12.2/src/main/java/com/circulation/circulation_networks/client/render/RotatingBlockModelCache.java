@@ -18,21 +18,6 @@ import java.util.Map;
 @SideOnly(Side.CLIENT)
 public final class RotatingBlockModelCache {
 
-    private static final Map<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
-    private static final ResourceLocation[] HUB_TEXTURES = {
-        texture("node/hub/hub_body_primary"),
-        texture("node/hub/hub_body_secondary"),
-        texture("node/hub/hub_body_tertiary"),
-        texture("node/hub/hub_body_emissive"),
-        texture("node/hub/hub_body_frame"),
-        texture("node/hub/hub_channel_energy"),
-        texture("node/hub/hub_crystal_core"),
-        texture("node/hub/hub_ring_band"),
-        texture("node/hub/plug/hub_plug_shell"),
-        texture("node/hub/plug/hub_plug_detail"),
-        texture("node/hub/plug/hub_plug_dimensional_link"),
-        texture("node/hub/plug/hub_plug_wide_area_link")
-    };
     public static final ResourceLocation HUB_BASE = model(HubRenderLayout.HUB_BASE_MODEL);
     public static final ResourceLocation HUB_EMISSIVE = model(HubRenderLayout.HUB_EMISSIVE_MODEL);
     public static final ResourceLocation HUB_CRYSTAL = model(HubRenderLayout.HUB_CRYSTAL_MODEL);
@@ -58,6 +43,21 @@ public final class RotatingBlockModelCache {
     public static final ResourceLocation HUB_DEFAULT_PLUGIN_3 = model(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "3");
     public static final ResourceLocation HUB_PLUGIN_WIDE_AREA = model(HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
     public static final ResourceLocation HUB_PLUGIN_DIMENSIONAL = model(HubRenderLayout.DIMENSIONAL_PLUGIN_MODEL);
+    private static final Map<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    private static final ResourceLocation[] HUB_TEXTURES = {
+        texture("node/hub/hub_body_primary"),
+        texture("node/hub/hub_body_secondary"),
+        texture("node/hub/hub_body_tertiary"),
+        texture("node/hub/hub_body_emissive"),
+        texture("node/hub/hub_body_frame"),
+        texture("node/hub/hub_channel_energy"),
+        texture("node/hub/hub_crystal_core"),
+        texture("node/hub/hub_ring_band"),
+        texture("node/hub/plug/hub_plug_shell"),
+        texture("node/hub/plug/hub_plug_detail"),
+        texture("node/hub/plug/hub_plug_dimensional_link"),
+        texture("node/hub/plug/hub_plug_wide_area_link")
+    };
 
     private RotatingBlockModelCache() {
     }

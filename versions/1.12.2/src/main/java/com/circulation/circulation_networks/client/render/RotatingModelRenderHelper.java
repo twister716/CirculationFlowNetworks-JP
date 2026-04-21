@@ -518,7 +518,8 @@ public final class RotatingModelRenderHelper {
 
     @Desugar
     @ParametersAreNonnullByDefault
-    private record LightSamplingBlockAccess(IBlockAccess delegate, BlockPos renderPos, BlockPos samplePos, boolean fullBright) implements IBlockAccess {
+    private record LightSamplingBlockAccess(IBlockAccess delegate, BlockPos renderPos, BlockPos samplePos,
+                                            boolean fullBright) implements IBlockAccess {
 
         private BlockPos remap(BlockPos pos) {
             return pos.add(

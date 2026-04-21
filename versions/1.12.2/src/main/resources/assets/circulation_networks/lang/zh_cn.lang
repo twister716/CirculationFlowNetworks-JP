@@ -11,9 +11,11 @@ block.circulation_networks.hub.tooltip.2=§7可配置玩家各背包栏位是否
 block.circulation_networks.hub.tooltip.3=§7可连接、切换并管理网络频道
 block.circulation_networks.hub.tooltip.4=§e连接频道前需先安装中枢频道插件
 block.circulation_networks.hub.tooltip.5=§7在具有中枢时，只有具有权限的玩家才会被网络充能
+block.circulation_networks.hub.tooltip.6=§e空手潜行右键可重扫描附近能量设备
 block.circulation_networks.node_pedestal.name=节点基座
 block.circulation_networks.port_node.tooltip.0=§7必须放置在节点基座上
 block.circulation_networks.port_node.tooltip.1=§7用于连接机器
+block.circulation_networks.port_node.tooltip.2=§e空手潜行右键可重扫描附近能量设备
 block.circulation_networks.charging_node.tooltip.0=§7必须放置在节点基座上
 block.circulation_networks.charging_node.tooltip.1=§7用于为玩家充能
 block.circulation_networks.relay_node.tooltip.0=§7必须放置在节点基座上
@@ -68,6 +70,7 @@ message.circulation_networks.node_location=节点位于 [%d, %d, %d]
 tooltip.circulation_networks.double_click_locate=§e双击查看世界上的坐标
 tooltip.circulation_networks.pocket_node_attach_on_block=§e右键以依附在方块上
 tooltip.circulation_networks.pocket_node_detach_with_configurator=§e可用环流配置器右键拆下
+tooltip.circulation_networks.node_rescan=§e空手潜行右键可重扫描附近能量设备
 
 # Circulation Shielder GUI
 gui.circulation_shielder.title=环流屏蔽仪配置

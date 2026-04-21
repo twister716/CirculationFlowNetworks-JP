@@ -3,10 +3,11 @@ package com.circulation.circulation_networks.proxy;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.energy.manager.EUHandlerManager;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
-import com.circulation.circulation_networks.energy.manager.MMCEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
+import com.circulation.circulation_networks.energy.manager.MMCEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.RFHandlerManager;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
+import com.circulation.circulation_networks.handlers.NodeRescanHandler;
 import com.circulation.circulation_networks.manager.EnergyMachineManager;
 import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
@@ -107,6 +108,7 @@ public class CommonProxy implements IGuiHandler {
             RegistryEnergyHandler.registerEnergyHandler(EUHandlerManager.INSTANCE);
             MinecraftForge.EVENT_BUS.register(EUHandlerManager.INSTANCE);
         }
+        MinecraftForge.EVENT_BUS.register(NodeRescanHandler.INSTANCE);
     }
 
     public void postInit() {

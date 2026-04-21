@@ -30,6 +30,18 @@ public final class NodeHudRequest implements Packet<NodeHudRequest> {
         this.posLong = pos.asLong();
     }
 
+    private static String resolveDisplayName(ServerPlayer sender, BlockPos pos, INode node) {
+        String displayName = node.getCustomName();
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            return displayName;
+        }
+        if (!PocketNodeManager.INSTANCE.isActivePocketNode(sender.level(), pos, node.getNodeType())) {
+            return "";
+        }
+        ItemStack stack = PocketNodeItems.createStack(node.getNodeType());
+        return stack.isEmpty() ? "" : stack.getHoverName().getString();
+    }
+
     @Override
     public NodeHudRequest decode(FriendlyByteBuf buf) {
         NodeHudRequest msg = new NodeHudRequest();
@@ -79,17 +91,5 @@ public final class NodeHudRequest implements Packet<NodeHudRequest> {
             );
         });
         context.setPacketHandled(true);
-    }
-
-    private static String resolveDisplayName(ServerPlayer sender, BlockPos pos, INode node) {
-        String displayName = node.getCustomName();
-        if (displayName != null && !displayName.trim().isEmpty()) {
-            return displayName;
-        }
-        if (!PocketNodeManager.INSTANCE.isActivePocketNode(sender.level(), pos, node.getNodeType())) {
-            return "";
-        }
-        ItemStack stack = PocketNodeItems.createStack(node.getNodeType());
-        return stack.isEmpty() ? "" : stack.getHoverName().getString();
     }
 }

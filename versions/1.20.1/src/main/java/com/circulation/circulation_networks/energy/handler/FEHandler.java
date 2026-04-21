@@ -52,9 +52,6 @@ public class FEHandler implements IEnergyHandler {
             if (send != null && receive != null) break;
             blockEntity.getCapability(ForgeCapabilities.ENERGY, direction).ifPresent(this::bindStorage);
         }
-        if (send == null || receive == null) {
-            blockEntity.getCapability(ForgeCapabilities.ENERGY, null).ifPresent(this::bindStorage);
-        }
         return this;
     }
 

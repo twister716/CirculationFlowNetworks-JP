@@ -55,9 +55,6 @@ public class FEHandler implements IEnergyHandler {
             if (send != null && receive != null) break;
             bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, direction));
         }
-        if (send == null || receive == null) {
-            bindStorage(level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null));
-        }
         return this;
     }
 

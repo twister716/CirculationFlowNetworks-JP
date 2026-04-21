@@ -54,45 +54,6 @@ public final class HubRenderer implements BlockEntityRenderer<HubBlockEntity> {
     public HubRenderer(BlockEntityRendererProvider.Context context) {
     }
 
-    @Override
-    public void render(@NotNull HubBlockEntity hub, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        if (hub.getLevel() == null) {
-            return;
-        }
-
-        long worldTime = hub.getLevel().getGameTime();
-        boolean breaking = RotatingModelVBORenderer.getDestroyStage(hub.getBlockPos()) >= 0;
-        BlockState state = hub.getBlockState();
-
-        if (breaking) {
-            renderBaseThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
-            renderChannelThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
-            renderPluginsThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
-            return;
-        }
-
-        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
-            renderBaseCached(hub, poseStack, state, worldTime, partialTick);
-            renderChannelCached(hub, poseStack, state, worldTime, partialTick);
-            renderPluginsCached(hub, poseStack, state, worldTime, partialTick);
-        }
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(@NotNull HubBlockEntity blockEntity) {
-        return true;
-    }
-
-    @Override
-    public boolean shouldRender(@NotNull HubBlockEntity blockEntity, @NotNull Vec3 cameraPos) {
-        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos);
-    }
-
-    @Override
-    public int getViewDistance() {
-        return 128;
-    }
-
     private static void renderBaseThroughBufferSource(HubBlockEntity hub, PoseStack poseStack, MultiBufferSource bufferSource, BlockState state, long worldTime, float partialTick) {
         float upperAngle = NodeRotationAnimation.hubUpperRingAngle(worldTime, partialTick);
         float lowerAngle = NodeRotationAnimation.hubLowerRingAngle(worldTime, partialTick);
@@ -313,5 +274,44 @@ public final class HubRenderer implements BlockEntityRenderer<HubBlockEntity> {
             return Math.max(1, plugin.getHubRotationPeriodTicks());
         }
         return IHubPlugin.DEFAULT_HUB_ROTATION_PERIOD_TICKS;
+    }
+
+    @Override
+    public void render(@NotNull HubBlockEntity hub, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (hub.getLevel() == null) {
+            return;
+        }
+
+        long worldTime = hub.getLevel().getGameTime();
+        boolean breaking = RotatingModelVBORenderer.getDestroyStage(hub.getBlockPos()) >= 0;
+        BlockState state = hub.getBlockState();
+
+        if (breaking) {
+            renderBaseThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
+            renderChannelThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
+            renderPluginsThroughBufferSource(hub, poseStack, bufferSource, state, worldTime, partialTick);
+            return;
+        }
+
+        try (RotatingModelVBORenderer.RenderSession ignored = RotatingModelVBORenderer.beginRenderSession()) {
+            renderBaseCached(hub, poseStack, state, worldTime, partialTick);
+            renderChannelCached(hub, poseStack, state, worldTime, partialTick);
+            renderPluginsCached(hub, poseStack, state, worldTime, partialTick);
+        }
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen(@NotNull HubBlockEntity blockEntity) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldRender(@NotNull HubBlockEntity blockEntity, @NotNull Vec3 cameraPos) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPos);
+    }
+
+    @Override
+    public int getViewDistance() {
+        return 128;
     }
 }

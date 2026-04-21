@@ -21,14 +21,14 @@ import java.util.Map;
 @SideOnly(Side.CLIENT)
 public final class PocketNodeModelCache {
 
+    public static final ResourceLocation PORT = model("pocket_node/pocket_port_node");
+    public static final ResourceLocation CHARGING = model("pocket_node/pocket_charging_node");
+    public static final ResourceLocation RELAY = model("pocket_node/pocket_relay_node");
     private static final Map<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
     private static final ResourceLocation[] TEXTURES = {
         texture("node/node_crystal"),
         texture("node/pocket_node")
     };
-    public static final ResourceLocation PORT = model("pocket_node/pocket_port_node");
-    public static final ResourceLocation CHARGING = model("pocket_node/pocket_charging_node");
-    public static final ResourceLocation RELAY = model("pocket_node/pocket_relay_node");
 
     private PocketNodeModelCache() {
     }

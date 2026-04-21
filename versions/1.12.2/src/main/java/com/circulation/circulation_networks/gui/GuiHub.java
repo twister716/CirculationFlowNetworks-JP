@@ -51,6 +51,7 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
     private String oldFT;
     private ButtonComponent node, playerPowerSupply, upgradePlugin, channel, permission, settings;
     private Component nodeUI, playerPowerSupplyUI, upgradePluginUI, channelUI, permissionUI, settingsUI;
+
     public GuiHub(EntityPlayer player, IHubNode node) {
         super(new ContainerHub(player, node));
         this.xSize = 178;

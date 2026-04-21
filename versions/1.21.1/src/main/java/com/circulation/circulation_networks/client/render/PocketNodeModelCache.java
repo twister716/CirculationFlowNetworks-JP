@@ -21,10 +21,10 @@ import java.util.Map;
 public final class PocketNodeModelCache {
 
     private static final List<ResourceLocation> REGISTERED_MODELS = new ArrayList<>();
-    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
     public static final ResourceLocation PORT = register("pocket_node/pocket_port_node");
     public static final ResourceLocation CHARGING = register("pocket_node/pocket_charging_node");
     public static final ResourceLocation RELAY = register("pocket_node/pocket_relay_node");
+    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 
     private PocketNodeModelCache() {
     }

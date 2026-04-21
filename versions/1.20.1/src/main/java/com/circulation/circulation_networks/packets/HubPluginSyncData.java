@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.packets;
 
-import com.circulation.circulation_networks.utils.Packet;
 import com.circulation.circulation_networks.tiles.nodes.HubBlockEntity;
+import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -25,6 +25,15 @@ public final class HubPluginSyncData implements Packet<HubPluginSyncData> {
     public HubPluginSyncData(BlockPos pos, ItemStack[] snapshot) {
         this.posLong = pos.asLong();
         this.snapshot = copySnapshot(snapshot);
+    }
+
+    private static ItemStack[] copySnapshot(ItemStack[] snapshot) {
+        ItemStack[] copy = new ItemStack[snapshot.length];
+        for (int i = 0; i < snapshot.length; i++) {
+            ItemStack stack = snapshot[i];
+            copy[i] = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
+        }
+        return copy;
     }
 
     @Override
@@ -62,14 +71,5 @@ public final class HubPluginSyncData implements Packet<HubPluginSyncData> {
             }
         });
         context.setPacketHandled(true);
-    }
-
-    private static ItemStack[] copySnapshot(ItemStack[] snapshot) {
-        ItemStack[] copy = new ItemStack[snapshot.length];
-        for (int i = 0; i < snapshot.length; i++) {
-            ItemStack stack = snapshot[i];
-            copy[i] = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
-        }
-        return copy;
     }
 }

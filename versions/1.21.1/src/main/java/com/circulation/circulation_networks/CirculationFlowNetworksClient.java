@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks;
 
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.client.render.ChargingNodeRenderer;
 import com.circulation.circulation_networks.client.render.HubRenderer;
 import com.circulation.circulation_networks.client.render.NodePedestalRenderer;
@@ -13,7 +14,6 @@ import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.gui.GuiCirculationShielder;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
-import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.handlers.CirculationShielderRenderingHandler;
 import com.circulation.circulation_networks.handlers.ConfigOverrideRenderingHandler;
 import com.circulation.circulation_networks.handlers.EnergyWarningRenderingHandler;

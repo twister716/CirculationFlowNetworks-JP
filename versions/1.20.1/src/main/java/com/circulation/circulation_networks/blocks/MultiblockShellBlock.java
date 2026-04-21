@@ -72,6 +72,14 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
         return originState.isAir() || originState.getBlock() instanceof MultiblockShellBlock;
     }
 
+    private static @NotNull VoxelShape emptyShape() {
+        return Shapes.empty();
+    }
+
+    private static @NotNull VoxelShape fullShape() {
+        return Shapes.block();
+    }
+
     @Override
     @Nullable
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
@@ -271,14 +279,6 @@ public class MultiblockShellBlock extends Block implements EntityBlock {
             return originState.getAnalogOutputSignal(level, originPos);
         }
         return 0;
-    }
-
-    private static @NotNull VoxelShape emptyShape() {
-        return Shapes.empty();
-    }
-
-    private static @NotNull VoxelShape fullShape() {
-        return Shapes.block();
     }
 
     @Override

@@ -32,6 +32,15 @@ public final class HubPluginSyncData implements Packet<HubPluginSyncData> {
         this.snapshot = copySnapshot(snapshot);
     }
 
+    private static ItemStack[] copySnapshot(ItemStack[] snapshot) {
+        ItemStack[] copy = new ItemStack[snapshot.length];
+        for (int i = 0; i < snapshot.length; i++) {
+            ItemStack stack = snapshot[i];
+            copy[i] = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
+        }
+        return copy;
+    }
+
     @Override
     public HubPluginSyncData decode(RegistryFriendlyByteBuf buf) {
         HubPluginSyncData msg = new HubPluginSyncData();
@@ -72,14 +81,5 @@ public final class HubPluginSyncData implements Packet<HubPluginSyncData> {
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-
-    private static ItemStack[] copySnapshot(ItemStack[] snapshot) {
-        ItemStack[] copy = new ItemStack[snapshot.length];
-        for (int i = 0; i < snapshot.length; i++) {
-            ItemStack stack = snapshot[i];
-            copy[i] = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
-        }
-        return copy;
     }
 }

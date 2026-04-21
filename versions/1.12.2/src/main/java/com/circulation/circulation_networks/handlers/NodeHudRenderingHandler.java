@@ -3,12 +3,12 @@ package com.circulation.circulation_networks.handlers;
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.EnergyAmount;
+import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.gui.GuiHub;
 import com.circulation.circulation_networks.gui.component.base.AtlasRegion;
 import com.circulation.circulation_networks.gui.component.base.ComponentAtlas;
 import com.circulation.circulation_networks.packets.NodeHudRequest;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
 import com.circulation.circulation_networks.utils.CI18n;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import com.circulation.circulation_networks.utils.ScrollingTextHelper;
@@ -25,10 +25,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import org.lwjgl.BufferUtils;
 
 @SideOnly(Side.CLIENT)
 public final class NodeHudRenderingHandler {
@@ -61,6 +62,19 @@ public final class NodeHudRenderingHandler {
     private long clientTick;
 
     private NodeHudRenderingHandler() {
+    }
+
+    private static float[] projectToWindow(float objX, float objY, FloatBuffer mv, FloatBuffer proj, IntBuffer vp) {
+        float eyeX = mv.get(0) * objX + mv.get(4) * objY + mv.get(12);
+        float eyeY = mv.get(1) * objX + mv.get(5) * objY + mv.get(13);
+        float eyeZ = mv.get(2) * objX + mv.get(6) * objY + mv.get(14);
+        float eyeW = mv.get(3) * objX + mv.get(7) * objY + mv.get(15);
+        float clipX = proj.get(0) * eyeX + proj.get(4) * eyeY + proj.get(8) * eyeZ + proj.get(12) * eyeW;
+        float clipY = proj.get(1) * eyeX + proj.get(5) * eyeY + proj.get(9) * eyeZ + proj.get(13) * eyeW;
+        float clipW = proj.get(3) * eyeX + proj.get(7) * eyeY + proj.get(11) * eyeZ + proj.get(15) * eyeW;
+        float ndcX = clipX / clipW;
+        float ndcY = clipY / clipW;
+        return new float[]{vp.get(0) + vp.get(2) * (ndcX + 1) / 2f, vp.get(1) + vp.get(3) * (ndcY + 1) / 2f};
     }
 
     public void updateData(long posLong, String displayName, String input, String output, String interactionTimeMicros, int nodeCount) {
@@ -269,19 +283,6 @@ public final class NodeHudRenderingHandler {
 
     private void disableHudScissor() {
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
-    }
-
-    private static float[] projectToWindow(float objX, float objY, FloatBuffer mv, FloatBuffer proj, IntBuffer vp) {
-        float eyeX = mv.get(0) * objX + mv.get(4) * objY + mv.get(12);
-        float eyeY = mv.get(1) * objX + mv.get(5) * objY + mv.get(13);
-        float eyeZ = mv.get(2) * objX + mv.get(6) * objY + mv.get(14);
-        float eyeW = mv.get(3) * objX + mv.get(7) * objY + mv.get(15);
-        float clipX = proj.get(0) * eyeX + proj.get(4) * eyeY + proj.get(8) * eyeZ + proj.get(12) * eyeW;
-        float clipY = proj.get(1) * eyeX + proj.get(5) * eyeY + proj.get(9) * eyeZ + proj.get(13) * eyeW;
-        float clipW = proj.get(3) * eyeX + proj.get(7) * eyeY + proj.get(11) * eyeZ + proj.get(15) * eyeW;
-        float ndcX = clipX / clipW;
-        float ndcY = clipY / clipW;
-        return new float[]{vp.get(0) + vp.get(2) * (ndcX + 1) / 2f, vp.get(1) + vp.get(3) * (ndcY + 1) / 2f};
     }
 
     private void drawRotatedRegion(ComponentAtlas atlas, AtlasRegion region,

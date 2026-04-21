@@ -8,8 +8,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -31,15 +31,15 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Shadow
     @Final
     Level level;
-
-    @Shadow protected abstract boolean isInLevel();
-
     @Unique
     private BlockEntity cfn$blockEntity;
 
     public MixinLevelChunk(ChunkPos p_187621_, UpgradeData p_187622_, LevelHeightAccessor p_187623_, Registry<Biome> p_187624_, long p_187625_, @Nullable LevelChunkSection[] p_187626_, @Nullable BlendingData p_187627_) {
         super(p_187621_, p_187622_, p_187623_, p_187624_, p_187625_, p_187626_, p_187627_);
     }
+
+    @Shadow
+    protected abstract boolean isInLevel();
 
     @Inject(method = "addAndRegisterBlockEntity", at = @At("TAIL"))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {

@@ -1,8 +1,8 @@
 package com.circulation.circulation_networks.blocks.nodes;
 
-import com.circulation.circulation_networks.client.render.HubRenderLayout;
 import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.blocks.MultiblockShellBlock;
+import com.circulation.circulation_networks.client.render.HubRenderLayout;
 import com.circulation.circulation_networks.items.BaseItemTooltipModel;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNBlocks;
@@ -32,14 +32,13 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 public final class BlockHub extends BaseNodeBlock {
 
+    private static final Long2ObjectMap<BlockPos[]> positions = new Long2ObjectOpenHashMap<>();
     private List<LocalizedComponent> cachedHubTooltips;
 
     public BlockHub() {
         super(metalPropertiesNoOcclusion().pushReaction(PushReaction.BLOCK),
             () -> CFNBlockEntityTypes.HUB);
     }
-
-    private static final Long2ObjectMap<BlockPos[]> positions = new Long2ObjectOpenHashMap<>();
 
     private static BlockPos[] shellPositions(BlockPos origin) {
         if (!positions.containsKey(origin.asLong())) {

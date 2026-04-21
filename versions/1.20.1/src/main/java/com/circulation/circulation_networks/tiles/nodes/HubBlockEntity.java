@@ -13,8 +13,8 @@ import com.circulation.circulation_networks.inventory.CFNInventoryChangeOperatio
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
 import com.circulation.circulation_networks.network.nodes.HubNode;
-import com.circulation.circulation_networks.network.nodes.HubPluginSyncSupport;
 import com.circulation.circulation_networks.network.nodes.HubPluginStateTracker;
+import com.circulation.circulation_networks.network.nodes.HubPluginSyncSupport;
 import com.circulation.circulation_networks.packets.HubPluginSyncRequest;
 import com.circulation.circulation_networks.registry.CFNBlockEntityTypes;
 import com.circulation.circulation_networks.registry.CFNMenuTypes;

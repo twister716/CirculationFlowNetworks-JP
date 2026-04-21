@@ -30,6 +30,18 @@ public final class NodeHudRequest implements Packet<NodeHudRequest> {
         this.posLong = pos.toLong();
     }
 
+    private static String resolveDisplayName(EntityPlayerMP sender, BlockPos pos, INode node) {
+        String displayName = node.getCustomName();
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            return displayName;
+        }
+        if (!PocketNodeManager.INSTANCE.isActivePocketNode(sender.world, pos, node.getNodeType())) {
+            return "";
+        }
+        ItemStack stack = PocketNodeItems.createStack(node.getNodeType());
+        return stack.isEmpty() ? "" : stack.getDisplayName();
+    }
+
     @Override
     public void fromBytes(ByteBuf buf) {
         posLong = buf.readLong();
@@ -73,17 +85,5 @@ public final class NodeHudRequest implements Packet<NodeHudRequest> {
             sender
         );
         return null;
-    }
-
-    private static String resolveDisplayName(EntityPlayerMP sender, BlockPos pos, INode node) {
-        String displayName = node.getCustomName();
-        if (displayName != null && !displayName.trim().isEmpty()) {
-            return displayName;
-        }
-        if (!PocketNodeManager.INSTANCE.isActivePocketNode(sender.world, pos, node.getNodeType())) {
-            return "";
-        }
-        ItemStack stack = PocketNodeItems.createStack(node.getNodeType());
-        return stack.isEmpty() ? "" : stack.getDisplayName();
     }
 }

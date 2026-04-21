@@ -361,7 +361,8 @@ public final class RotatingModelVBORenderer {
         poseStack.popPose();
     }
 
-    private record AmbientVBOKey(int worldId, BlockPos originPos, BlockPos lightSamplePos, ResourceLocation modelLocation) {
+    private record AmbientVBOKey(int worldId, BlockPos originPos, BlockPos lightSamplePos,
+                                 ResourceLocation modelLocation) {
     }
 
     private record CachedVBO(VertexBuffer vbo, int lightSignature) {

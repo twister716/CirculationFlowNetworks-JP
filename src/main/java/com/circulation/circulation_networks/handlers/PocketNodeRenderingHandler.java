@@ -68,7 +68,8 @@ import org.jetbrains.annotations.Nullable;
 public final class PocketNodeRenderingHandler {
 
     public static final PocketNodeRenderingHandler INSTANCE = new PocketNodeRenderingHandler();
-    private static final double FACE_OFFSET = 0.501D;
+    // Keep a visible but tiny bias away from the host face to avoid Z-fighting.
+    private static final double FACE_OFFSET = 0.503D;
     private static final float FACE_SCALE = 0.03125F;
     private static final double MAX_RENDER_DISTANCE_SQ = 96.0D * 96.0D;
     private final Int2ObjectMap<Long2ObjectMap<PocketNodeClientHost>> hosts = new Int2ObjectOpenHashMap<>();

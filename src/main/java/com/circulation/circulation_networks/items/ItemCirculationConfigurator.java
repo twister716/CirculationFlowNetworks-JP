@@ -63,7 +63,7 @@ public class ItemCirculationConfigurator extends BaseItem {
     *///?}
 
     //~ if >=1.20 'EntityPlayerMP' -> 'ServerPlayer' {
-    private static void sendModeMessage(EntityPlayerMP player, CirculationConfiguratorSelection selection) {
+    public static void sendModeMessage(EntityPlayerMP player, CirculationConfiguratorSelection selection) {
         //? if <1.20 {
         TextComponentTranslation modeComponent = new TextComponentTranslation(selection.modeLangKey());
         TextComponentTranslation submodeComponent = new TextComponentTranslation(selection.subModeLangKey());

@@ -1,7 +1,9 @@
 package com.circulation.circulation_networks.packets;
 
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel;
+import com.circulation.circulation_networks.items.CirculationConfiguratorSelection;
 import com.circulation.circulation_networks.items.CirculationConfiguratorState;
+import com.circulation.circulation_networks.items.ItemCirculationConfigurator;
 import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.Packet;
 import io.netty.buffer.ByteBuf;
@@ -34,9 +36,13 @@ public final class UpdateItemModeMessage implements Packet<UpdateItemModeMessage
     public IMessage onMessage(UpdateItemModeMessage message, MessageContext ctx) {
         ItemStack stack = ctx.getServerHandler().player.getHeldItemMainhand();
 
-        if (stack.getItem() == CFNItems.circulationConfigurator && stack.getTagCompound() != null) {
+        if (stack.getItem() == CFNItems.circulationConfigurator) {
             var function = CirculationConfiguratorState.getFunction(stack);
             CirculationConfiguratorState.setSubMode(stack, CirculationConfiguratorModeModel.wrapSubMode(message.mode, function));
+            ItemCirculationConfigurator.sendModeMessage(
+                ctx.getServerHandler().player,
+                CirculationConfiguratorSelection.fromStack(stack)
+            );
         }
         return null;
     }

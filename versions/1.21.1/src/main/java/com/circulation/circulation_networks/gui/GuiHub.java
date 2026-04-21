@@ -50,6 +50,7 @@ public class GuiHub extends CFNBaseGui<ContainerHub> {
     private String oldFT;
     private ButtonComponent node, playerPowerSupply, upgradePlugin, channel, permission, settings;
     private Component nodeUI, playerPowerSupplyUI, upgradePluginUI, channelUI, permissionUI, settingsUI;
+
     public GuiHub(ContainerHub container, Inventory playerInventory, net.minecraft.network.chat.Component title) {
         super(container, playerInventory, title);
         this.imageWidth = 178;

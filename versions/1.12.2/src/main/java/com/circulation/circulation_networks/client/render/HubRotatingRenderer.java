@@ -47,28 +47,6 @@ public final class HubRotatingRenderer extends TileEntitySpecialRenderer<TileEnt
         HUB_DEFAULT_PLUGIN_3
     };
 
-    @Override
-    public void render(@NotNull TileEntityHub hub, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
-        if (!hub.hasWorld()) {
-            return;
-        }
-
-        RotatingModelRenderHelper.RenderBatch batch = RotatingModelRenderHelper.beginBatch(hub, x, y, z, destroyStage);
-        if (batch == null) {
-            return;
-        }
-
-        try {
-            long worldTime = hub.getWorld().getTotalWorldTime();
-            renderBase(batch, worldTime, partialTicks);
-            renderChannel(hub, batch, worldTime, partialTicks);
-            renderPlugins(hub, batch, worldTime, partialTicks);
-        } finally {
-            batch.end();
-        }
-        super.render(hub, x, y, z, partialTicks, destroyStage, alpha);
-    }
-
     private static void renderBase(RotatingModelRenderHelper.RenderBatch batch, long worldTime, float partialTicks) {
         float upperAngle = NodeRotationAnimation.hubUpperRingAngle(worldTime, partialTicks);
         float lowerAngle = NodeRotationAnimation.hubLowerRingAngle(worldTime, partialTicks);
@@ -195,5 +173,27 @@ public final class HubRotatingRenderer extends TileEntitySpecialRenderer<TileEnt
 
     private static BlockPos translatedLightSamplePos(RotatingModelRenderHelper.RenderBatch batch, double yOffset) {
         return batch.getTileEntity().getPos().up((int) Math.round(yOffset));
+    }
+
+    @Override
+    public void render(@NotNull TileEntityHub hub, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+        if (!hub.hasWorld()) {
+            return;
+        }
+
+        RotatingModelRenderHelper.RenderBatch batch = RotatingModelRenderHelper.beginBatch(hub, x, y, z, destroyStage);
+        if (batch == null) {
+            return;
+        }
+
+        try {
+            long worldTime = hub.getWorld().getTotalWorldTime();
+            renderBase(batch, worldTime, partialTicks);
+            renderChannel(hub, batch, worldTime, partialTicks);
+            renderPlugins(hub, batch, worldTime, partialTicks);
+        } finally {
+            batch.end();
+        }
+        super.render(hub, x, y, z, partialTicks, destroyStage, alpha);
     }
 }

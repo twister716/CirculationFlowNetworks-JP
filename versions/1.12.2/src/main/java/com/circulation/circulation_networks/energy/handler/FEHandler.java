@@ -51,9 +51,6 @@ public class FEHandler implements IEnergyHandler {
             EnumFacing facing = EnumFacing.VALUES[i];
             bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, facing));
         }
-        if (this.send == null || this.receive == null) {
-            bindStorage(tileEntity.getCapability(CapabilityEnergy.ENERGY, null));
-        }
         return this;
     }
 
