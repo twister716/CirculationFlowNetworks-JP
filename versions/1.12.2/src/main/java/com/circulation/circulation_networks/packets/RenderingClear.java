@@ -9,6 +9,7 @@ import com.circulation.circulation_networks.handlers.PocketNodeRenderingHandler;
 import com.circulation.circulation_networks.handlers.SpoceRenderingHandler;
 import com.circulation.circulation_networks.utils.Packet;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import org.jetbrains.annotations.Nullable;
@@ -33,13 +34,15 @@ public class RenderingClear implements Packet<RenderingClear> {
 
     @Override
     public @Nullable IMessage onMessage(RenderingClear message, MessageContext ctx) {
-        NodeNetworkRenderingHandler.INSTANCE.clearLinks();
-        EnergyWarningRenderingHandler.INSTANCE.clear();
-        ConfigOverrideRenderingHandler.INSTANCE.clear();
-        PocketNodeRenderingHandler.INSTANCE.clear();
-        NodeHighlightRenderingHandler.INSTANCE.clear();
-        CirculationShielderRenderingHandler.INSTANCE.clear();
-        SpoceRenderingHandler.INSTANCE.clear();
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            NodeNetworkRenderingHandler.INSTANCE.clearLinks();
+            EnergyWarningRenderingHandler.INSTANCE.clear();
+            ConfigOverrideRenderingHandler.INSTANCE.clear();
+            PocketNodeRenderingHandler.INSTANCE.clear();
+            NodeHighlightRenderingHandler.INSTANCE.clear();
+            CirculationShielderRenderingHandler.INSTANCE.clear();
+            SpoceRenderingHandler.INSTANCE.clear();
+        });
         return null;
     }
 }
