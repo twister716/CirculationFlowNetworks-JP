@@ -15,8 +15,6 @@ import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.utils.Functions;
-//? if <1.20
-import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
@@ -42,12 +40,12 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 //? if <1.20 {
+import com.github.bsideup.jabel.Desugar;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraftforge.fml.server.FMLServerHandler;
 //?} else {
 /*import net.minecraft.server.level.ServerPlayer;
  *///?}
-
-import net.minecraftforge.fml.server.FMLServerHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
@@ -68,12 +66,13 @@ public final class EnergyMachineManager {
     private final Int2ObjectMap<Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
     private final Reference2ObjectMap<INode, Set<TileEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
-    private final Reference2ObjectOpenHashMap<TileEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<TileEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeTickGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTickGrids = new ReferenceOpenHashSet<>();
-    private final Reference2ObjectOpenHashMap<TileEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<TileEntity, IEnergyHandler> tickMachineHandlers = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<TileEntity, IEnergyHandler.EnergyType> machineEnergyTypeCache = new Reference2ObjectOpenHashMap<>();
     private final ReferenceSet<IEnergyHandler> tickSharedHandlers = new ReferenceOpenHashSet<>();
     private final Int2ObjectMap<LongSet> warningPositionsScratch = new Int2ObjectOpenHashMap<>();
     private final ChannelMergeScratch channelMergeScratch = new ChannelMergeScratch();
@@ -306,7 +305,7 @@ public final class EnergyMachineManager {
                 }
                 var participant = EnergyTransferParticipant.obtain(handler, grid, hubMetadata, getOrCreateInteraction(grid), false);
 
-                var type = override != null ? override : participant.getType();
+                final IEnergyHandler.EnergyType type = override != null ? override : stabilizeEnergyType(te, participant.getType());
                 if (type == IEnergyHandler.EnergyType.INVALID) {
                     participant.recycle();
                     continue;
@@ -436,6 +435,7 @@ public final class EnergyMachineManager {
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
     public void removeMachine(TileEntity blockEntity) {
         //~}
+        machineEnergyTypeCache.remove(blockEntity);
         var set = machineGridMap.remove(blockEntity);
         if (set == null || set.isEmpty()) return;
         for (var node : set) {
@@ -667,6 +667,7 @@ public final class EnergyMachineManager {
         activeTickGrids.clear();
         processedTickGrids.clear();
         tickMachineSeenGrids.clear();
+        machineEnergyTypeCache.clear();
         warningPositionsScratch.clear();
         visibleWarningsScratch.clear();
         lastWarningTicks.clear();
@@ -696,6 +697,25 @@ public final class EnergyMachineManager {
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
     public @NotNull Set<TileEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
         return gridMachineMap.getOrDefault(node, Collections.emptySet());
+    }
+
+    private IEnergyHandler.EnergyType stabilizeEnergyType(TileEntity tileEntity, IEnergyHandler.EnergyType currentType) {
+        if (currentType == IEnergyHandler.EnergyType.INVALID) {
+            return currentType;
+        }
+        IEnergyHandler.EnergyType cachedType = machineEnergyTypeCache.get(tileEntity);
+        if (cachedType == null) {
+            machineEnergyTypeCache.put(tileEntity, currentType);
+            return currentType;
+        }
+        if (cachedType == IEnergyHandler.EnergyType.STORAGE) {
+            return IEnergyHandler.EnergyType.STORAGE;
+        }
+        if (cachedType == currentType) {
+            return currentType;
+        }
+        machineEnergyTypeCache.put(tileEntity, IEnergyHandler.EnergyType.STORAGE);
+        return IEnergyHandler.EnergyType.STORAGE;
     }
 
     @Nullable
