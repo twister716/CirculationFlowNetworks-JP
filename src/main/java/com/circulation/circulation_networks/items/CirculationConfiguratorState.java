@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel.ToolFunction;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ItemStackTagUtils;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -39,23 +39,23 @@ public final class CirculationConfiguratorState {
 
     public static void setSubMode(ItemStack stack, int subMode) {
         //? if <1.21 {
-        putInt(Functions.getOrCreateTagCompound(stack), MODE_KEY, subMode);
+        putInt(ItemStackTagUtils.getOrCreateTagCompound(stack), MODE_KEY, subMode);
         //?} else {
-        /*CompoundTag tag = Functions.getOrCreateTagCompound(stack);
+        /*CompoundTag tag = ItemStackTagUtils.getOrCreateTagCompound(stack);
         putInt(tag, MODE_KEY, subMode);
-        Functions.saveTagCompound(stack, tag);
+        ItemStackTagUtils.saveTagCompound(stack, tag);
         *///?}
     }
 
     public static ToggleResult toggleFunction(ItemStack stack) {
-        var nbt = Functions.getOrCreateTagCompound(stack);
+        var nbt = ItemStackTagUtils.getOrCreateTagCompound(stack);
         ToolFunction previousFunction = ToolFunction.fromID(getInt(nbt, FUNCTION_KEY));
         ToolFunction currentFunction = ToolFunction.fromID(CirculationConfiguratorModeModel.nextFunctionId(previousFunction.ordinal()));
         putInt(nbt, FUNCTION_KEY, currentFunction.ordinal());
         putInt(nbt, MODE_KEY, 0);
         //? if >=1.21 {
-        /*Functions.saveTagCompound(stack, nbt);
-         *///?}
+        /*ItemStackTagUtils.saveTagCompound(stack, nbt);
+          *///?}
         return new ToggleResult(previousFunction, currentFunction);
     }
 

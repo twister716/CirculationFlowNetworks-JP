@@ -1,8 +1,8 @@
 package com.circulation.circulation_networks.utils;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -12,13 +12,13 @@ public final class ObjectPool<T> {
     private final Supplier<T> factory;
     private final Consumer<T> resetter;
     private final int maxSize;
-    private final List<T> storage;
+    private final ObjectList<T> storage;
 
     public ObjectPool(Supplier<T> factory, Consumer<T> resetter, int maxSize) {
         this(factory, resetter, maxSize, new ObjectArrayList<>(maxSize));
     }
 
-    public ObjectPool(Supplier<T> factory, Consumer<T> resetter, int maxSize, List<T> storage) {
+    public ObjectPool(Supplier<T> factory, Consumer<T> resetter, int maxSize, ObjectList<T> storage) {
         if (maxSize < 0) {
             throw new IllegalArgumentException("ObjectPool maxSize cannot be negative");
         }

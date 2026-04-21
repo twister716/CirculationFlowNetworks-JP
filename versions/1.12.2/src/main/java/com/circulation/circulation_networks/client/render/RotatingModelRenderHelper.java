@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.client.render;
 
 import com.github.bsideup.jabel.Desugar;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -32,7 +34,6 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +51,9 @@ public final class RotatingModelRenderHelper {
     private static final Map<IBakedModel, IBakedModel> NO_DIFFUSE_MODELS = new IdentityHashMap<>();
     private static final Map<List<BakedQuad>, List<BakedQuad>> NO_DIFFUSE_QUAD_LISTS = new IdentityHashMap<>();
     private static final Map<BakedQuad, BakedQuad> NO_DIFFUSE_QUADS = new IdentityHashMap<>();
-    private static final Map<NoDiffuseDisplayListKey, CachedDisplayList> NO_DIFFUSE_DISPLAY_LISTS = new HashMap<>();
-    private static final Map<NoDiffuseDisplayListKey, CachedDisplayList> NORMAL_DISPLAY_LISTS = new HashMap<>();
-    private static final Map<LightSignatureKey, CachedLightSignature> LIGHT_SIGNATURES = new HashMap<>();
+    private static final Object2ObjectMap<NoDiffuseDisplayListKey, CachedDisplayList> NO_DIFFUSE_DISPLAY_LISTS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<NoDiffuseDisplayListKey, CachedDisplayList> NORMAL_DISPLAY_LISTS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<LightSignatureKey, CachedLightSignature> LIGHT_SIGNATURES = new Object2ObjectOpenHashMap<>();
 
     private RotatingModelRenderHelper() {
     }

@@ -8,6 +8,7 @@ import com.circulation.circulation_networks.packets.ContainerValueConfig;
 //? if <1.20
 import com.github.bsideup.jabel.Desugar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 //? if <1.20 {
@@ -28,8 +29,6 @@ import net.minecraft.world.inventory.Slot;
 *///?}
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 //? if <1.20 {
 public abstract class CFNBaseContainer extends Container {
 
@@ -38,9 +37,9 @@ public abstract class CFNBaseContainer extends Container {
 /*public abstract class CFNBaseContainer extends AbstractContainerMenu {
 
     protected final Player player;
-*///?}
+    *///?}
     private final GuiSyncManager guiSyncManager = new GuiSyncManager();
-    private final List<LayoutEntry> layouts = new ObjectArrayList<>();
+    private final ObjectList<LayoutEntry> layouts = new ObjectArrayList<>();
 
     {
         guiSyncManager.scan(this, this::onUpdate);

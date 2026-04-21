@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.registry.CFNItems;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
@@ -14,8 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 @OnlyIn(Dist.CLIENT)
 public final class PocketNodeModelCache {
 
@@ -23,7 +22,7 @@ public final class PocketNodeModelCache {
     public static final ResourceLocation PORT = register("pocket_node/pocket_port_node");
     public static final ResourceLocation CHARGING = register("pocket_node/pocket_charging_node");
     public static final ResourceLocation RELAY = register("pocket_node/pocket_relay_node");
-    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 
     private PocketNodeModelCache() {
     }

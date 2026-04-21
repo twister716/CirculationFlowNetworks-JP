@@ -7,6 +7,8 @@ import com.circulation.circulation_networks.blocks.nodes.BlockChargingNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockHub;
 import com.circulation.circulation_networks.blocks.nodes.BlockPortNode;
 import com.circulation.circulation_networks.blocks.nodes.BlockRelayNode;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -17,15 +19,13 @@ import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 
 @SuppressWarnings("UnusedReturnValue")
 public final class RegistryBlocks {
 
-    private static final List<Block> BLOCKS_TO_REGISTER = new LinkedList<>();
-    private static final List<Block> BLOCK_MODELS_TO_REGISTER = new LinkedList<>();
+    private static final ObjectList<Block> BLOCKS_TO_REGISTER = new ObjectArrayList<>();
+    private static final ObjectList<Block> BLOCK_MODELS_TO_REGISTER = new ObjectArrayList<>();
 
     public static BlockPortNode blockPortNode;
     public static BlockChargingNode blockChargingNode;

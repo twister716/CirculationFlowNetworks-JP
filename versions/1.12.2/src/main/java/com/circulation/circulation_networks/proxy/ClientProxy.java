@@ -185,7 +185,6 @@ public final class ClientProxy extends CommonProxy {
 
     @SubscribeEvent
     public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
-        super.onBlockEntityInvalidate(event);
         if (!event.getWorld().isRemote) {
             return;
         }

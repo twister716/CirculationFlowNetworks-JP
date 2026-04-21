@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.mixins.mc;
 
 import com.circulation.circulation_networks.manager.PocketNodeManager;
-import com.circulation.circulation_networks.utils.EventHooks;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleHooks;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -39,18 +39,18 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Inject(method = "addAndRegisterBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addFreshBlockEntities(Ljava/util/Collection;)V", shift = At.Shift.AFTER))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (blockEntity != null) {
-            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            BlockEntityLifecycleHooks.postValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
 
     @Inject(method = "setBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
-    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci, @Local(name = "blockentity") BlockEntity blockentity, @Local BlockPos pos) {
-        EventHooks.onBlockEntityInvalidate(this.level, pos, blockentity);
+    private void setBlockEntity(BlockEntity blockEntity, CallbackInfo ci, @Local(name = "blockentity") BlockEntity blockentity, @Local(name = "blockpos") BlockPos pos) {
+        BlockEntityLifecycleHooks.postInvalidate(this.level, pos, blockentity);
     }
 
     @Inject(method = "removeBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
     private void removeBlockEntity(BlockPos blockPos, CallbackInfo ci, @Local(name = "blockentity") BlockEntity blockentity) {
-        EventHooks.onBlockEntityInvalidate(this.level, blockPos, blockentity);
+        BlockEntityLifecycleHooks.postInvalidate(this.level, blockPos, blockentity);
     }
 
     @Inject(method = "setBlockState", at = @At("TAIL"))

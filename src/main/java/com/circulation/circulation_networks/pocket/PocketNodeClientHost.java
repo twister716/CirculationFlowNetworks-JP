@@ -3,8 +3,8 @@ package com.circulation.circulation_networks.pocket;
 import com.circulation.circulation_networks.api.ClientTickMachine;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.client.render.PocketNodeModelCache;
+import com.circulation.circulation_networks.network.nodes.NodeFactory;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
-import com.circulation.circulation_networks.utils.Functions;
 //~ mc_imports
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -34,7 +34,7 @@ public final class PocketNodeClientHost implements ClientTickMachine {
     public @Nullable INode getNode(World world) {
         if (node == null || node.getWorld() != world || node.getNodeType() != record.nodeType()) {
             try {
-                node = Functions.createNode(record.nodeType(), record.createNodeContext(world));
+                node = NodeFactory.createNode(record.nodeType(), record.createNodeContext(world));
             } catch (IllegalArgumentException ignored) {
                 return null;
             }

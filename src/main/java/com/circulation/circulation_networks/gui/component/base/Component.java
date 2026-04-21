@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.tooltip.Composite;
 import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import com.circulation.circulation_networks.utils.FormatNumberUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 //? if <1.20 {
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -45,13 +46,13 @@ public class Component extends Rectangle {
     *///?}
     @NotNull
     protected final CFNBaseGui<?> gui;
-    private final List<Component> children = new ObjectArrayList<>();
-    private final List<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
+    private final ObjectList<Component> children = new ObjectArrayList<>();
+    private final ObjectList<ComponentSlotLayout> boundLayouts = new ObjectArrayList<>();
     protected boolean visible = true;
     protected boolean enabled = true;
     protected int zIndex = 0;
     protected boolean update;
-    protected List<LocalizedComponent> tooltips = new ObjectArrayList<>();
+    protected ObjectList<LocalizedComponent> tooltips = new ObjectArrayList<>();
     @Nullable
     private Component parent;
     private boolean hovered = false;

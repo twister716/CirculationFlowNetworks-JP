@@ -1,5 +1,6 @@
 package com.circulation.circulation_networks.gui.component.base;
 
+import com.circulation.circulation_networks.tooltip.LocalizedComponent;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 //? if <1.20 {
 import net.minecraft.client.renderer.GlStateManager;
@@ -57,6 +58,74 @@ public final class ComponentScreenController {
         System.arraycopy(source, index + 1, source, index, source.length - index - 1);
         source[source.length - 1] = component;
         return true;
+    }
+
+    @Nullable
+    private static DraggableComponent findDraggingComponent(Component[] nodes) {
+        for (Component component : nodes) {
+            if (component instanceof DraggableComponent draggable && draggable.isDragging()) {
+                return draggable;
+            }
+            DraggableComponent found = findDraggingComponent(component.getChildren());
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static DraggableComponent findDraggingComponent(List<Component> nodes) {
+        if (nodes.isEmpty()) {
+            return null;
+        }
+        for (Component component : nodes) {
+            if (component instanceof DraggableComponent draggable && draggable.isDragging()) {
+                return draggable;
+            }
+            DraggableComponent found = findDraggingComponent(component.getChildren());
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private static List<LocalizedComponent> collectTopTooltip(Component[] components, int mouseX, int mouseY) {
+        for (Component component : components) {
+            if (!component.isVisible() || !component.contains(mouseX, mouseY)) {
+                continue;
+            }
+            return component.collectTooltip(mouseX, mouseY);
+        }
+        return Collections.emptyList();
+    }
+
+    @Nullable
+    private static Component findTopComponentAt(Component[] components, int mouseX, int mouseY) {
+        for (Component component : components) {
+            if (!component.isVisible() || !component.contains(mouseX, mouseY)) {
+                continue;
+            }
+            return findTopComponentAt(component, mouseX, mouseY);
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Component findTopComponentAt(Component component, int mouseX, int mouseY) {
+        List<Component> children = component.getChildren();
+        if (children.isEmpty()) {
+            return component;
+        }
+        for (int i = children.size(); i-- > 0; ) {
+            Component child = children.get(i);
+            if (!child.isVisible() || !child.contains(mouseX, mouseY)) {
+                continue;
+            }
+            return findTopComponentAt(child, mouseX, mouseY);
+        }
+        return component;
     }
 
     public void initializeComponents(Map<RenderPhase, List<Component>> phaseMap) {
@@ -146,7 +215,7 @@ public final class ComponentScreenController {
             }
             boolean handled = component.dispatchMouseClicked(mouseX, mouseY, mouseButton);
             if (handled) {
-                dragTarget = ComponentTreeUtils.findDraggingComponent(allComponents);
+                dragTarget = findDraggingComponent(allComponents);
             }
             return handled;
         }
@@ -193,7 +262,7 @@ public final class ComponentScreenController {
         if (allComponentsTopFirst.length == 0) {
             return Collections.emptyList();
         }
-        var list = ComponentTreeUtils.collectTopTooltip(allComponentsTopFirst, mouseX, mouseY);
+        var list = collectTopTooltip(allComponentsTopFirst, mouseX, mouseY);
         if (list.isEmpty()) {
             return Collections.emptyList();
         }
@@ -209,7 +278,7 @@ public final class ComponentScreenController {
         if (allComponentsTopFirst.length == 0) {
             return null;
         }
-        return ComponentTreeUtils.findTopComponentAt(allComponentsTopFirst, mouseX, mouseY);
+        return findTopComponentAt(allComponentsTopFirst, mouseX, mouseY);
     }
 
     public Component[] getAllComponents() {

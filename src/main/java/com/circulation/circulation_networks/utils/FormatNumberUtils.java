@@ -1,6 +1,8 @@
 package com.circulation.circulation_networks.utils;
 
 import com.circulation.circulation_networks.api.EnergyAmount;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -8,11 +10,15 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 @SuppressWarnings("unused")
-public class FormatNumberUtils {
-    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#,###.##");
+public final class FormatNumberUtils {
+    private static final ThreadLocal<DecimalFormat> DECIMAL_FORMAT = ThreadLocal.withInitial(() -> {
+        DecimalFormat format = new DecimalFormat("#,###.##");
+        format.setRoundingMode(RoundingMode.HALF_UP);
+        return format;
+    });
+    private static final ThreadLocal<Int2ObjectMap<NumberFormat>> NUMBER_FORMATS = ThreadLocal.withInitial(Int2ObjectOpenHashMap::new);
 
-    static {
-        DECIMAL_FORMAT.setRoundingMode(RoundingMode.HALF_UP);
+    private FormatNumberUtils() {
     }
 
     public static String formatFloat(float value, int decimalFraction) {
@@ -20,13 +26,19 @@ public class FormatNumberUtils {
     }
 
     public static String formatDouble(double value, int decimalFraction) {
-        NumberFormat nf = NumberFormat.getNumberInstance();
-        nf.setMaximumFractionDigits(decimalFraction);
-        return nf.format(value);
+        int normalizedFraction = Math.max(0, decimalFraction);
+        Int2ObjectMap<NumberFormat> formats = NUMBER_FORMATS.get();
+        NumberFormat format = formats.get(normalizedFraction);
+        if (format == null) {
+            format = NumberFormat.getNumberInstance();
+            format.setMaximumFractionDigits(normalizedFraction);
+            formats.put(normalizedFraction, format);
+        }
+        return format.format(value);
     }
 
     public static String formatDecimal(double value) {
-        return DECIMAL_FORMAT.format(value);
+        return DECIMAL_FORMAT.get().format(value);
     }
 
     public static String formatNumber(long value) {

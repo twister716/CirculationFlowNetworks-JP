@@ -8,8 +8,8 @@ import com.circulation.circulation_networks.api.node.IMachineNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.events.BlockEntityLifeCycleEvent;
 import com.circulation.circulation_networks.network.Grid;
-import com.circulation.circulation_networks.utils.EventHooks;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ChunkCoordUtils;
+import com.circulation.circulation_networks.utils.NodeEventHooks;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -374,7 +374,7 @@ public final class NetworkManager {
         pMap.put(pos.toLong(), node);
         //~}
 
-        long ownChunkCoord = Functions.mergeChunkCoords(pos);
+        long ownChunkCoord = ChunkCoordUtils.mergeChunkCoords(pos);
         var locMap = nodeLocation.get(dimId);
         if (locMap == nodeLocation.defaultReturnValue()) {
             locMap = new Long2ObjectOpenHashMap<>();
@@ -400,7 +400,7 @@ public final class NetworkManager {
         }
         for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
             for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
-                long chunkCoord = Functions.mergeChunkCoords(cx, cz);
+                long chunkCoord = ChunkCoordUtils.mergeChunkCoords(cx, cz);
                 chunksCovered.add(chunkCoord);
                 var sSet = scopeMap.get(chunkCoord);
                 if (sSet == scopeMap.defaultReturnValue()) {
@@ -431,7 +431,7 @@ public final class NetworkManager {
         posNodes.get(dimId).remove(node.getPos().toLong());
         //~}
 
-        long ownChunkCoord = Functions.mergeChunkCoords(node.getPos());
+        long ownChunkCoord = ChunkCoordUtils.mergeChunkCoords(node.getPos());
         nodeLocation.get(dimId).get(ownChunkCoord).remove(node);
 
         var sm = scopeNode.get(dimId);
@@ -490,7 +490,7 @@ public final class NetworkManager {
 
     //~ if >=1.20 '(World ' -> '(Level ' {
     public void validatePendingNodesInChunk(World world, int x, int z) {
-        validatePendingNodesInChunk(world, Functions.mergeChunkCoords(x, z));
+        validatePendingNodesInChunk(world, ChunkCoordUtils.mergeChunkCoords(x, z));
     }
 
     public void validatePendingNodesInChunk(World world, long chunkCoord) {
@@ -562,7 +562,7 @@ public final class NetworkManager {
             for (long chunkCoord : dimEntry.getValue().keySet()) {
                 int chunkX = (int) (chunkCoord >> 32);
                 int chunkZ = (int) chunkCoord;
-                if (Functions.isChunkLoaded(world, chunkX, chunkZ)) {
+                if (ChunkCoordUtils.isChunkLoaded(world, chunkX, chunkZ)) {
                     loadedChunkCoords.add(chunkCoord);
                 }
             }
@@ -577,16 +577,16 @@ public final class NetworkManager {
 
     //~ if >=1.20 '(World ' -> '(Level ' {
     public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, BlockPos pos) {
-        return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(pos));
+        return scopeNode.get(getDimensionId(world)).get(ChunkCoordUtils.mergeChunkCoords(pos));
     }
 
     public @NotNull ReferenceSet<INode> getNodesCoveringPosition(World world, int chunkX, int chunkY) {
-        return scopeNode.get(getDimensionId(world)).get(Functions.mergeChunkCoords(chunkX, chunkY));
+        return scopeNode.get(getDimensionId(world)).get(ChunkCoordUtils.mergeChunkCoords(chunkX, chunkY));
     }
 
     public @NotNull ReferenceSet<INode> getNodesInChunk(World world, int chunkX, int chunkZ) {
         var map = nodeLocation.get(getDimensionId(world));
-        return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
+        return map.get(ChunkCoordUtils.mergeChunkCoords(chunkX, chunkZ));
     }
     //~}
 
@@ -602,7 +602,7 @@ public final class NetworkManager {
     public void removeNode(INode removedNode) {
         if (removedNode == null || isClientWorld(removedNode.getWorld()) || !activeNodes.remove(removedNode)) return;
 
-        EventHooks.postRemoveNodePre(removedNode);
+        NodeEventHooks.postRemoveNodePre(removedNode);
         int dimId = getDimensionId(removedNode);
         validationTracker.removePending(dimId, removedNode.getPos());
 
@@ -709,7 +709,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.removeNode(removedNode);
         ChargingManager.INSTANCE.removeNode(removedNode);
 
-        EventHooks.postRemoveNodePost(removedNode);
+        NodeEventHooks.postRemoveNodePost(removedNode);
     }
 
     private static void enqueueComponentNeighbor(
@@ -763,7 +763,7 @@ public final class NetworkManager {
             return AddNodeResult.failure(AddNodeResult.Status.ALREADY_ACTIVE);
         }
 
-        if (EventHooks.postAddNodePre(newNode, blockEntity)) {
+        if (NodeEventHooks.postAddNodePre(newNode, blockEntity)) {
             return AddNodeResult.failure(AddNodeResult.Status.EVENT_CANCELED);
         }
 
@@ -881,7 +881,7 @@ public final class NetworkManager {
         EnergyMachineManager.INSTANCE.addNode(newNode);
         ChargingManager.INSTANCE.addNode(newNode);
 
-        EventHooks.postAddNodePost(newNode, blockEntity);
+        NodeEventHooks.postAddNodePost(newNode, blockEntity);
         return AddNodeResult.success(newNode.getGrid());
     }
 
@@ -1073,7 +1073,7 @@ public final class NetworkManager {
         }
 
         void markPending(int dimId, BlockPos pos) {
-            long chunkCoord = Functions.mergeChunkCoords(pos);
+            long chunkCoord = ChunkCoordUtils.mergeChunkCoords(pos);
             var dimMap = pending.get(dimId);
             if (dimMap == pending.defaultReturnValue()) {
                 dimMap = new Long2ObjectOpenHashMap<>();
@@ -1093,13 +1093,13 @@ public final class NetworkManager {
             //~ if >=1.20 '.toLong()' -> '.asLong()' {
             long posLong = pos.toLong();
             //~}
-            long chunkCoord = Functions.mergeChunkCoords(pos);
+            long chunkCoord = ChunkCoordUtils.mergeChunkCoords(pos);
             removePendingInternal(dimId, posLong, chunkCoord);
         }
 
         void removePending(int dimId, long posLong) {
             //~ if >=1.20 '.fromLong(' -> '.of(' {
-            long chunkCoord = Functions.mergeChunkCoords(BlockPos.fromLong(posLong));
+            long chunkCoord = ChunkCoordUtils.mergeChunkCoords(BlockPos.fromLong(posLong));
             //~}
             removePendingInternal(dimId, posLong, chunkCoord);
         }

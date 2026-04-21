@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.network.hub.HubChannel;
 import com.circulation.circulation_networks.network.hub.HubPluginCapability;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import com.circulation.circulation_networks.registry.NodeTypes;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
@@ -47,8 +48,8 @@ public final class HubNode extends Node implements IHubNode {
     private final double chargingScope;
     private final double chargingScopeSq;
 
-    private final Map<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
-    private final Map<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, ChargingPreference> playerPreferences = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<UUID, HubPermissionLevel> explicitPermissions = new Object2ObjectOpenHashMap<>();
     private final HubMetadata hubData = new HubMetadata();
     private PermissionMode permissionMode = PermissionMode.PUBLIC;
     @Nullable

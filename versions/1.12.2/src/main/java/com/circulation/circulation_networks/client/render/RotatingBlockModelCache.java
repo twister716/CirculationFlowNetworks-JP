@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.IBakedModel;
@@ -12,8 +13,6 @@ import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-
-import java.util.Map;
 
 @SideOnly(Side.CLIENT)
 public final class RotatingBlockModelCache {
@@ -43,7 +42,7 @@ public final class RotatingBlockModelCache {
     public static final ResourceLocation HUB_DEFAULT_PLUGIN_3 = model(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "3");
     public static final ResourceLocation HUB_PLUGIN_WIDE_AREA = model(HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
     public static final ResourceLocation HUB_PLUGIN_DIMENSIONAL = model(HubRenderLayout.DIMENSIONAL_PLUGIN_MODEL);
-    private static final Map<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
     private static final ResourceLocation[] HUB_TEXTURES = {
         texture("node/hub/hub_body_primary"),
         texture("node/hub/hub_body_secondary"),

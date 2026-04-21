@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.mixins.mc;
 
 import com.circulation.circulation_networks.manager.PocketNodeManager;
-import com.circulation.circulation_networks.utils.EventHooks;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleHooks;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.tileentity.TileEntity;
@@ -31,17 +31,17 @@ public class MixinChunk {
 
     @Inject(method = "addTileEntity(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/tileentity/TileEntity;)V", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", shift = At.Shift.AFTER, remap = false))
     private void addTileEntity(BlockPos pos, TileEntity tileEntityIn, CallbackInfo ci) {
-        EventHooks.onBlockEntityValidate(world, pos, tileEntityIn);
+        BlockEntityLifecycleHooks.postValidate(world, pos, tileEntityIn);
     }
 
     @Inject(method = "addTileEntity(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/tileentity/TileEntity;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/tileentity/TileEntity;invalidate()V", shift = At.Shift.AFTER))
     private void addTileEntityRemove(BlockPos pos, TileEntity tileEntityIn, CallbackInfo ci) {
-        EventHooks.onBlockEntityInvalidate(world, pos, this.tileEntities.get(pos));
+        BlockEntityLifecycleHooks.postInvalidate(world, pos, this.tileEntities.get(pos));
     }
 
     @Inject(method = "removeTileEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/tileentity/TileEntity;invalidate()V", shift = At.Shift.AFTER))
     private void removeTileEntity(BlockPos pos, CallbackInfo ci, @Local(name = "tileentity") TileEntity tileentity) {
-        EventHooks.onBlockEntityInvalidate(world, pos, tileentity);
+        BlockEntityLifecycleHooks.postInvalidate(world, pos, tileentity);
     }
 
     @Inject(method = "setBlockState", at = @At("TAIL"))

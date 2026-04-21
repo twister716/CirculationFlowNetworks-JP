@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -43,8 +44,8 @@ import java.util.SortedSet;
 public final class RotatingModelVBORenderer {
 
     private static final Map<ResourceLocation, VertexBuffer> FULL_BRIGHT_VBOS = new IdentityHashMap<>();
-    private static final Map<AmbientVBOKey, CachedVBO> AMBIENT_VBOS = new Object2ObjectOpenHashMap<>();
-    private static final Map<AmbientLightKey, CachedLightSignature> AMBIENT_LIGHT_SIGNATURES = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<AmbientVBOKey, CachedVBO> AMBIENT_VBOS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<AmbientLightKey, CachedLightSignature> AMBIENT_LIGHT_SIGNATURES = new Object2ObjectOpenHashMap<>();
     private static final Quaternionf ROTATION = new Quaternionf();
     private static final Matrix4f RENDER_SESSION_MODEL_VIEW = new Matrix4f();
     private static final Matrix4f DRAW_MODEL_VIEW = new Matrix4f();

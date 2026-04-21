@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.items;
 
 import com.circulation.circulation_networks.api.node.IHubNode;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ItemStackTagUtils;
 //~ mc_imports
 //? if <1.20
 import com.github.bsideup.jabel.Desugar;
@@ -28,11 +28,11 @@ public final class HubChannelPluginData {
         if (stack.isEmpty() || channelId == null || channelName == null) {
             return;
         }
-        var tag = Functions.getOrCreateTagCompound(stack);
+        var tag = ItemStackTagUtils.getOrCreateTagCompound(stack);
         putString(tag, CHANNEL_ID_KEY, channelId.toString());
         putString(tag, CHANNEL_NAME_KEY, channelName);
         //? if >=1.21 {
-        /*Functions.saveTagCompound(stack, tag);
+        /*ItemStackTagUtils.saveTagCompound(stack, tag);
          *///?}
     }
 

@@ -6,8 +6,9 @@ import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeContext;
 import com.circulation.circulation_networks.api.node.NodeType;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.network.nodes.NodeFactory;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ChunkCoordUtils;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -109,7 +110,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
                 if (existingNode != null) {
                     NetworkManager.INSTANCE.removeNode(existingNode);
                 }
-                node = Functions.createNode(nodeType, createNodeContext());
+                node = NodeFactory.createNode(nodeType, createNodeContext());
             } else if (existingNode != null && existingNode != node) {
                 NetworkManager.INSTANCE.removeNode(existingNode);
             }
@@ -122,7 +123,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
     protected void onClientValidate() {
         var nodeType = getNodeType();
         if (node == null || !nodeType.matches(node)) {
-            node = Functions.createNode(nodeType, createNodeContext());
+            node = NodeFactory.createNode(nodeType, createNodeContext());
         }
         onNodeBound(node);
         node.setActive(true);
@@ -149,7 +150,7 @@ public abstract class BaseNodeTileEntity<N extends INode> extends BaseTileEntity
     }
 
     private boolean shouldInitializeNode() {
-        return world != null && Functions.isChunkLoaded(world, pos);
+        return world != null && ChunkCoordUtils.isChunkLoaded(world, pos);
     }
 
 }

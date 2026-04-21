@@ -5,13 +5,14 @@ import com.circulation.circulation_networks.api.API;
 import com.circulation.circulation_networks.api.INodeBlockEntity;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.api.node.NodeType;
+import com.circulation.circulation_networks.network.nodes.NodeFactory;
 import com.circulation.circulation_networks.packets.PocketNodeRendering;
 import com.circulation.circulation_networks.pocket.PocketNodeHost;
 import com.circulation.circulation_networks.pocket.PocketNodeHostRules;
 import com.circulation.circulation_networks.pocket.PocketNodeRecord;
 import com.circulation.circulation_networks.registry.NodeTypes;
 import com.circulation.circulation_networks.registry.PocketNodeItems;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ChunkCoordUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -130,12 +131,12 @@ public final class PocketNodeManager {
     //? if <1.20 {
     @Nullable
     private static net.minecraft.util.EnumFacing inferAttachmentFace(World world, BlockPos pos) {
-        if (world == null || !Functions.isChunkLoaded(world, pos)) {
+        if (world == null || !ChunkCoordUtils.isChunkLoaded(world, pos)) {
             return null;
         }
         for (net.minecraft.util.EnumFacing face : net.minecraft.util.EnumFacing.values()) {
             BlockPos adjacentPos = pos.offset(face);
-            if (!Functions.isChunkLoaded(world, adjacentPos)) {
+            if (!ChunkCoordUtils.isChunkLoaded(world, adjacentPos)) {
                 continue;
             }
             var adjacentState = world.getBlockState(adjacentPos);
@@ -148,12 +149,12 @@ public final class PocketNodeManager {
     //?} else {
     /*@Nullable
     private static net.minecraft.core.Direction inferAttachmentFace(Level world, BlockPos pos) {
-        if (world == null || !Functions.isChunkLoaded(world, pos)) {
+        if (world == null || !ChunkCoordUtils.isChunkLoaded(world, pos)) {
             return null;
         }
         for (net.minecraft.core.Direction face : net.minecraft.core.Direction.values()) {
             BlockPos adjacentPos = pos.relative(face);
-            if (!Functions.isChunkLoaded(world, adjacentPos)) {
+            if (!ChunkCoordUtils.isChunkLoaded(world, adjacentPos)) {
                 continue;
             }
             var adjacentState = world.getBlockState(adjacentPos);
@@ -187,7 +188,7 @@ public final class PocketNodeManager {
     }
 
     private static boolean isHostChunkLoaded(World world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos);
+        return ChunkCoordUtils.isChunkLoaded(world, pos);
     }
 
     private static boolean hasHostBlock(World world, BlockPos pos) {
@@ -195,7 +196,7 @@ public final class PocketNodeManager {
     }
 
     private static boolean isAirBlock(World world, BlockPos pos) {
-        if (!Functions.isChunkLoaded(world, pos)) {
+        if (!ChunkCoordUtils.isChunkLoaded(world, pos)) {
             return false;
         }
         var state = world.getBlockState(pos);
@@ -203,11 +204,11 @@ public final class PocketNodeManager {
     }
 
     private static boolean hasNodeBlockEntity(World world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos) && world.getTileEntity(pos) instanceof INodeBlockEntity;
+        return ChunkCoordUtils.isChunkLoaded(world, pos) && world.getTileEntity(pos) instanceof INodeBlockEntity;
     }
 
     private static @Nullable String getCurrentHostBlockId(World world, BlockPos pos) {
-        if (!Functions.isChunkLoaded(world, pos)) {
+        if (!ChunkCoordUtils.isChunkLoaded(world, pos)) {
             return null;
         }
         var state = world.getBlockState(pos);
@@ -257,7 +258,7 @@ public final class PocketNodeManager {
     }
 
     private static boolean isHostChunkLoaded(Level world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos);
+        return ChunkCoordUtils.isChunkLoaded(world, pos);
     }
 
     private static boolean hasHostBlock(Level world, BlockPos pos) {
@@ -265,15 +266,15 @@ public final class PocketNodeManager {
     }
 
     private static boolean isAirBlock(Level world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos) && world.getBlockState(pos).isAir();
+        return ChunkCoordUtils.isChunkLoaded(world, pos) && world.getBlockState(pos).isAir();
     }
 
     private static boolean hasNodeBlockEntity(Level world, BlockPos pos) {
-        return Functions.isChunkLoaded(world, pos) && world.getBlockEntity(pos) instanceof INodeBlockEntity;
+        return ChunkCoordUtils.isChunkLoaded(world, pos) && world.getBlockEntity(pos) instanceof INodeBlockEntity;
     }
 
     private static @Nullable String getCurrentHostBlockId(Level world, BlockPos pos) {
-        if (!Functions.isChunkLoaded(world, pos)) {
+        if (!ChunkCoordUtils.isChunkLoaded(world, pos)) {
             return null;
         }
         var state = world.getBlockState(pos);
@@ -402,7 +403,7 @@ public final class PocketNodeManager {
             return;
         }
         int dimId = getDimensionId(world);
-        long chunkCoord = Functions.mergeChunkCoords(chunkX, chunkZ);
+        long chunkCoord = ChunkCoordUtils.mergeChunkCoords(chunkX, chunkZ);
 
         LongSet activePositions = getChunkPositions(activeChunkIndex.get(dimId), chunkCoord);
         if (activePositions != null && !activePositions.isEmpty()) {
@@ -635,7 +636,7 @@ public final class PocketNodeManager {
 
         INode node;
         try {
-            node = Functions.createNode(record.nodeType(), record.createNodeContext(world));
+            node = NodeFactory.createNode(record.nodeType(), record.createNodeContext(world));
         } catch (IllegalArgumentException ex) {
             removePending(dimId, posLong);
             dirty = true;
@@ -685,7 +686,7 @@ public final class PocketNodeManager {
     private void putActive(PocketNodeHost host) {
         int dimId = host.record().dimensionId();
         long posLong = host.record().pos().toLong();
-        long chunkCoord = Functions.mergeChunkCoords(host.record().pos());
+        long chunkCoord = ChunkCoordUtils.mergeChunkCoords(host.record().pos());
         getActiveDimMap(dimId).put(posLong, host);
         indexChunkPosition(getChunkIndex(activeChunkIndex, dimId), chunkCoord, posLong);
     }
@@ -697,7 +698,7 @@ public final class PocketNodeManager {
         }
         PocketNodeHost removed = dimMap.remove(posLong);
         if (removed != null) {
-            unindexChunkPosition(activeChunkIndex.get(dimId), Functions.mergeChunkCoords(removed.record().pos()), posLong);
+            unindexChunkPosition(activeChunkIndex.get(dimId), ChunkCoordUtils.mergeChunkCoords(removed.record().pos()), posLong);
             if (dimMap.isEmpty()) {
                 activeHosts.remove(dimId);
                 activeChunkIndex.remove(dimId);
@@ -711,7 +712,7 @@ public final class PocketNodeManager {
     private void putPending(PocketNodeRecord record) {
         int dimId = record.dimensionId();
         long posLong = record.pos().toLong();
-        long chunkCoord = Functions.mergeChunkCoords(record.pos());
+        long chunkCoord = ChunkCoordUtils.mergeChunkCoords(record.pos());
         getPendingDimMap(dimId).put(posLong, record);
         indexChunkPosition(getChunkIndex(pendingChunkIndex, dimId), chunkCoord, posLong);
     }
@@ -723,7 +724,7 @@ public final class PocketNodeManager {
         }
         PocketNodeRecord removed = dimMap.remove(posLong);
         if (removed != null) {
-            unindexChunkPosition(pendingChunkIndex.get(dimId), Functions.mergeChunkCoords(removed.pos()), posLong);
+            unindexChunkPosition(pendingChunkIndex.get(dimId), ChunkCoordUtils.mergeChunkCoords(removed.pos()), posLong);
             if (dimMap.isEmpty()) {
                 pendingHosts.remove(dimId);
                 pendingChunkIndex.remove(dimId);

@@ -10,7 +10,7 @@ import com.circulation.circulation_networks.api.node.IHubNode;
 import com.circulation.circulation_networks.api.node.INode;
 import com.circulation.circulation_networks.network.hub.HubCapabilitys;
 import com.circulation.circulation_networks.network.nodes.HubNode;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ChunkCoordUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -50,10 +50,8 @@ import net.minecraft.server.MinecraftServer;
 
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Set;
 
 import static com.circulation.circulation_networks.manager.EnergyMachineManager.transferEnergy;
 
@@ -75,7 +73,7 @@ public final class ChargingManager {
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IChargingNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<IChargingNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<ReferenceSet<IHubNode>> wideAreaHubs = new Int2ObjectOpenHashMap<>();
-    private final Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> tickChargeTargetsByGrid = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<IGrid, ReferenceSet<EnergyTransferParticipant>> tickChargeTargetsByGrid = new Reference2ObjectOpenHashMap<>();
     private final ObjectList<IGrid> activeChargeTargetGrids = new ObjectArrayList<>();
     private final ReferenceSet<IGrid> processedTransferGrids = new ReferenceOpenHashSet<>();
     private final ChannelTransferScratch channelTransferScratch = new ChannelTransferScratch();
@@ -281,8 +279,8 @@ public final class ChargingManager {
         }
     }
 
-    private static void transferEnergyToTargets(Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> chargeTargetsByGrid,
-                                                Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap) {
+    private static void transferEnergyToTargets(Reference2ObjectMap<IGrid, ReferenceSet<EnergyTransferParticipant>> chargeTargetsByGrid,
+                                                 Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap) {
         for (var entry : chargeTargetsByGrid.entrySet()) {
             var grid = entry.getKey();
             if (INSTANCE.processedTransferGrids.contains(grid)) {
@@ -306,11 +304,11 @@ public final class ChargingManager {
     }
 
     private static void transferEnergyForGrid(IGrid grid,
-                                              Reference2ObjectMap<IGrid, Set<EnergyTransferParticipant>> chargeTargetsByGrid,
-                                              Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap,
-                                              ReferenceSet<IGrid> processedGrids) {
+                                               Reference2ObjectMap<IGrid, ReferenceSet<EnergyTransferParticipant>> chargeTargetsByGrid,
+                                               Reference2ObjectMap<IGrid, EnergyMachineManager.GridTickData> machineMap,
+                                               ReferenceSet<IGrid> processedGrids) {
         processedGrids.add(grid);
-        var chargingTargets = chargeTargetsByGrid.getOrDefault(grid, Collections.emptySet());
+        var chargingTargets = chargeTargetsByGrid.getOrDefault(grid, ReferenceSets.emptySet());
 
         var hubNode = grid.getHubNode();
         if (hubNode != null && !hubNode.getChannelId().equals(HubNode.EMPTY)) {
@@ -458,7 +456,7 @@ public final class ChargingManager {
         var map = scopeNode.get(player.dimension);
         if (map != null && !map.isEmpty()) {
             var pos = player.getPosition();
-            var nodeSet = map.get(Functions.mergeChunkCoords(pos));
+            var nodeSet = map.get(ChunkCoordUtils.mergeChunkCoords(pos));
             if (nodeSet != null && !nodeSet.isEmpty()) {
                 for (var node : nodeSet) {
                     if (!node.chargingScopeCheck(pos)) continue;
@@ -502,8 +500,8 @@ public final class ChargingManager {
         activeChargeTargetGrids.clear();
     }
 
-    private Set<EnergyTransferParticipant> getChargeTargets(IGrid grid) {
-        Set<EnergyTransferParticipant> targets = tickChargeTargetsByGrid.get(grid);
+    private ReferenceSet<EnergyTransferParticipant> getChargeTargets(IGrid grid) {
+        ReferenceSet<EnergyTransferParticipant> targets = tickChargeTargetsByGrid.get(grid);
         if (targets == null) {
             targets = new ReferenceOpenHashSet<>();
             tickChargeTargetsByGrid.put(grid, targets);
@@ -539,7 +537,7 @@ public final class ChargingManager {
         LongSet coveredChunks = new LongOpenHashSet();
         for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
             for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
-                long chunkCoord = Functions.mergeChunkCoords(cx, cz);
+                long chunkCoord = ChunkCoordUtils.mergeChunkCoords(cx, cz);
                 coveredChunks.add(chunkCoord);
 
                 ReferenceSet<IChargingNode> chunkNodeSet = dimScopeMap.get(chunkCoord);

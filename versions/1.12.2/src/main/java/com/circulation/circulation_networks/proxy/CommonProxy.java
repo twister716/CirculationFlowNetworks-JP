@@ -40,7 +40,7 @@ import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
 import com.circulation.circulation_networks.registry.RegistryItems;
 import com.circulation.circulation_networks.tiles.BaseTileEntity;
 import com.circulation.circulation_networks.tiles.nodes.BaseNodeTileEntity;
-import com.circulation.circulation_networks.utils.BlockEntityLifecycleDispatcher;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleHooks;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 import com.circulation.circulation_networks.utils.HubTeamServices;
 import com.circulation.circulation_networks.utils.Packet;
@@ -175,19 +175,9 @@ public class CommonProxy implements IGuiHandler {
         }
     }
 
-    @SubscribeEvent
-    public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
-        BlockEntityLifecycleDispatcher.onValidate(event);
-    }
-
     public <T extends Packet<T>> void registerMessage(T aClass, Side side) {
         //noinspection unchecked
         NET_CHANNEL.registerMessage(aClass, (Class<T>) aClass.getClass(), id++, side);
-    }
-
-    @SubscribeEvent
-    public void onBlockEntityInvalidate(BlockEntityLifeCycleEvent.Invalidate event) {
-        BlockEntityLifecycleDispatcher.onInvalidate(event);
     }
 
     @SubscribeEvent
@@ -216,7 +206,7 @@ public class CommonProxy implements IGuiHandler {
                 continue;
             }
             nodeBlockEntity.syncNodeAfterNetworkInit();
-            BlockEntityLifecycleDispatcher.onValidate(new BlockEntityLifeCycleEvent.Validate(world, blockEntity.getPos(), blockEntity));
+            BlockEntityLifecycleHooks.dispatchValidate(new BlockEntityLifeCycleEvent.Validate(world, blockEntity.getPos(), blockEntity));
         }
     }
 

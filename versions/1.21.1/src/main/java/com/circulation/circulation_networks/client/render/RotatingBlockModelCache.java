@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
@@ -12,8 +13,6 @@ import net.neoforged.neoforge.client.event.ModelEvent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 @OnlyIn(Dist.CLIENT)
 public final class RotatingBlockModelCache {
 
@@ -71,7 +70,7 @@ public final class RotatingBlockModelCache {
     public static final ResourceLocation HUB_DEFAULT_PLUGIN_3 = register(HubRenderLayout.DEFAULT_PLUGIN_MODEL_PREFIX + "3");
     public static final ResourceLocation HUB_PLUGIN_WIDE_AREA = register(HubRenderLayout.WIDE_AREA_PLUGIN_MODEL);
     public static final ResourceLocation HUB_PLUGIN_DIMENSIONAL = register(HubRenderLayout.DIMENSIONAL_PLUGIN_MODEL);
-    private static final Map<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<ResourceLocation, BakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
 
     private RotatingBlockModelCache() {
     }

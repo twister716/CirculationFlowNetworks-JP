@@ -1,7 +1,7 @@
 package com.circulation.circulation_networks.mixins.mc;
 
 import com.circulation.circulation_networks.manager.PocketNodeManager;
-import com.circulation.circulation_networks.utils.EventHooks;
+import com.circulation.circulation_networks.utils.BlockEntityLifecycleHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.ChunkPos;
@@ -44,7 +44,7 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     @Inject(method = "addAndRegisterBlockEntity", at = @At("TAIL"))
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (this.isInLevel() && blockEntity != null) {
-            EventHooks.onBlockEntityValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            BlockEntityLifecycleHooks.postValidate(this.level, blockEntity.getBlockPos(), blockEntity);
         }
     }
 
@@ -53,7 +53,7 @@ public abstract class MixinLevelChunk extends ChunkAccess {
         var pos = blockEntity.getBlockPos();
         var rb = this.blockEntities.get(pos);
         if (rb != null && rb != blockEntity) {
-            EventHooks.onBlockEntityInvalidate(this.level, pos, rb);
+            BlockEntityLifecycleHooks.postInvalidate(this.level, pos, rb);
         }
     }
 
@@ -64,7 +64,7 @@ public abstract class MixinLevelChunk extends ChunkAccess {
 
     @Inject(method = "removeBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BlockEntity;setRemoved()V", shift = At.Shift.BEFORE))
     private void removeBlockEntity(BlockPos blockPos, CallbackInfo ci) {
-        EventHooks.onBlockEntityInvalidate(this.level, blockPos, cfn$blockEntity);
+        BlockEntityLifecycleHooks.postInvalidate(this.level, blockPos, cfn$blockEntity);
     }
 
     @Inject(method = "removeBlockEntity", at = @At("TAIL"))

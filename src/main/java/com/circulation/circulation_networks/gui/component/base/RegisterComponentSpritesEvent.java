@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.gui.component.base;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 //? if <1.20 {
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.relauncher.Side;
@@ -35,7 +36,7 @@ import java.util.List;
 //~}
 public final class RegisterComponentSpritesEvent extends Event {
 
-    private final List<String> sprites = new ObjectArrayList<>();
+    private final ObjectList<String> sprites = new ObjectArrayList<>();
 
     /**
      * Registers an atlas sprite base-name (without {@code .png} extension) to be

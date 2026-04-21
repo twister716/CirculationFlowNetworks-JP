@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.client.render;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.registry.CFNItems;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.IBakedModel;
@@ -16,15 +17,13 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 @SideOnly(Side.CLIENT)
 public final class PocketNodeModelCache {
 
     public static final ResourceLocation PORT = model("pocket_node/pocket_port_node");
     public static final ResourceLocation CHARGING = model("pocket_node/pocket_charging_node");
     public static final ResourceLocation RELAY = model("pocket_node/pocket_relay_node");
-    private static final Map<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectMap<ResourceLocation, IBakedModel> BAKED_MODELS = new Object2ObjectOpenHashMap<>();
     private static final ResourceLocation[] TEXTURES = {
         texture("node/node_crystal"),
         texture("node/pocket_node")

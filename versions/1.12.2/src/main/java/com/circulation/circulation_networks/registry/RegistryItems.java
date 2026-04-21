@@ -6,6 +6,8 @@ import com.circulation.circulation_networks.items.ItemHubChannelPlugin;
 import com.circulation.circulation_networks.items.ItemMaterial;
 import com.circulation.circulation_networks.items.ItemPocketNode;
 import com.circulation.circulation_networks.items.ItemWideAreaChargingPlugin;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -15,14 +17,12 @@ import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 
 public final class RegistryItems {
 
-    private static final List<Item> ITEMS_TO_REGISTER = new LinkedList<>();
-    private static final List<Item> ITEM_MODELS_TO_REGISTER = new LinkedList<>();
+    private static final ObjectList<Item> ITEMS_TO_REGISTER = new ObjectArrayList<>();
+    private static final ObjectList<Item> ITEM_MODELS_TO_REGISTER = new ObjectArrayList<>();
 
     public static void registerItems(RegistryEvent.Register<Item> event) {
         CFNItems.circulationConfigurator = registryItem(new ItemCirculationConfigurator());

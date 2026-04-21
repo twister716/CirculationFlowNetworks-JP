@@ -4,10 +4,8 @@ import com.circulation.circulation_networks.math.Vec3d;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 
-import java.util.List;
-
 public final class BuckyBallGeometry {
-    public static final List<Vec3d> vertices = new ObjectArrayList<>();
+    public static final ObjectList<Vec3d> vertices = new ObjectArrayList<>();
     public static final ObjectList<int[]> edges = new ObjectArrayList<>();
 
     static {

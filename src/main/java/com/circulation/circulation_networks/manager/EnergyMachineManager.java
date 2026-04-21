@@ -14,7 +14,7 @@ import com.circulation.circulation_networks.packets.NodeNetworkRendering;
 import com.circulation.circulation_networks.packets.EnergyWarningRendering;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
-import com.circulation.circulation_networks.utils.Functions;
+import com.circulation.circulation_networks.utils.ChunkCoordUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
@@ -50,7 +50,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -67,7 +66,7 @@ public final class EnergyMachineManager {
     private final Int2ObjectMap<Long2ObjectMap<ReferenceSet<IEnergySupplyNode>>> scopeNode = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object2ObjectMap<IEnergySupplyNode, LongSet>> nodeScope = new Int2ObjectOpenHashMap<>();
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
-    private final Reference2ObjectMap<INode, Set<TileEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
+    private final Reference2ObjectMap<INode, ReferenceSet<TileEntity>> gridMachineMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<TileEntity, ReferenceSet<INode>> machineGridMap = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, Interaction> interaction = new Reference2ObjectOpenHashMap<>();
     private final Reference2ObjectMap<IGrid, GridTickData> tickGridData = new Reference2ObjectOpenHashMap<>();
@@ -289,7 +288,7 @@ public final class EnergyMachineManager {
             //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
             var world = te.getWorld();
             var pos = te.getPos();
-            if (!Functions.isChunkLoaded(world, pos)) continue;
+            if (!ChunkCoordUtils.isChunkLoaded(world, pos)) continue;
             //~}
             //~}
             if (CirculationShielderManager.INSTANCE.isBlockedByShielder(pos, world)) continue;
@@ -399,7 +398,7 @@ public final class EnergyMachineManager {
         //~ if >=1.20 '.getPos()' -> '.getBlockPos()' {
         var pos = blockEntity.getPos();
         //~}
-        long chunkCoord = Functions.mergeChunkCoords(pos);
+        long chunkCoord = ChunkCoordUtils.mergeChunkCoords(pos);
 
         //~ if >=1.20 '.getWorld()' -> '.getLevel()' {
         var dim = getDimensionId(blockEntity.getWorld());
@@ -506,7 +505,7 @@ public final class EnergyMachineManager {
 
             for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
                 for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
-                    long chunkCoord = Functions.mergeChunkCoords(cx, cz);
+                    long chunkCoord = ChunkCoordUtils.mergeChunkCoords(cx, cz);
                     chunksCovered.add(chunkCoord);
 
                     ReferenceSet<IEnergySupplyNode> set = map.get(chunkCoord);
@@ -639,7 +638,7 @@ public final class EnergyMachineManager {
 
                 for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
                     for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
-                        long chunkCoord = Functions.mergeChunkCoords(cx, cz);
+                        long chunkCoord = ChunkCoordUtils.mergeChunkCoords(cx, cz);
                         chunksCovered.add(chunkCoord);
 
                         ReferenceSet<IEnergySupplyNode> set = map.get(chunkCoord);
@@ -737,7 +736,7 @@ public final class EnergyMachineManager {
     //~ if >=1.20 '(World ' -> '(Level ' {
     public @NotNull ReferenceSet<IEnergySupplyNode> getEnergyNodes(World world, int chunkX, int chunkZ) {
         var map = scopeNode.get(getDimensionId(world));
-        return map.get(Functions.mergeChunkCoords(chunkX, chunkZ));
+        return map.get(ChunkCoordUtils.mergeChunkCoords(chunkX, chunkZ));
     }
     //~}
     //? if >=1.20 {
@@ -748,7 +747,7 @@ public final class EnergyMachineManager {
 
     //~ if >=1.20 'TileEntity' -> 'BlockEntity' {
     public @NotNull Set<TileEntity> getMachinesSuppliedBy(IEnergySupplyNode node) {
-        return gridMachineMap.getOrDefault(node, Collections.emptySet());
+        return gridMachineMap.getOrDefault(node, ReferenceSets.emptySet());
     }
 
     private IEnergyHandler.EnergyType stabilizeEnergyType(TileEntity tileEntity, IEnergyHandler.EnergyType currentType) {
@@ -865,7 +864,7 @@ public final class EnergyMachineManager {
         }
     }
 
-    private void collectWarningPositions(Set<EnergyTransferParticipant> receiveHandlers,
+    private void collectWarningPositions(ReferenceSet<EnergyTransferParticipant> receiveHandlers,
                                          Reference2ObjectMap<EnergyTransferParticipant, WarningTarget> receiveTargets,
                                          Int2ObjectMap<LongSet> warningPositions) {
         if (receiveHandlers.isEmpty() || receiveTargets == null || receiveTargets.isEmpty()) {

@@ -19,6 +19,7 @@ import com.circulation.circulation_networks.network.nodes.HubNode;
 import com.circulation.circulation_networks.utils.HubPlatformServices;
 //? if <1.20
 import com.github.bsideup.jabel.Desugar;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -56,7 +57,7 @@ public final class HubChannelManager {
 
     public static final HubChannelManager INSTANCE = new HubChannelManager();
 
-    private final Map<UUID, HubChannel> channels = new Object2ReferenceOpenHashMap<>();
+    private final Object2ReferenceMap<UUID, HubChannel> channels = new Object2ReferenceOpenHashMap<>();
     private final Reference2ObjectMap<IHubNode, UUID> hubChannels = new Reference2ObjectOpenHashMap<>();
     private long snapshotVersion = 1L;
     private boolean loaded;

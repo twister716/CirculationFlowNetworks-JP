@@ -2,6 +2,7 @@ package com.circulation.circulation_networks.api;
 
 import com.circulation.circulation_networks.utils.ObjectPool;
 import com.circulation.circulation_networks.registry.RegistryEnergyHandler;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import com.circulation.circulation_networks.network.nodes.HubNode;
 //~ mc_imports
@@ -9,12 +10,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
 import org.jetbrains.annotations.Nullable;
-import java.util.Map;
-
 public interface IEnergyHandler {
 
     int MAX_POOL_SIZE = 4096;
-    Map<Class<? extends IEnergyHandler>, ObjectPool<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
+    Reference2ObjectMap<Class<? extends IEnergyHandler>, ObjectPool<IEnergyHandler>> POOL = new Reference2ObjectOpenHashMap<>();
 
     //~ if >=1.20 '(TileEntity ' -> '(BlockEntity ' {
     static @org.jetbrains.annotations.Nullable IEnergyHandler release(TileEntity tileEntity, @Nullable HubNode.HubMetadata hubMetadata) {
