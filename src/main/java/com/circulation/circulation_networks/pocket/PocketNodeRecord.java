@@ -36,6 +36,10 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         return nodeType;
     }
 
+    public @Nullable EnumFacing getAttachmentFace() {
+        return attachmentFace;
+    }
+
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     //~ if >=1.20 '.hasKey(' -> '.contains(' {
     //~ if >=1.20 '.getInteger(' -> '.getInt(' {

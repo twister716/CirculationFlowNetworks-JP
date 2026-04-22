@@ -143,11 +143,11 @@ The Hub provides several functional tabs:
 
 Networks are isolated through **channels**. Each channel has one of three visibility modes:
 
-| Mode | Behavior |
-|------|----------|
-| **Public** | Visible to all players; everyone can use the channel as a member |
-| **Team** | Only visible to players on the same team as the channel owner (built-in FTB Teams support) |
-| **Private** | Only visible to the channel owner and explicitly authorized players |
+| Mode        | Behavior                                                                                   |
+|-------------|--------------------------------------------------------------------------------------------|
+| **Public**  | Visible to all players; everyone can use the channel as a member                           |
+| **Team**    | Only visible to players on the same team as the channel owner (built-in FTB Teams support) |
+| **Private** | Only visible to the channel owner and explicitly authorized players                        |
 
 Each channel has its own permission system:
 
@@ -175,26 +175,26 @@ All parameters are adjustable in the config file:
 
 ### Node Ranges
 
-| Node | Parameter | Default |
-|------|-----------|---------|
-| Port Node | Energy detection range | 8 |
-| Port Node | Link range | 12 |
-| Charging Node | Charging range | 5 |
-| Charging Node | Link range | 8 |
-| Relay Node | Link range | 20 |
-| Hub | Energy detection range | 10 |
-| Hub | Charging range | 8 |
-| Hub | Link range | 16 |
-| Circulation Shielder | Max range | 8 |
+| Node                 | Parameter              | Default |
+|----------------------|------------------------|---------|
+| Port Node            | Energy detection range | 8       |
+| Port Node            | Link range             | 12      |
+| Charging Node        | Charging range         | 5       |
+| Charging Node        | Link range             | 8       |
+| Relay Node           | Link range             | 20      |
+| Hub                  | Energy detection range | 10      |
+| Hub                  | Charging range         | 8       |
+| Hub                  | Link range             | 16      |
+| Circulation Shielder | Max range              | 8       |
 
 ### Other Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| Default energy unit display | FE | The energy unit shown by default in the UI |
-| Animated model rendering | Enabled | Animation for Relay Nodes and pedestals; disable for better performance |
-| Energy entity blacklist | — | Exclude incompatible block entities by class name prefix |
-| Supply operation blacklist | — | Exclude specific devices from generic energy supply; only dedicated nodes can connect |
+| Option                      | Default | Description                                                                           |
+|-----------------------------|---------|---------------------------------------------------------------------------------------|
+| Default energy unit display | FE      | The energy unit shown by default in the UI                                            |
+| Animated model rendering    | Enabled | Animation for Relay Nodes and pedestals; disable for better performance               |
+| Energy entity blacklist     | —       | Exclude incompatible block entities by class name prefix                              |
+| Supply operation blacklist  | —       | Exclude specific devices from generic energy supply; only dedicated nodes can connect |
 
 ---
 
