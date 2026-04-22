@@ -54,10 +54,7 @@ public abstract class BaseBlock extends Block implements EntityBlock {
         if (cachedAutoTooltipKeys == null) {
             cachedAutoTooltipKeys = BaseItemTooltipModel.resolveTooltipKeys(getDescriptionId(), CI18n::hasKey);
         }
-        if (cachedAutoTooltipKeys.length == 0) {
-            return Collections.emptyList();
-        }
-        List<LocalizedComponent> result = new ObjectArrayList<>(cachedAutoTooltipKeys.length);
+        List<LocalizedComponent> result = new ObjectArrayList<>();
         for (var key : cachedAutoTooltipKeys) {
             result.add(LocalizedComponent.of(key));
         }

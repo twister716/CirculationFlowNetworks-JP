@@ -26,7 +26,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.circulation.circulation_networks.CirculationFlowNetworks.CREATIVE_TAB;
@@ -58,10 +57,7 @@ public abstract class BaseBlock extends Block implements ITileEntityProvider {
         if (cachedAutoTooltipKeys == null) {
             cachedAutoTooltipKeys = BaseItemTooltipModel.resolveTooltipKeys(getTranslationKey(), CI18n::hasKey);
         }
-        if (cachedAutoTooltipKeys.length == 0) {
-            return Collections.emptyList();
-        }
-        List<LocalizedComponent> result = new ObjectArrayList<>(cachedAutoTooltipKeys.length);
+        List<LocalizedComponent> result = new ObjectArrayList<>();
         for (var key : cachedAutoTooltipKeys) {
             result.add(LocalizedComponent.of(key));
         }
