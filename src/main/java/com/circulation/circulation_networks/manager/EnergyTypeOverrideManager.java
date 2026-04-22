@@ -41,10 +41,16 @@ public final class EnergyTypeOverrideManager {
 
     public static void onServerStop() {
         if (INSTANCE != null) {
-            INSTANCE.saveToFile();
             INSTANCE.overrides.clear();
         }
         INSTANCE = null;
+    }
+
+    public static boolean save() {
+        if (INSTANCE != null) {
+            return INSTANCE.saveToFile();
+        }
+        return true;
     }
 
     private static MinecraftServer getServer() {
@@ -65,7 +71,7 @@ public final class EnergyTypeOverrideManager {
 
     public void setOverride(String dim, BlockPos pos, IEnergyHandler.EnergyType type) {
         overrides.computeIfAbsent(dim, _ -> new Long2ObjectOpenHashMap<>()).put(BlockPosCompat.toLong(pos), type);
-        m = true;
+        markDirty();
     }
 
     public void clearOverride(String dim, BlockPos pos) {
@@ -74,7 +80,7 @@ public final class EnergyTypeOverrideManager {
             dimMap.remove(BlockPosCompat.toLong(pos));
             if (dimMap.isEmpty()) overrides.remove(dim);
         }
-        m = true;
+        markDirty();
     }
 
     @Nullable
@@ -82,6 +88,11 @@ public final class EnergyTypeOverrideManager {
         var dimMap = overrides.get(dim);
         if (dimMap == null) return null;
         return dimMap.get(BlockPosCompat.toLong(pos));
+    }
+
+    public void markDirty() {
+        m = true;
+        DatPersistenceScheduler.INSTANCE.markDirty(DatPersistenceScheduler.Target.ENERGY_TYPE_OVERRIDE);
     }
 
     @Nullable
@@ -140,9 +151,9 @@ public final class EnergyTypeOverrideManager {
         }
     }
 
-    private void saveToFile() {
+    private boolean saveToFile() {
         if (overrides.isEmpty() && !m) {
-            return;
+            return true;
         }
 
         File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
@@ -166,9 +177,10 @@ public final class EnergyTypeOverrideManager {
 
         try {
             NetworkManager.writeCompressedNbt(nbt, saveFile);
+            m = false;
+            return true;
         } catch (IOException ignored) {
+            return false;
         }
-
-        m = false;
     }
 }

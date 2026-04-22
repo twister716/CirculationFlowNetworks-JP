@@ -225,9 +225,9 @@ public final class PocketNodeManager {
         recoverPocketHostsFromLoadedNodes();
     }
 
-    public void save() {
+    public boolean save() {
         if (!loaded || (!dirty && activeHosts.isEmpty() && pendingHosts.isEmpty())) {
-            return;
+            return true;
         }
 
         File saveFile = getSaveFile();
@@ -249,7 +249,9 @@ public final class PocketNodeManager {
 
         if (NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "pocket node save")) {
             dirty = false;
+            return true;
         }
+        return false;
     }
 
     public void onServerStop() {
@@ -261,6 +263,7 @@ public final class PocketNodeManager {
     public void markDirty() {
         if (loaded) {
             dirty = true;
+            DatPersistenceScheduler.INSTANCE.markDirty(DatPersistenceScheduler.Target.POCKET_NODE);
         }
     }
 
@@ -287,12 +290,12 @@ public final class PocketNodeManager {
                     removeActiveHost(dimId, posLong);
                     NetworkManager.INSTANCE.removeNode(host.node());
                     syncRemove(dimId, host.record().pos());
-                    dirty = true;
+                    markDirty();
                     continue;
                 }
                 if (resolvedRecord != host.record()) {
                     activeDimMap.put(posLong, new PocketNodeHost(resolvedRecord, host.node()));
-                    dirty = true;
+                    markDirty();
                 }
             }
         }
@@ -337,7 +340,7 @@ public final class PocketNodeManager {
         PocketNodeRecord record = new PocketNodeRecord(dimId, pos, nodeType, attachmentFace, customName, hostBlockId);
         RegisterPocketNodeResult activated = tryActivate(record, false);
         if (activated.isSuccess()) {
-            dirty = true;
+            markDirty();
             syncAdd(record);
         }
         return activated;
@@ -356,7 +359,7 @@ public final class PocketNodeManager {
                 dropItem(world, activeHost.record());
             }
             syncRemove(dimId, pos);
-            dirty = true;
+            markDirty();
             return true;
         }
         PocketNodeRecord pendingRecord = removePending(dimId, posLong);
@@ -365,7 +368,7 @@ public final class PocketNodeManager {
                 dropItem(world, pendingRecord);
             }
             syncRemove(dimId, pos);
-            dirty = true;
+            markDirty();
             return true;
         }
         return false;
@@ -395,7 +398,7 @@ public final class PocketNodeManager {
             }
             if (resolvedRecord != activeHost.record()) {
                 activeDimMap.put(posLong, new PocketNodeHost(resolvedRecord, activeHost.node()));
-                dirty = true;
+                markDirty();
             }
         }
 
@@ -407,12 +410,12 @@ public final class PocketNodeManager {
         PocketNodeRecord resolvedPendingRecord = resolveValidatedRecord(world, pendingRecord);
         if (resolvedPendingRecord == null) {
             removePending(dimId, posLong);
-            dirty = true;
+            markDirty();
             return;
         }
         if (resolvedPendingRecord != pendingRecord) {
             pendingDimMap.put(posLong, resolvedPendingRecord);
-            dirty = true;
+            markDirty();
         }
     }
 
@@ -462,7 +465,7 @@ public final class PocketNodeManager {
         PocketNodeRecord resolvedRecord = resolveValidatedRecord(world, record);
         if (resolvedRecord == null) {
             removePending(dimId, posLong);
-            dirty = true;
+            markDirty();
             return RegisterPocketNodeResult.FAILED;
         }
         record = resolvedRecord;
@@ -472,11 +475,11 @@ public final class PocketNodeManager {
             if (canAdoptLoadedPocketNode(world, record, mappedNode)) {
                 removePending(dimId, posLong);
                 putActive(new PocketNodeHost(record, mappedNode));
-                dirty = true;
+                markDirty();
                 return RegisterPocketNodeResult.SUCCESS;
             }
             removePending(dimId, posLong);
-            dirty = true;
+            markDirty();
             return RegisterPocketNodeResult.OCCUPIED;
         }
 
@@ -485,7 +488,7 @@ public final class PocketNodeManager {
             node = Functions.createNode(record.nodeType(), record.createNodeContext(world));
         } catch (IllegalArgumentException ex) {
             removePending(dimId, posLong);
-            dirty = true;
+            markDirty();
             CirculationFlowNetworks.LOGGER.warn(
                 "Skipping legacy pocket node record with unsupported type={} pos={} dim={}",
                 record.nodeType().id(),
@@ -509,7 +512,7 @@ public final class PocketNodeManager {
                     && isHostChunkLoaded(world, record.pos())) {
                     dropItem(world, record);
                 }
-                dirty = true;
+                markDirty();
             }
             CirculationFlowNetworks.LOGGER.warn(
                 "Failed to activate pocket node type={} pos={} dim={} status={}",
@@ -634,7 +637,7 @@ public final class PocketNodeManager {
                 getCurrentHostBlockId(world, node.getPos())
             );
             putActive(new PocketNodeHost(record, node));
-            dirty = true;
+            markDirty();
             CirculationFlowNetworks.LOGGER.warn(
                 "Recovered pocket node state from loaded grid node type={} pos={} dim={}",
                 node.getNodeType().id(),
