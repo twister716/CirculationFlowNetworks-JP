@@ -18,11 +18,9 @@ import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
 //? if <1.20 {
 import net.minecraftforge.common.DimensionManager;
-//?} else {
-/*import net.minecraft.nbt.NBTTagCompound;
- *///?}
-import org.jetbrains.annotations.NotNull;
+//?}
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class NodeTypes {
@@ -34,22 +32,22 @@ public final class NodeTypes {
     private NodeTypes() {
     }
 
-    private static <N extends INode> NodeType<N> type(String id, Class<N> nodeClass, boolean allowsPocketNode, String fallbackVisualId, NodeDeserializer deserializer, @Nullable NodeCreator creator) {
-        var nodeType = new SimpleNodeType<>(id, nodeClass, allowsPocketNode, fallbackVisualId);
+    private static <N extends INode> NodeType<N> type(String id, Class<N> nodeClass, boolean allowsPocketNode, NodeDeserializer deserializer, @Nullable NodeCreator creator) {
+        var nodeType = new SimpleNodeType<>(id, nodeClass, allowsPocketNode);
         register(nodeType, deserializer, creator);
         return nodeType;
     }
 
-    public static final NodeType<HubNode> HUB = type("hub", HubNode.class, false, "circulation_networks:hub", HubNode::new,
+    public static final NodeType<HubNode> HUB = type("hub", HubNode.class, false, HubNode::new,
         ctx -> new HubNode(ctx, CFNConfig.NODE.hub.energyScope, CFNConfig.NODE.hub.chargingScope, CFNConfig.NODE.hub.linkScope));
 
-    public static final NodeType<PortNode> PORT_NODE = type("port_node", PortNode.class, true, "circulation_networks:port_node", PortNode::new,
+    public static final NodeType<PortNode> PORT_NODE = type("port_node", PortNode.class, true, PortNode::new,
         ctx -> new PortNode(ctx, CFNConfig.NODE.portNode.energyScope, CFNConfig.NODE.portNode.linkScope));
 
-    public static final NodeType<ChargingNode> CHARGING_NODE = type("charging_node", ChargingNode.class, true, "circulation_networks:charging_node", ChargingNode::new,
+    public static final NodeType<ChargingNode> CHARGING_NODE = type("charging_node", ChargingNode.class, true, ChargingNode::new,
         ctx -> new ChargingNode(ctx, CFNConfig.NODE.chargingNode.chargingScope, CFNConfig.NODE.chargingNode.linkScope));
 
-    public static final NodeType<Node> RELAY_NODE = type("relay_node", Node.class, true, "circulation_networks:relay_node", Node::new,
+    public static final NodeType<Node> RELAY_NODE = type("relay_node", Node.class, true, Node::new,
         ctx -> new Node(NodeTypes.RELAY_NODE, ctx, CFNConfig.NODE.relayNode.linkScope));
 
     public static @Nullable NodeType<?> getById(@Nullable String id) {
@@ -74,7 +72,7 @@ public final class NodeTypes {
         return CREATORS_BY_TYPE_ID.get(typeId);
     }
 
-    public static final NodeType<GeneratorNode> GENERATOR = type("generator", GeneratorNode.class, false, "", GeneratorNode::new, null);
+    public static final NodeType<GeneratorNode> GENERATOR = type("generator", GeneratorNode.class, false, GeneratorNode::new, null);
 
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     //~ if >=1.20 '.hasKey(' -> '.contains(' {
@@ -101,7 +99,7 @@ public final class NodeTypes {
     //~}
     //~}
 
-    public static final NodeType<StorageNode> STORAGE = type("storage", StorageNode.class, false, "", StorageNode::new, null);
+    public static final NodeType<StorageNode> STORAGE = type("storage", StorageNode.class, false, StorageNode::new, null);
 
     private static void registerTypeDeserializer(String typeId, NodeDeserializer deserializer) {
         NodeDeserializer existing = DESERIALIZERS_BY_TYPE_ID.get(typeId);
@@ -119,7 +117,7 @@ public final class NodeTypes {
         CREATORS_BY_TYPE_ID.put(typeId, creator);
     }
 
-    public static final NodeType<ConsumerNode> CONSUMER = type("consumer", ConsumerNode.class, false, "", ConsumerNode::new, null);
+    public static final NodeType<ConsumerNode> CONSUMER = type("consumer", ConsumerNode.class, false, ConsumerNode::new, null);
 
     //? if <1.20 {
     private static boolean isRegisteredDimension(int dimId) {
@@ -151,8 +149,7 @@ public final class NodeTypes {
 
     //? if <1.20
     @com.github.bsideup.jabel.Desugar
-    private record SimpleNodeType<N extends INode>(String id, Class<N> nodeClass, boolean allowsPocketNode,
-                                                   String fallbackVisualId) implements NodeType<N> {
+    private record SimpleNodeType<N extends INode>(String id, Class<N> nodeClass, boolean allowsPocketNode) implements NodeType<N> {
 
     }
 

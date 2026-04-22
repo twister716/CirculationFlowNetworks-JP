@@ -37,10 +37,6 @@ public final class NodeContext {
         return new NodeContext(world, pos, resolveDefaultName(world, pos), resolveVisualId(world, pos));
     }
 
-    public static NodeContext of(@NotNull World world, @NotNull BlockPos pos, @NotNull String defaultName, @NotNull String visualId) {
-        return new NodeContext(world, pos, defaultName, visualId);
-    }
-
     //~ if >=1.20 'World ' -> 'Level ' {
     private static String resolveDefaultName(World world, BlockPos pos) {
         return null;

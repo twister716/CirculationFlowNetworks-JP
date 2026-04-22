@@ -69,7 +69,7 @@ public class Node implements INode {
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
         this.linkScope = nbt.getDouble("linkScope");
         this.linkScopeSq = linkScope * linkScope;
-        this.visualId = normalizeVisualId(nbt.hasKey("visualId") ? nbt.getString("visualId") : nodeType.fallbackVisualId());
+        this.visualId = normalizeVisualId(nbt.hasKey("visualId") ? nbt.getString("visualId") : null);
         this.customName = normalizeCustomName(nbt.hasKey("customName") ? nbt.getString("customName") : null);
     }
     //~}

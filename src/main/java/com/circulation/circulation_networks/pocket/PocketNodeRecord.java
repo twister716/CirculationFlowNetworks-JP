@@ -36,18 +36,6 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
         return nodeType;
     }
 
-    public @Nullable EnumFacing getAttachmentFace() {
-        return attachmentFace;
-    }
-
-    public @Nullable String getCustomName() {
-        return customName;
-    }
-
-    public @Nullable String getHostBlockId() {
-        return hostBlockId;
-    }
-
     //~ if >=1.20 'NBTTagCompound' -> 'CompoundTag' {
     //~ if >=1.20 '.hasKey(' -> '.contains(' {
     //~ if >=1.20 '.getInteger(' -> '.getInt(' {
@@ -78,24 +66,6 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
     //~}
     //~}
 
-    private static String toDisplayName(String typeId) {
-        String[] parts = typeId.split("_");
-        StringBuilder builder = new StringBuilder();
-        for (String part : parts) {
-            if (part.isEmpty()) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append(' ');
-            }
-            builder.append(Character.toUpperCase(part.charAt(0)));
-            if (part.length() > 1) {
-                builder.append(part.substring(1));
-            }
-        }
-        return builder.toString();
-    }
-
     private static String serializeFace(EnumFacing face) {
         //? if <1.20 {
         return face.getName2();
@@ -117,7 +87,7 @@ public record PocketNodeRecord(int dimensionId, BlockPos pos, NodeType<?> nodeTy
 
     //~ if >=1.20 'World ' -> 'Level ' {
     public NodeContext createNodeContext(World world) {
-        return NodeContext.of(world, pos, null, nodeType.fallbackVisualId());
+        return NodeContext.fromWorld(world, pos);
     }
     //~}
 
