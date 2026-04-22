@@ -122,12 +122,13 @@ public final class NetworkManager {
         runFileIoAsync(() -> deleteFile(file));
     }
 
-    static void deleteFile(File file) {
+    static boolean deleteFile(File file) {
         synchronized (FILE_IO_LOCK) {
             try {
-                Files.deleteIfExists(file.toPath());
+                return !file.exists() || Files.deleteIfExists(file.toPath());
             } catch (IOException e) {
                 CirculationFlowNetworks.LOGGER.warn("Failed to delete file {}", file.getAbsolutePath(), e);
+                return false;
             }
         }
     }
@@ -639,7 +640,7 @@ public final class NetworkManager {
         }
         oldGrid.getNodes().remove(removedNode);
         oldGrid.markSnapshotDirty();
-        dirtyGrids.add(oldGrid);
+        markGridDirty(oldGrid);
 
         if (oldGrid.getNodes().isEmpty()) {
             destroyGrid(oldGrid);
@@ -685,7 +686,7 @@ public final class NetworkManager {
                     }
                 }
                 oldGrid.markSnapshotDirty();
-                dirtyGrids.add(oldGrid);
+                markGridDirty(oldGrid);
 
                 var watchingPlayers = NodeNetworkRendering.getPlayers(oldGrid);
                 for (int i = 1; i < components.size(); i++) {
@@ -859,7 +860,7 @@ public final class NetworkManager {
                 src.setHubNode(null);
                 dst.markSnapshotDirty();
                 destroyGrid(src);
-                dirtyGrids.add(dst);
+                markGridDirty(dst);
             }
         }
 
@@ -886,7 +887,7 @@ public final class NetworkManager {
     }
 
     private void assignNodeToGrid(INode node, IGrid grid) {
-        dirtyGrids.add(grid);
+        markGridDirty(grid);
         grid.getNodes().add(node);
         node.setGrid(grid);
         grid.markSnapshotDirty();
@@ -896,7 +897,7 @@ public final class NetworkManager {
         IGrid grid = new Grid(UUID.randomUUID());
         grids.put(grid.getId(), grid);
         EnergyMachineManager.INSTANCE.getInteraction().put(grid, new EnergyMachineManager.Interaction());
-        dirtyGrids.add(grid);
+        markGridDirty(grid);
         return grid;
     }
 
@@ -923,22 +924,31 @@ public final class NetworkManager {
     public void markGridDirty(@Nullable IGrid grid) {
         if (grid != null) {
             dirtyGrids.add(grid);
+            DatPersistenceScheduler.INSTANCE.markDirty(DatPersistenceScheduler.Target.NETWORK_GRID);
         }
     }
 
-    public void saveGrid() {
+    public boolean saveGrid() {
         File saveDir = NetworkManager.getSaveFile();
-        if (!dirtyGrids.isEmpty()) {
-            List<IGrid> snapshot = new ObjectArrayList<>(dirtyGrids);
-            dirtyGrids.clear();
-            for (IGrid grid : snapshot) {
-                try {
-                    tryWriteCompressedNbt(grid.serialize(), new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId());
-                } catch (Exception e) {
-                    CirculationFlowNetworks.LOGGER.error("Failed to serialize grid {}", grid.getId(), e);
+        if (dirtyGrids.isEmpty()) {
+            return true;
+        }
+
+        boolean success = true;
+        List<IGrid> snapshot = new ObjectArrayList<>(dirtyGrids);
+        for (IGrid grid : snapshot) {
+            try {
+                if (tryWriteCompressedNbt(grid.serialize(), new File(saveDir, grid.getId().toString() + ".dat"), "grid " + grid.getId())) {
+                    dirtyGrids.remove(grid);
+                } else {
+                    success = false;
                 }
+            } catch (Exception e) {
+                success = false;
+                CirculationFlowNetworks.LOGGER.error("Failed to serialize grid {}", grid.getId(), e);
             }
         }
+        return success;
     }
 
     public void initGrid() {

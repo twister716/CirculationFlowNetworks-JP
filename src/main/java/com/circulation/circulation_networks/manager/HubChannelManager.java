@@ -105,8 +105,7 @@ public final class HubChannelManager {
             }
             channels.put(channelId, channel);
             markSnapshotsDirty();
-            dirty = true;
-            schedulePersistAsync();
+            markDirty();
         } else {
             syncHubFromChannel(hub, channel);
         }
@@ -152,8 +151,7 @@ public final class HubChannelManager {
         channel.setOwner(hub.getOwner());
         channel.replaceExplicitPermissions(new Object2ReferenceOpenHashMap<>(hub.getExplicitPermissions()));
         markSnapshotsDirty();
-        dirty = true;
-        schedulePersistAsync();
+        markDirty();
     }
 
     public long getSnapshotVersion() {
@@ -297,8 +295,7 @@ public final class HubChannelManager {
         }
         hubChannels.put(hub, channel.getChannelId());
         markSnapshotsDirty();
-        dirty = true;
-        schedulePersistAsync();
+        markDirty();
         return true;
     }
 
@@ -331,8 +328,7 @@ public final class HubChannelManager {
         }
         syncBoundHubs(channel);
         markSnapshotsDirty();
-        dirty = true;
-        schedulePersistAsync();
+        markDirty();
         return true;
     }
 
@@ -358,8 +354,7 @@ public final class HubChannelManager {
         }
         channels.remove(channelId);
         markSnapshotsDirty();
-        dirty = true;
-        schedulePersistAsync();
+        markDirty();
         return true;
     }
 
@@ -392,8 +387,7 @@ public final class HubChannelManager {
 
         syncBoundHubs(channel);
         markSnapshotsDirty();
-        dirty = true;
-        schedulePersistAsync();
+        markDirty();
         return true;
     }
 
@@ -412,11 +406,11 @@ public final class HubChannelManager {
         ensureLoaded();
     }
 
-    public void save() {
+    public boolean save() {
         if (!loaded) {
-            return;
+            return true;
         }
-        saveToFile();
+        return saveToFile();
     }
 
     public void onBlockEntityValidate(BlockEntityLifeCycleEvent.Validate event) {
@@ -451,9 +445,6 @@ public final class HubChannelManager {
     }
 
     public void onServerStop() {
-        if (loaded) {
-            saveToFile();
-        }
         channels.clear();
         hubChannels.clear();
         snapshotVersion++;
@@ -475,8 +466,15 @@ public final class HubChannelManager {
     }
 
     public void markChargingDirty() {
+        markDirty();
+    }
+
+    public void markDirty() {
+        if (!loaded) {
+            return;
+        }
         dirty = true;
-        schedulePersistAsync();
+        DatPersistenceScheduler.INSTANCE.markDirty(DatPersistenceScheduler.Target.HUB_CHANNEL);
     }
 
     private void syncHubFromChannel(IHubNode hub, HubChannel channel) {
@@ -615,21 +613,6 @@ public final class HubChannelManager {
         }
     }
 
-    private void schedulePersistAsync() {
-        if (!loaded) {
-            return;
-        }
-
-        List<ChannelDataSnapshot> snapshot = snapshotChannels();
-        File saveFile = getSaveFile();
-        if (snapshot.isEmpty()) {
-            NetworkManager.deleteFileAsync(saveFile);
-            return;
-        }
-
-        NetworkManager.runFileIoAsync(() -> writeSnapshot(saveFile, snapshot));
-    }
-
     private File getSaveFile() {
         return new File(NetworkManager.getSaveFile(), "HubChannels.dat");
     }
@@ -714,21 +697,26 @@ public final class HubChannelManager {
         }
     }
 
-    private void saveToFile() {
+    private boolean saveToFile() {
         if (!dirty) {
-            return;
+            return true;
         }
 
         File saveFile = getSaveFile();
         List<ChannelDataSnapshot> snapshot = snapshotChannels();
         if (snapshot.isEmpty()) {
-            NetworkManager.deleteFile(saveFile);
-            dirty = false;
-            return;
+            if (NetworkManager.deleteFile(saveFile)) {
+                dirty = false;
+                return true;
+            }
+            return false;
         }
 
-        writeSnapshot(saveFile, snapshot);
-        dirty = false;
+        if (writeSnapshot(saveFile, snapshot)) {
+            dirty = false;
+            return true;
+        }
+        return false;
     }
     //?} else {
     /*private void loadFromFile() {
@@ -791,24 +779,29 @@ public final class HubChannelManager {
         }
     }
 
-    private void saveToFile() {
+    private boolean saveToFile() {
         if (!dirty) {
-            return;
+            return true;
         }
 
         File saveFile = getSaveFile();
         List<ChannelDataSnapshot> snapshot = snapshotChannels();
         if (snapshot.isEmpty()) {
-            NetworkManager.deleteFile(saveFile);
-            dirty = false;
-            return;
+            if (NetworkManager.deleteFile(saveFile)) {
+                dirty = false;
+                return true;
+            }
+            return false;
         }
 
-        writeSnapshot(saveFile, snapshot);
-        dirty = false;
+        if (writeSnapshot(saveFile, snapshot)) {
+            dirty = false;
+            return true;
+        }
+        return false;
     }
 
-    private void writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
+    private boolean writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
         CompoundTag nbt = new CompoundTag();
         ListTag channelList = new ListTag();
         for (ChannelDataSnapshot channel : snapshot) {
@@ -844,13 +837,15 @@ public final class HubChannelManager {
 
         try {
             NetworkManager.writeCompressedNbt(nbt, saveFile);
+            return true;
         } catch (IOException ignored) {
+            return false;
         }
     }
     *///?}
 
     //? if <1.20 {
-    private void writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
+    private boolean writeSnapshot(File saveFile, List<ChannelDataSnapshot> snapshot) {
         NBTTagCompound nbt = new NBTTagCompound();
         NBTTagList channelList = new NBTTagList();
         for (ChannelDataSnapshot channel : snapshot) {
@@ -884,7 +879,7 @@ public final class HubChannelManager {
         }
         nbt.setTag("channels", channelList);
 
-        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "hub channel save");
+        return NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "hub channel save");
     }
     //?}
 

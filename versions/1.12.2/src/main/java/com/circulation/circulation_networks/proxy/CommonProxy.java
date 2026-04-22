@@ -13,6 +13,7 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.DatPersistenceScheduler;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.packets.BindHubChannel;
 import com.circulation.circulation_networks.packets.CirculationShielderSyncPacket;
@@ -162,16 +163,7 @@ public class CommonProxy implements IGuiHandler {
             EnergyMachineManager.INSTANCE.onServerTick();
         } else {
             MachineNodeBlockEntityManager.INSTANCE.onServerTick();
-        }
-    }
-
-    @SubscribeEvent
-    public void onWorldSave(WorldEvent.Save event) {
-        if (!event.getWorld().isRemote && event.getWorld().provider.getDimension() == 0) {
-            NetworkManager.INSTANCE.saveGrid();
-            PocketNodeManager.INSTANCE.save();
-            EnergyTypeOverrideManager.save();
-            HubChannelManager.INSTANCE.save();
+            DatPersistenceScheduler.INSTANCE.onServerTick();
         }
     }
 

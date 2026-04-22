@@ -6,6 +6,7 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.DatPersistenceScheduler;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.proxy.CommonProxy;
 import com.circulation.circulation_networks.registry.CFNBlocks;
@@ -97,9 +98,10 @@ public class CirculationFlowNetworks {
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
-        server = null;
         NetworkManager.INSTANCE.saveGrid();
         PocketNodeManager.INSTANCE.save();
+        HubChannelManager.INSTANCE.save();
+        EnergyTypeOverrideManager.save();
         NetworkManager.INSTANCE.onServerStop();
         PocketNodeManager.INSTANCE.onServerStop();
         EnergyMachineManager.INSTANCE.onServerStop();
@@ -107,6 +109,8 @@ public class CirculationFlowNetworks {
         ChargingManager.INSTANCE.onServerStop();
         HubChannelManager.INSTANCE.onServerStop();
         MachineNodeBlockEntityManager.INSTANCE.clear();
+        DatPersistenceScheduler.INSTANCE.reset();
+        server = null;
     }
 
 }

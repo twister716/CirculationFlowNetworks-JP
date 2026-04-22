@@ -49,16 +49,16 @@ public final class EnergyTypeOverrideManager {
 
     public static void onServerStop() {
         if (INSTANCE != null) {
-            INSTANCE.saveToFile();
             INSTANCE.overrides.clear();
         }
         INSTANCE = null;
     }
 
-    public static void save() {
+    public static boolean save() {
         if (INSTANCE != null) {
-            INSTANCE.saveToFile();
+            return INSTANCE.saveToFile();
         }
+        return true;
     }
 
     //? if <1.20 {
@@ -101,7 +101,7 @@ public final class EnergyTypeOverrideManager {
     //~ if >=1.20 '.toLong()' -> '.asLong()' {
     public void setOverride(int dim, BlockPos pos, IEnergyHandler.EnergyType type) {
         overrides.computeIfAbsent(dim, k -> new Long2ObjectOpenHashMap<>()).put(pos.toLong(), type);
-        m = true;
+        markDirty();
     }
 
     public void clearOverride(int dim, BlockPos pos) {
@@ -110,7 +110,7 @@ public final class EnergyTypeOverrideManager {
             dimMap.remove(pos.toLong());
             if (dimMap.isEmpty()) overrides.remove(dim);
         }
-        m = true;
+        markDirty();
     }
 
     @Nullable
@@ -118,6 +118,11 @@ public final class EnergyTypeOverrideManager {
         var dimMap = overrides.get(dim);
         if (dimMap == null) return null;
         return dimMap.get(pos.toLong());
+    }
+
+    public void markDirty() {
+        m = true;
+        DatPersistenceScheduler.INSTANCE.markDirty(DatPersistenceScheduler.Target.ENERGY_TYPE_OVERRIDE);
     }
     //~}
 
@@ -184,9 +189,9 @@ public final class EnergyTypeOverrideManager {
         }
     }
 
-    private void saveToFile() {
+    private boolean saveToFile() {
         if (overrides.isEmpty() && !m) {
-            return;
+            return true;
         }
 
         File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
@@ -208,9 +213,11 @@ public final class EnergyTypeOverrideManager {
         }
         nbt.setTag("overrides", dims);
 
-        NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "energy type override save");
-
-        m = false;
+        if (NetworkManager.tryWriteCompressedNbt(nbt, saveFile, "energy type override save")) {
+            m = false;
+            return true;
+        }
+        return false;
     }
     //?} else {
     /*private void loadFromFile() {
@@ -245,9 +252,9 @@ public final class EnergyTypeOverrideManager {
         }
     }
 
-    private void saveToFile() {
+    private boolean saveToFile() {
         if (overrides.isEmpty() && !m) {
-            return;
+            return true;
         }
 
         File saveFile = new File(NetworkManager.getSaveFile(), "EnergyTypeOverride.dat");
@@ -271,10 +278,11 @@ public final class EnergyTypeOverrideManager {
 
         try {
             NetworkManager.writeCompressedNbt(nbt, saveFile);
+            m = false;
+            return true;
         } catch (IOException ignored) {
+            return false;
         }
-
-        m = false;
     }
     *///?}
 }

@@ -10,6 +10,7 @@ import com.circulation.circulation_networks.manager.EnergyTypeOverrideManager;
 import com.circulation.circulation_networks.manager.HubChannelManager;
 import com.circulation.circulation_networks.manager.MachineNodeBlockEntityManager;
 import com.circulation.circulation_networks.manager.NetworkManager;
+import com.circulation.circulation_networks.manager.DatPersistenceScheduler;
 import com.circulation.circulation_networks.manager.PocketNodeManager;
 import com.circulation.circulation_networks.network.CFNNetwork;
 import com.circulation.circulation_networks.packets.ConfigOverrideRendering;
@@ -43,7 +44,6 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -82,7 +82,6 @@ public final class CirculationFlowNetworks {
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(this::onBlockBreak);
-        NeoForge.EVENT_BUS.addListener(this::onLevelSave);
         NeoForge.EVENT_BUS.addListener(this::onServerStopping);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
@@ -180,6 +179,7 @@ public final class CirculationFlowNetworks {
 
     private void onServerTickPost(ServerTickEvent.Post event) {
         MachineNodeBlockEntityManager.INSTANCE.onServerTick();
+        DatPersistenceScheduler.INSTANCE.onServerTick();
     }
 
     private void onChunkLoad(ChunkEvent.Load event) {
@@ -196,18 +196,11 @@ public final class CirculationFlowNetworks {
         }
     }
 
-    private void onLevelSave(LevelEvent.Save event) {
-        if (!(event.getLevel() instanceof Level level) || level.isClientSide() || level.dimension() != Level.OVERWORLD) {
-            return;
-        }
-        NetworkManager.INSTANCE.saveGrid();
-        PocketNodeManager.INSTANCE.save();
-        HubChannelManager.INSTANCE.save();
-    }
-
     private void onServerStopping(ServerStoppingEvent event) {
         NetworkManager.INSTANCE.saveGrid();
         PocketNodeManager.INSTANCE.save();
+        HubChannelManager.INSTANCE.save();
+        EnergyTypeOverrideManager.save();
         NetworkManager.INSTANCE.onServerStop();
         PocketNodeManager.INSTANCE.onServerStop();
         EnergyMachineManager.INSTANCE.onServerStop();
@@ -215,6 +208,7 @@ public final class CirculationFlowNetworks {
         ChargingManager.INSTANCE.onServerStop();
         HubChannelManager.INSTANCE.onServerStop();
         MachineNodeBlockEntityManager.INSTANCE.clear();
+        DatPersistenceScheduler.INSTANCE.reset();
     }
 
     private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
