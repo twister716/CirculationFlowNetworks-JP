@@ -10,18 +10,12 @@ public interface NodeType<N extends INode> {
 
     boolean allowsPocketNode();
 
-    @NotNull String fallbackVisualId();
-
     default @NotNull String getId() {
         return id();
     }
 
     default @NotNull Class<N> getNodeClass() {
         return nodeClass();
-    }
-
-    default @NotNull String getFallbackVisualId() {
-        return fallbackVisualId();
     }
 
     default boolean matches(INode node) {

@@ -75,7 +75,7 @@ public record PocketNodeRecord(String dimensionId, BlockPos pos, NodeType<?> nod
     }
 
     public NodeContext createNodeContext(Level world) {
-        return NodeContext.of(world, pos, null, nodeType.fallbackVisualId());
+        return NodeContext.of(world, pos, null, "");
     }
 
     public PocketNodeRecord withHostBlockId(@Nullable String newHostBlockId) {

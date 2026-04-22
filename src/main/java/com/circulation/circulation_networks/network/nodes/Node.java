@@ -55,7 +55,7 @@ public class Node implements INode {
         this.vec3d = Vec3d.ofCenter(new Vec3i(pos.getX(), pos.getY(), pos.getZ()));
         this.linkScope = NbtCompat.getDoubleOr(nbt, "linkScope", 0.0D);
         this.linkScopeSq = linkScope * linkScope;
-        this.visualId = normalizeVisualId(NbtCompat.getStringOr(nbt, "visualId", nodeType.fallbackVisualId()));
+        this.visualId = normalizeVisualId(NbtCompat.contains(nbt, "visualId") ? NbtCompat.getStringOr(nbt, "visualId", "") : null);
         this.customName = normalizeCustomName(NbtCompat.contains(nbt, "customName") ? NbtCompat.getStringOr(nbt, "customName", "") : null);
     }
 
