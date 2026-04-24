@@ -40,7 +40,7 @@ item.circulation_networks.circulation_configurator.submode.inspection.machine_li
 item.circulation_networks.circulation_configurator.submode.configuration.send=能量输出
 item.circulation_networks.circulation_configurator.submode.configuration.receive=能量输入
 item.circulation_networks.circulation_configurator.submode.configuration.storage=能量存储
-item.circulation_networks.circulation_configurator.submode.configuration.invalid=失效模式
+item.circulation_networks.circulation_configurator.submode.configuration.invalid=传输失效
 item.circulation_networks.circulation_configurator.submode.configuration.clear=清除配置
 item.circulation_networks.circulation_configurator.usage.switch_mode=§e潜行 + 右键空气§r切换主模式
 item.circulation_networks.circulation_configurator.usage.switch_submode=§e潜行 + 滚轮§r切换子模式

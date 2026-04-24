@@ -103,7 +103,7 @@
   "item.circulation_networks.circulation_configurator.mode_display": "§6%s§7[§9%s§7]",
   "item.circulation_networks.circulation_configurator.name": "Circulation Configurator",
   "item.circulation_networks.circulation_configurator.submode.configuration.clear": "Clear Configuration",
-  "item.circulation_networks.circulation_configurator.submode.configuration.invalid": "Disable Machine",
+  "item.circulation_networks.circulation_configurator.submode.configuration.invalid": "Disable Transfer",
   "item.circulation_networks.circulation_configurator.submode.configuration.receive": "Energy Input",
   "item.circulation_networks.circulation_configurator.submode.configuration.send": "Energy Output",
   "item.circulation_networks.circulation_configurator.submode.configuration.storage": "Energy Storage",
