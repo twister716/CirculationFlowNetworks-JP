@@ -95,6 +95,7 @@ public final class CirculationConfiguratorModeModel {
         SEND(IEnergyHandler.EnergyType.SEND),
         RECEIVE(IEnergyHandler.EnergyType.RECEIVE),
         STORAGE(IEnergyHandler.EnergyType.STORAGE),
+        INVALID(IEnergyHandler.EnergyType.INVALID),
         CLEAR(null);
 
         private final IEnergyHandler.EnergyType energyType;
