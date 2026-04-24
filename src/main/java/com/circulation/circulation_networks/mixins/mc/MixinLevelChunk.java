@@ -24,12 +24,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
+
 @Mixin(value = LevelChunk.class, remap = false)
 public abstract class MixinLevelChunk extends ChunkAccess {
 
     @Shadow
     @Final
     private Level level;
+
+    @Shadow
+    public abstract Map<BlockPos, BlockEntity> getBlockEntities();
 
     public MixinLevelChunk(ChunkPos chunkPos, UpgradeData upgradeData, LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory containerFactory, long inhabitedTime, LevelChunkSection @Nullable [] sections, @Nullable BlendingData blendingData) {
         super(chunkPos, upgradeData, levelHeightAccessor, containerFactory, inhabitedTime, sections, blendingData);
@@ -39,6 +44,15 @@ public abstract class MixinLevelChunk extends ChunkAccess {
     public void addAndRegisterBlockEntity(BlockEntity blockEntity, CallbackInfo ci) {
         if (blockEntity != null) {
             BlockEntityLifecycleHooks.onValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+        }
+    }
+
+    @Inject(method = "registerAllBlockEntitiesAfterLevelLoad", at = @At("TAIL"))
+    private void registerAllBlockEntitiesAfterLevelLoad(CallbackInfo ci) {
+        for (BlockEntity blockEntity : this.getBlockEntities().values()) {
+            if (blockEntity != null && !blockEntity.isRemoved()) {
+                BlockEntityLifecycleHooks.onValidate(this.level, blockEntity.getBlockPos(), blockEntity);
+            }
         }
     }
 
