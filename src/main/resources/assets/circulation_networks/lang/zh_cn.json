@@ -109,6 +109,7 @@
   "item.circulation_networks.circulation_configurator.mode_display": "§6%s§7[§9%s§7]",
   "item.circulation_networks.circulation_configurator.name": "环流配置器",
   "item.circulation_networks.circulation_configurator.submode.configuration.clear": "清除配置",
+  "item.circulation_networks.circulation_configurator.submode.configuration.invalid": "失效模式",
   "item.circulation_networks.circulation_configurator.submode.configuration.receive": "能量输入",
   "item.circulation_networks.circulation_configurator.submode.configuration.send": "能量输出",
   "item.circulation_networks.circulation_configurator.submode.configuration.storage": "能量存储",

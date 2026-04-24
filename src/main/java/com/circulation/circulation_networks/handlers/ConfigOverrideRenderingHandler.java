@@ -69,27 +69,48 @@ public final class ConfigOverrideRenderingHandler {
                     continue;
                 }
 
-                float r, g, b;
+                float fillR, fillG, fillB;
+                float edgeR, edgeG, edgeB;
                 switch (type) {
                     case SEND -> {
-                        r = 1.0f;
-                        g = 0.2f;
-                        b = 0.2f;
+                        fillR = 1.0f;
+                        fillG = 0.2f;
+                        fillB = 0.2f;
+                        edgeR = fillR;
+                        edgeG = fillG;
+                        edgeB = fillB;
                     }
                     case RECEIVE -> {
-                        r = 0.2f;
-                        g = 1.0f;
-                        b = 0.2f;
+                        fillR = 0.2f;
+                        fillG = 1.0f;
+                        fillB = 0.2f;
+                        edgeR = fillR;
+                        edgeG = fillG;
+                        edgeB = fillB;
                     }
                     case STORAGE -> {
-                        r = 0.2f;
-                        g = 0.4f;
-                        b = 1.0f;
+                        fillR = 0.2f;
+                        fillG = 0.4f;
+                        fillB = 1.0f;
+                        edgeR = fillR;
+                        edgeG = fillG;
+                        edgeB = fillB;
+                    }
+                    case INVALID -> {
+                        fillR = 0.08f;
+                        fillG = 0.08f;
+                        fillB = 0.08f;
+                        edgeR = 1.0f;
+                        edgeG = 0.15f;
+                        edgeB = 0.15f;
                     }
                     default -> {
-                        r = 1.0f;
-                        g = 1.0f;
-                        b = 1.0f;
+                        fillR = 1.0f;
+                        fillG = 1.0f;
+                        fillB = 1.0f;
+                        edgeR = fillR;
+                        edgeG = fillG;
+                        edgeB = fillB;
                     }
                 }
 
@@ -100,8 +121,8 @@ public final class ConfigOverrideRenderingHandler {
                 double y1 = pos.getY() + 1.0 - INSET;
                 double z1 = pos.getZ() + 1.0 - INSET;
 
-                RenderingUtils.drawOverlayFilledBox(x0, y0, z0, x1, y1, z1, r, g, b, 0.15f);
-                RenderingUtils.drawOverlayBoxEdges(x0, y0, z0, x1, y1, z1, r, g, b, 0.6f, 2.0f);
+                RenderingUtils.drawOverlayFilledBox(x0, y0, z0, x1, y1, z1, fillR, fillG, fillB, 0.15f);
+                RenderingUtils.drawOverlayBoxEdges(x0, y0, z0, x1, y1, z1, edgeR, edgeG, edgeB, 0.6f, 2.0f);
             }
         } finally {
             RenderSystem.getModelViewStack().popMatrix();
