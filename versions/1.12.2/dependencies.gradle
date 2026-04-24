@@ -8,7 +8,6 @@ dependencies {
     def deobfCompileOnly = { Object notation ->
         compileOnly(rfg.deobf(notation))
     }
-
     // 1.12.2-only dependencies migrated from the current implementation.
     runtimeOnly 'com.cleanroommc:strip-latest-forge-requirements:1.0'
     runtimeOnly 'com.cleanroommc:osxnarratorblocker:1.0'
@@ -34,4 +33,6 @@ dependencies {
     deobfRuntimeOnly("curse.maven:brandons-core-231382:3408276")
     deobfRuntimeOnly("curse.maven:draconic-evolution-223565:3431261")
     deobfRuntimeOnly("curse.maven:CodeChickenLib-242818:2779848")
+    deobfCompileOnly("curse.maven:endercore-231868:4671384")
+    deobfCompileOnly("curse.maven:EnderIO-64578:4674244")
 }

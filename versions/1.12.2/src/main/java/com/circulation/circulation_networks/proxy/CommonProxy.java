@@ -1,6 +1,7 @@
 package com.circulation.circulation_networks.proxy;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
+import com.circulation.circulation_networks.energy.manager.EIOHandlerManager;
 import com.circulation.circulation_networks.energy.manager.EUHandlerManager;
 import com.circulation.circulation_networks.energy.manager.FEHandlerManager;
 import com.circulation.circulation_networks.energy.manager.MEKHandlerManager;
@@ -94,6 +95,9 @@ public class CommonProxy implements IGuiHandler {
             HubTeamServices.INSTANCE = new MyHubTeamServices();
         }
 
+        if (Loader.isModLoaded("enderio")) {
+            RegistryEnergyHandler.registerEnergyHandler(new EIOHandlerManager());
+        }
         RegistryEnergyHandler.registerEnergyHandler(new FEHandlerManager());
         try {
             Class.forName("hellfirepvp.modularmachinery.common.block.BlockBus");
