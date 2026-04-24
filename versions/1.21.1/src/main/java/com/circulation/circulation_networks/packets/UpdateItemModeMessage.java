@@ -2,7 +2,9 @@ package com.circulation.circulation_networks.packets;
 
 import com.circulation.circulation_networks.CirculationFlowNetworks;
 import com.circulation.circulation_networks.items.CirculationConfiguratorModeModel;
+import com.circulation.circulation_networks.items.CirculationConfiguratorSelection;
 import com.circulation.circulation_networks.items.CirculationConfiguratorState;
+import com.circulation.circulation_networks.items.ItemCirculationConfigurator;
 import com.circulation.circulation_networks.registry.CFNItems;
 import com.circulation.circulation_networks.utils.Packet;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -44,6 +46,10 @@ public final class UpdateItemModeMessage implements Packet<UpdateItemModeMessage
             if (stack.getItem() == CFNItems.circulationConfigurator) {
                 var function = CirculationConfiguratorState.getFunction(stack);
                 CirculationConfiguratorState.setSubMode(stack, CirculationConfiguratorModeModel.wrapSubMode(message.mode, function));
+                ItemCirculationConfigurator.sendModeMessage(
+                    serverPlayer,
+                    CirculationConfiguratorSelection.fromStack(stack)
+                );
             }
         });
     }
